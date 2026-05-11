@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Registro Voluntario | Red Solidaria UTP'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <a th:href="@{/registro}" class="rs-back-link">← Volver a selección</a>
+
+    <div class="rs-card">
+        <div class="rs-card-header">
+            <div class="rs-header-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+            </div>
+            <h2>Registro de Voluntario</h2>
+            <p>Completa tu información como estudiante UTP</p>
+        </div>
+
+        <form th:action="@{/registro/voluntario}" method="post" enctype="multipart/form-data">
+            <div class="rs-form-grid">
+                <div class="rs-field">
+                    <label>Nombres <span class="req">*</span></label>
+                    <input type="text" name="nombres" required />
+                </div>
+                <div class="rs-field">
+                    <label>Apellidos <span class="req">*</span></label>
+                    <input type="text" name="apellidos" required />
+                </div>
+                <div class="rs-field rs-form-full">
+                    <label>Correo Institucional UTP <span class="req">*</span></label>
+                    <input type="email" name="email" placeholder="Uxxxxxxxx@utp.edu.pe" required />
+                    <span class="rs-field-hint">Ejemplo: U12345678@utp.edu.pe</span>
+                </div>
+                <div class="rs-field">
+                    <label>Código de Estudiante <span class="req">*</span></label>
+                    <input type="text" name="codigo" placeholder="U12345678" required />
+                </div>
+                <div class="rs-field">
+                    <label>Carrera <span class="req">*</span></label>
+                    <select name="carrera" required>
+                        <option value="">Selecciona tu carrera</option>
+                        <option>Ingeniería de Sistemas</option>
+                        <option>Ingeniería Civil</option>
+                        <option>Administración</option>
+                        <option>Psicología</option>
+                    </select>
+                </div>
+                <div class="rs-field rs-form-full">
+                    <label>Foto de Perfil (Opcional)</label>
+                    <div class="rs-file-upload">
+                        <label class="btn-file" for="fotoPerfil">Seleccionar archivo</label>
+                        <span class="rs-file-name" id="fileNameDisplay">Sin archivos seleccionados</span>
+                        <input type="file" id="fotoPerfil" name="fotoPerfil" accept="image/jpeg,image/png"
+                               onchange="document.getElementById('fileNameDisplay').textContent = this.files[0]?.name || 'Sin archivos seleccionados'" />
+                    </div>
+                </div>
+                <div class="rs-field">
+                    <label>Contraseña <span class="req">*</span></label>
+                    <input type="password" name="password" required />
+                </div>
+                <div class="rs-field">
+                    <label>Confirmar Contraseña <span class="req">*</span></label>
+                    <input type="password" name="confirmPassword" required />
+                </div>
+                <div class="rs-form-full">
+                    <div class="rs-nota">
+                        <strong>Nota:</strong> Tu cuenta será verificada por nuestro equipo antes de ser activada.
+                    </div>
+                </div>
+                <div class="rs-form-full">
+                    <button type="submit" class="rs-btn-submit">Registrarse como Voluntario</button>
+                </div>
+            </div>
+        </form>
+
+        <p class="rs-login-link">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a></p>
+    </div>
+</div>
+
+</body>
+</html>

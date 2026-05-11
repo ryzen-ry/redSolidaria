@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Sobre Nosotros | Red Solidaria UTP'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <div class="rs-hero" style="padding: 48px;">
+        <h1 style="font-size: 2.5rem;">Sobre Red Solidaria</h1>
+        <p>Construyendo puentes de solidaridad entre estudiantes universitarios y personas con discapacidad</p>
+    </div>
+
+    <!-- MISIÓN Y VISIÓN -->
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; margin: 48px 0;">
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">🎯</div>
+            <h3>Nuestra Misión</h3>
+            <p style="font-family: cursive;">“Brindar nuestro Sistema de alerta de ayuda gratuita para conectar a personas con discapacidad con voluntarios universitarios de la UTP que quieran brindar su apoyo, promoviendo la solidaridad y reduciendo el aislamiento social.”</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">👁️</div>
+            <h3>Nuestra Visión</h3>
+            <p style="font-family: cursive;">"Ser la plataforma digital líder en el Perú que convierta el voluntariado en parte esencial del trayecto profesional del universitario peruano, formando profesionales empáticos e inclusivos."</p>
+        </div>
+    </div>
+
+    <!-- VALORES -->
+    <h2 class="rs-section-title">Nuestros Valores</h2>
+    <div class="rs-grid-4">
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">🤝</div>
+            <h3>Solidaridad</h3>
+            <p>Compromiso genuino con el bienestar del otro</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">🌍</div>
+            <h3>Inclusión</h3>
+            <p>Todos merecen las mismas oportunidades</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">💚</div>
+            <h3>Empatía</h3>
+            <p>Comprender y sentir las necesidades ajenas</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">⭐</div>
+            <h3>Respeto</h3>
+            <p>Dignidad y consideración en cada interacción</p>
+        </div>
+    </div>
+
+    <!-- COMUNIDAD UTP -->
+    <div class="rs-cta" style="background: linear-gradient(135deg, #3AAA6B 0%, #2E8F5A 100%);">
+        <h2>Comunidad UTP</h2>
+        <p>Red Solidaria es una iniciativa impulsada por estudiantes de la Universidad Tecnológica del Perú (UTP), comprometidos con crear un impacto positivo en nuestra sociedad.</p>
+    </div>
+</div>
+
+</body>
+</html>

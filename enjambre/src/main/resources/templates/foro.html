@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Foro | Red Solidaria UTP'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <h1 class="rs-section-title" style="margin-bottom: 0;">Foro Comunitario</h1>
+        <a th:href="@{/login}" class="rs-btn-primary">+ Crear Nueva Publicación</a>
+    </div>
+    <p class="rs-section-subtitle" style="text-align: center; color: #6B7280; margin-bottom: 32px;">Comparte experiencias, haz preguntas y conecta con la comunidad</p>
+
+    <!-- FILTROS -->
+    <div class="rs-foro-filters">
+        <button class="rs-filter-btn active">Todos</button>
+        <button class="rs-filter-btn">Experiencias</button>
+        <button class="rs-filter-btn">Consejos</button>
+        <button class="rs-filter-btn">Capacitación</button>
+        <button class="rs-filter-btn">Agradecimientos</button>
+        <button class="rs-filter-btn">Preguntas</button>
+    </div>
+
+    <!-- POSTS -->
+    <div class="rs-post-card">
+        <div class="rs-post-header">
+            <div class="rs-post-avatar">MG</div>
+            <div>
+                <div class="rs-post-author">María González</div>
+                <div class="rs-post-date">Voluntaria • Hace 2 horas</div>
+            </div>
+        </div>
+        <div class="rs-post-title">¿Cómo mejorar la comunicación con personas con discapacidad auditiva?</div>
+        <div class="rs-post-content">
+            Hola a todos, soy nueva como voluntaria y me gustaría aprender más sobre cómo comunicarme efectivamente con personas con discapacidad auditiva.
+        </div>
+        <div class="rs-post-stats">
+            <span>❤️ 15</span>
+            <span>💬 8 Respuestas</span>
+        </div>
+    </div>
+
+    <div class="rs-post-card">
+        <div class="rs-post-header">
+            <div class="rs-post-avatar">RT</div>
+            <div>
+                <div class="rs-post-author">Ricardo Torres</div>
+                <div class="rs-post-date">Voluntario • Hace 5 días</div>
+            </div>
+        </div>
+        <div class="rs-post-title">Mi primera experiencia ayudando a cruzar la calle</div>
+        <div class="rs-post-content">
+            Hoy ayudé a don José, un adulto mayor con discapacidad motriz. Fue una experiencia muy bonita. Anímense a ser voluntarios.
+        </div>
+        <div class="rs-post-stats">
+            <span>❤️ 42</span>
+            <span>💬 12 Respuestas</span>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

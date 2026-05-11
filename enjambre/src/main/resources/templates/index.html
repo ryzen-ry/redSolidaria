@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Red Solidaria UTP - Conectando Corazones Solidarios'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <!-- HERO -->
+    <div class="rs-hero">
+        <h1>Conectando Corazones Solidarios</h1>
+        <p>Red Solidaria une a personas con discapacidad con voluntarios universitarios de la UTP, creando una comunidad de apoyo mutuo y solidaridad.</p>
+        <div class="rs-hero-buttons">
+            <a th:href="@{/registro}" class="rs-btn-primary">Registrarse Ahora</a>
+            <a th:href="@{/nosotros}" class="rs-btn-secondary">Conocer Más</a>
+        </div>
+    </div>
+
+    <!-- CÓMO FUNCIONA -->
+    <h2 class="rs-section-title">¿Cómo Funciona?</h2>
+    <div class="rs-grid-4">
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">📝</div>
+            <h3>Registro Fácil</h3>
+            <p>Regístrate como voluntario UTP o persona con discapacidad de forma rápida y segura.</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">📍</div>
+            <h3>Asignación Cercana</h3>
+            <p>Te conectamos con ayuda cercana usando geolocalización para respuesta rápida.</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">⚡</div>
+            <h3>Apoyo Inmediato</h3>
+            <p>Presiona un botón y recibe ayuda para cruzar la calle, interpretar o cualquier necesidad.</p>
+        </div>
+        <div class="rs-feature-card">
+            <div class="rs-feature-icon">✅</div>
+            <h3>Verificado y Seguro</h3>
+            <p>Todos los voluntarios y usuarios son verificados para garantizar seguridad.</p>
+        </div>
+    </div>
+
+    <!-- DISCAPACIDADES -->
+    <div class="rs-disabilities-grid">
+        <div class="rs-disability-item">
+            <div class="rs-disability-icon">👁️</div>
+            <h4>Visual</h4>
+        </div>
+        <div class="rs-disability-item">
+            <div class="rs-disability-icon">🗣️</div>
+            <h4>Del Habla</h4>
+        </div>
+        <div class="rs-disability-item">
+            <div class="rs-disability-icon">👂</div>
+            <h4>Auditiva</h4>
+        </div>
+        <div class="rs-disability-item">
+            <div class="rs-disability-icon">🦽</div>
+            <h4>Motriz</h4>
+        </div>
+    </div>
+
+    
+</div>
+
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar código - Red Solidaria UTP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #DBEAFE 0%, #F0F4F8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .verify-container { max-width: 450px; width: 90%; margin: 20px; }
+        .verify-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .logo { text-align: center; margin-bottom: 24px; }
+        .logo h1 { font-size: 1.5rem; font-weight: 700; color: #1E2D4A; }
+        .logo h1 span { color: #2563EB; }
+        h2 { text-align: center; margin-bottom: 12px; font-size: 1.3rem; font-weight: 600; }
+        .subtitle { text-align: center; color: #6B7280; margin-bottom: 32px; font-size: 0.85rem; }
+        .form-group { margin-bottom: 32px; }
+        label { display: block; font-weight: 500; font-size: 0.85rem; margin-bottom: 8px; }
+        input {
+            width: 100%;
+            padding: 16px;
+            background: #F9FAFB;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 8px;
+            transition: all 0.2s;
+        }
+        input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .btn-verify {
+            width: 100%;
+            background: #2563EB;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-verify:hover { background: #1D4ED8; }
+        .resend { text-align: center; margin-top: 24px; font-size: 0.75rem; color: #6B7280; }
+        .resend a { color: #2563EB; text-decoration: none; }
+        .alert { padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; }
+        .alert-danger { background: #FEE2E2; color: #991B1B; }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <div class="verify-card">
+            <div class="logo">
+                <h1>Red Solidaria <span>UTP</span></h1>
+            </div>
+            <h2>🔐 Verifica tu correo</h2>
+            <div class="subtitle">Hemos enviado un código de 6 dígitos a <strong th:text="${email}"></strong></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            <form th:action="@{/verificar-codigo}" method="post">
+                <input type="hidden" name="email" th:value="${email}">
+                <input type="hidden" name="tipoUsuario" th:value="${tipoUsuario}">
+                <div class="form-group">
+                    <label>Código de verificación</label>
+                    <input type="text" name="codigo" placeholder="123456" maxlength="6" required>
+                </div>
+                <button type="submit" class="btn-verify">Verificar cuenta</button>
+            </form>
+            <div class="resend">¿No recibiste el código? <a href="#">Reenviar</a></div>
+        </div>
+    </div>
+</body>
+</html>

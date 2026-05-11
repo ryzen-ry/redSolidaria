@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Red Solidaria UTP</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #DBEAFE 0%, #F0F4F8 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-container { max-width: 450px; width: 90%; margin: 20px; }
+        .login-card {
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .logo { text-align: center; margin-bottom: 32px; }
+        .logo h1 { font-size: 1.8rem; font-weight: 700; color: #1E2D4A; }
+        .logo h1 span { color: #2563EB; }
+        .logo p { font-size: 0.7rem; color: #6B7280; margin-top: -4px; }
+        h2 { text-align: center; margin-bottom: 24px; font-size: 1.5rem; font-weight: 600; }
+        .form-group { margin-bottom: 24px; }
+        label { display: block; font-weight: 500; font-size: 0.85rem; margin-bottom: 8px; }
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: #F9FAFB;
+            border: 1.5px solid #E5E7EB;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .btn-login {
+            width: 100%;
+            background: #2563EB;
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-login:hover { background: #1D4ED8; transform: translateY(-1px); }
+        .register-link { text-align: center; margin-top: 24px; font-size: 0.85rem; color: #6B7280; }
+        .register-link a { color: #2563EB; text-decoration: none; font-weight: 600; }
+        .alert { padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; }
+        .alert-success { background: #D1FAE5; color: #065F46; }
+        .alert-danger { background: #FEE2E2; color: #991B1B; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1>Red Solidaria <span>UTP</span></h1>
+                <p>Voluntariado para todos</p>
+            </div>
+            <h2>🔐 Iniciar Sesión</h2>
+            <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
+            <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+            <form th:action="@{/login}" method="post">
+                <div class="form-group">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="email" placeholder="ejemplo@utp.edu.pe" required>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" name="password" placeholder="Ingresa tu contraseña" required>
+                </div>
+                <button type="submit" class="btn-login">Ingresar</button>
+            </form>
+            <div class="register-link">
+                ¿No tienes cuenta? <a href="/registro">Regístrate aquí</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Donaciones | Red Solidaria UTP'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <div class="text-center mb-4">
+        <h1 class="rs-section-title" style="font-size: 2rem;">Apoya Nuestra Causa</h1>
+        <p style="color: #6B7280;">Tu donación ayuda a mantener los servicios que conectan voluntarios con personas que necesitan apoyo.</p>
+    </div>
+
+    <h2 class="text-center" style="margin-bottom: 16px;">Metas de Donación Actuales</h2>
+    <p class="text-center" style="color: #6B7280; margin-bottom: 32px;">Ayúdanos a completar estas metas para entregar productos de ayuda</p>
+
+    <div class="rs-metas-container">
+        <div class="rs-meta-card">
+            <h3>🦽 Silla de Ruedas</h3>
+            <div class="rs-meta-falta">Nos faltan S/ 200 soles</div>
+            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 80%;"></div></div>
+            <div class="rs-progress-stats"><span>Recaudado: S/ 800</span><span>Meta: S/ 1000</span></div>
+        </div>
+        <div class="rs-meta-card">
+            <h3>🩼 Par de Muletas</h3>
+            <div class="rs-meta-falta">Nos faltan S/ 130 soles</div>
+            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 48%;"></div></div>
+            <div class="rs-progress-stats"><span>Recaudado: S/ 120</span><span>Meta: S/ 250</span></div>
+        </div>
+        <div class="rs-meta-card">
+            <h3>🦯 Bastón Guía</h3>
+            <div class="rs-meta-falta">Nos faltan S/ 100 soles</div>
+            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 33%;"></div></div>
+            <div class="rs-progress-stats"><span>Recaudado: S/ 50</span><span>Meta: S/ 150</span></div>
+        </div>
+        <div class="rs-meta-card">
+            <h3>🎧 Audífonos</h3>
+            <div class="rs-meta-falta">Nos faltan S/ 500 soles</div>
+            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 37%;"></div></div>
+            <div class="rs-progress-stats"><span>Recaudado: S/ 300</span><span>Meta: S/ 800</span></div>
+        </div>
+    </div>
+
+    <div class="rs-donation-options">
+        <div class="rs-donation-card">
+            <h3>💰 Donación Monetaria</h3>
+            <p>Dona la cantidad que desees para ayudar a comprar productos de apoyo</p>
+            <form th:action="@{/donaciones/procesar}" method="post">
+                <div class="rs-field">
+                    <label>Monto a donar</label>
+                    <input type="number" name="monto" placeholder="S/ 0.00" min="1" required>
+                </div>
+                <div class="rs-field">
+                    <label>Tu nombre (opcional)</label>
+                    <input type="text" name="nombre">
+                </div>
+                <div class="rs-field">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="email" required>
+                </div>
+                <button type="button" class="rs-btn-submit" style="margin-top: 16px;" onclick="window.location.href='/login'">Donar Ahora</button>
+            </form>
+        </div>
+
+        <div class="rs-donation-card">
+            <h3>📦 Donación de Productos</h3>
+            <p>Dona productos físicos como sillas de ruedas, muletas, etc.</p>
+            <form th:action="@{/donaciones/productos}" method="post">
+                <div class="rs-field">
+                    <label>Producto a donar</label>
+                    <input type="text" name="producto" required>
+                </div>
+                <div class="rs-field">
+                    <label>Tu nombre</label>
+                    <input type="text" name="nombre" required>
+                </div>
+                <div class="rs-field">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="email" required>
+                </div>
+                <div class="rs-field">
+                    <label>Teléfono de contacto</label>
+                    <input type="tel" name="telefono" required>
+                </div>
+                <button type="button" class="rs-btn-submit" style="margin-top: 16px;" onclick="window.location.href='/login'">Coordinar Donación</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="layout :: html"
+      th:with="titulo='Registro | Red Solidaria UTP'">
+<head></head>
+<body>
+
+<div th:fragment="content">
+    <div class="text-center mb-4">
+        <h1 class="rs-section-title" style="font-size: 2rem;">Registro de Usuario</h1>
+        <p style="color: #6B7280;">Selecciona el tipo de cuenta que deseas crear</p>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+        <a th:href="@{/registro/voluntario}" style="text-decoration: none;">
+            <div class="rs-feature-card" style="width: 280px;">
+                <div class="rs-feature-icon" style="font-size: 48px;">🧑‍🎓</div>
+                <h3>Voluntario UTP</h3>
+                <p>Estudiante universitario que quiere ayudar</p>
+                <div class="rs-btn-primary" style="margin-top: 16px; display: inline-block;">Registrarse</div>
+            </div>
+        </a>
+        <a th:href="@{/registro/discapacitado}" style="text-decoration: none;">
+            <div class="rs-feature-card" style="width: 280px;">
+                <div class="rs-feature-icon" style="font-size: 48px;">🫂</div>
+                <h3>Persona con Discapacidad</h3>
+                <p>Necesita apoyo y asistencia</p>
+                <div class="rs-btn-primary" style="margin-top: 16px; display: inline-block;">Registrarse</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+</body>
+</html>
