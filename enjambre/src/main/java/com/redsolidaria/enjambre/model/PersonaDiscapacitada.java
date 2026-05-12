@@ -22,6 +22,16 @@ public class PersonaDiscapacitada extends Usuario {
     @Column(nullable = false)
     private String direccion;
 
+    // Rutas de las fotos guardadas
+    @Column(name = "dni_delantera_url")
+    private String dniDelanteraUrl;
+
+    @Column(name = "dni_trasera_url")
+    private String dniTraseraUrl;
+
+    @Column(name = "conadis_foto_url")
+    private String conadisFotoUrl;
+
     public PersonaDiscapacitada(String nombres, String apellidos, String email, String password,
                                String conadis, String tipoDiscapacidad, String telefono, String direccion) {
         super(nombres, apellidos, email, password, "DISCAPACITADO");

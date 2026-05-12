@@ -1,15 +1,26 @@
 package com.redsolidaria.enjambre.controller;
 
+import com.redsolidaria.enjambre.dto.PersonaDiscapacitadaDTO;
 import com.redsolidaria.enjambre.model.Usuario;
 import com.redsolidaria.enjambre.service.UsuarioService;
 import com.redsolidaria.enjambre.service.VerificacionService;
-import jakarta.servlet.http.HttpSession;  // ← IMPORTANTE: Agregar esta importación
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.UUID;
 
 @Controller
 public class AuthController {
@@ -38,11 +49,12 @@ public class AuthController {
     }
 
     @GetMapping("/registro/discapacitado")
-    public String registroDiscapacitado() {
+    public String registroDiscapacitado(Model model) {
+        model.addAttribute("personaDiscapacitadaDTO", new PersonaDiscapacitadaDTO());
         return "registroDis";
     }
 
-    // ========== PROCESAR REGISTROS ==========
+    // ========== PROCESAR REGISTRO VOLUNTARIO ==========
     
     @PostMapping("/registro/voluntario")
     public String procesarRegistroVoluntario(@RequestParam String email,
@@ -84,41 +96,79 @@ public class AuthController {
         }
     }
 
+    // ========== PROCESAR REGISTRO DISCAPACITADO (CON FOTOS) ==========
+    
     @PostMapping("/registro/discapacitado")
-    public String procesarRegistroDiscapacitado(@RequestParam String email,
-                                                 @RequestParam String nombres,
-                                                 @RequestParam String apellidos,
-                                                 @RequestParam String conadis,
-                                                 @RequestParam String tipoDiscapacidad,
-                                                 @RequestParam String telefono,
-                                                 @RequestParam String direccion,
-                                                 @RequestParam String password,
-                                                 @RequestParam(required = false) String confirmPassword,
-                                                 Model model) {
+    public String procesarRegistroDiscapacitado(@Valid PersonaDiscapacitadaDTO dto,
+                                                BindingResult result,
+                                                Model model) {
         
-        if (!password.equals(confirmPassword)) {
-            model.addAttribute("error", "Las contraseñas no coinciden");
-            return "registroDis";
+        // Validar que las contraseñas coinciden
+        if (!dto.isPasswordMatching()) {
+            result.rejectValue("confirmPassword", "error", "Las contraseñas no coinciden");
         }
         
-        if (password.length() < 6) {
-            model.addAttribute("error", "La contraseña debe tener al menos 6 caracteres");
+        // ✅ CORREGIDO: usar dto.getPassword() en lugar de password
+        if (dto.getPassword() != null && dto.getPassword().length() < 6) {
+            result.rejectValue("password", "error", "La contraseña debe tener al menos 6 caracteres");
+        }
+        
+        if (result.hasErrors()) {
             return "registroDis";
         }
         
         try {
-            usuarioService.registrarDiscapacitado(nombres, apellidos, email, password, conadis, tipoDiscapacidad, telefono, direccion);
-            verificacionService.enviarCodigo(email);
+            // Guardar las fotos en el servidor
+            String dniDelanteraPath = guardarFoto(dto.getDniFotoDelantera(), "dni_delantera");
+            String dniTraseraPath = guardarFoto(dto.getDniFotoTrasera(), "dni_trasera");
+            String conadisPath = guardarFoto(dto.getConadisFoto(), "conadis");
             
-            model.addAttribute("email", email);
-            model.addAttribute("nombreCompleto", nombres + " " + apellidos);
+            // Registrar al usuario con las rutas de las fotos
+            usuarioService.registrarDiscapacitadoConFotos(
+                dto.getNombres(), dto.getApellidos(), dto.getEmail(), 
+                dto.getPassword(), dto.getConadis(), dto.getTipoDiscapacidad(),
+                dto.getTelefono(), dto.getDireccion(),
+                dniDelanteraPath, dniTraseraPath, conadisPath
+            );
+            
+            // Enviar código de verificación
+            verificacionService.enviarCodigo(dto.getEmail());
+            
+            model.addAttribute("email", dto.getEmail());
+            model.addAttribute("nombreCompleto", dto.getNombres() + " " + dto.getApellidos());
             model.addAttribute("tipoUsuario", "discapacitado");
             
             return "verificar-codigo";
+            
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return "registroDis";
         }
+    }
+    
+    // Método auxiliar para guardar fotos
+    private String guardarFoto(MultipartFile file, String prefijo) throws IOException {
+        if (file == null || file.isEmpty()) {
+            return null;
+        }
+        
+        // Crear directorio si no existe
+        String uploadDir = "src/main/resources/static/uploads/documentos/";
+        File directorio = new File(uploadDir);
+        if (!directorio.exists()) {
+            directorio.mkdirs();
+        }
+        
+        // Generar nombre único para el archivo
+        String nombreArchivo = prefijo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + file.getOriginalFilename();
+        String rutaCompleta = uploadDir + nombreArchivo;
+        
+        // Guardar el archivo
+        Path path = Paths.get(rutaCompleta);
+        Files.write(path, file.getBytes());
+        
+        // Retornar la ruta relativa para la web
+        return "/uploads/documentos/" + nombreArchivo;
     }
 
     // ========== VERIFICAR CÓDIGO ==========
@@ -142,12 +192,12 @@ public class AuthController {
         }
     }
     
-    // ========== PROCESAR LOGIN (MODIFICADO) ==========
+    // ========== PROCESAR LOGIN ==========
 
     @PostMapping("/login")
     public String procesarLogin(@RequestParam String email,
                                 @RequestParam String password,
-                                HttpSession session,  // ← NUEVO: Agregar sesión
+                                HttpSession session,
                                 Model model) {
         
         Usuario usuario = usuarioService.buscarPorEmail(email);
@@ -167,28 +217,29 @@ public class AuthController {
             return "login";
         }
         
-        // ✅ NUEVO: Guardar usuario en sesión
+        // Guardar usuario en sesión
         session.setAttribute("usuario", usuario);
         
-        // Redirigir según el rol (NUEVAS RUTAS)
+        // Redirigir según el rol
         String rol = usuario.getRol();
         
         switch (rol) {
             case "ADMIN":
                 return "redirect:/admin/dashboard";
             case "VOLUNTARIO":
-                return "redirect:/voluntario/inicio";  // ← CAMBIADO
+                return "redirect:/voluntario/inicio";
             case "DISCAPACITADO":
-                return "redirect:/discapacitado/inicio";  // ← CAMBIADO
+                return "redirect:/discapacitado/inicio";
             default:
                 return "redirect:/";
         }
     }
+    
     // ========== CERRAR SESIÓN ==========
 
-@GetMapping("/logout")
-public String cerrarSesion(HttpSession session) {
-    session.invalidate();  // Eliminar la sesión
-    return "redirect:/login?logout=true";
-}
+    @GetMapping("/logout")
+    public String cerrarSesion(HttpSession session) {
+        session.invalidate();
+        return "redirect:/login?logout=true";
+    }
 }

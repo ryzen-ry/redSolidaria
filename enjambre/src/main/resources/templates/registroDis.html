@@ -11,14 +11,15 @@
     <div class="rs-card">
         <div class="rs-card-header">
             <div class="rs-header-icon">
-                <svg viewBox="0 0 24 24"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+                <img th:src="@{/imagen/silla-de-ruedas.png}" alt="Logo" style="width: 57px; height: 57px; object-fit: contain;">
             </div>
             <h2>Registro de Persona con Discapacidad</h2>
             <p>Completa tu información personal</p>
         </div>
 
-        <form th:action="@{/registro/discapacitado}" method="post">
+        <form th:action="@{/registro/discapacitado}" method="post" enctype="multipart/form-data">
             <div class="rs-form-grid">
+                <!-- Campos básicos -->
                 <div class="rs-field">
                     <label>Nombres <span class="req">*</span></label>
                     <input type="text" name="nombres" required />
@@ -36,6 +37,8 @@
                     <input type="text" name="conadis" placeholder="Ej: 00123456-2024" required />
                     <span class="rs-field-hint">Número del Registro Único de Identidad</span>
                 </div>
+                
+                <!-- Tipo de discapacidad con opción múltiple -->
                 <div class="rs-field">
                     <label>Tipo de discapacidad <span class="req">*</span></label>
                     <select name="tipoDiscapacidad" required>
@@ -44,8 +47,10 @@
                         <option>Motriz</option>
                         <option>Visual</option>
                         <option>Del habla</option>
+                        <option>Discapacidad Múltiple</option>
                     </select>
                 </div>
+                
                 <div class="rs-field">
                     <label>Teléfono / Celular <span class="req">*</span></label>
                     <input type="tel" name="telefono" required />
@@ -54,6 +59,8 @@
                     <label>Dirección <span class="req">*</span></label>
                     <input type="text" name="direccion" placeholder="San Juan de Lurigancho" required />
                 </div>
+                
+                <!-- Contraseñas -->
                 <div class="rs-field">
                     <label>Contraseña <span class="req">*</span></label>
                     <input type="password" name="password" required />
@@ -62,21 +69,92 @@
                     <label>Confirmar Contraseña <span class="req">*</span></label>
                     <input type="password" name="confirmPassword" required />
                 </div>
+
+                <!-- SECCIÓN DE DOCUMENTOS -->
                 <div class="rs-form-full">
-                    <div class="rs-nota">
-                        <strong>Nota:</strong> Tu cuenta será verificada por nuestro equipo antes de ser activada.
+                    <div class="rs-documents-section">
+                        <h3>📄 Documentos de Verificación</h3>
+                        <p class="rs-documents-hint">Sube fotos claras de tus documentos</p>
                     </div>
                 </div>
+
+                <!-- DNI - Parte Delantera -->
+                <div class="rs-field rs-form-full">
+                    <label>Foto DNI (Parte Delantera) <span class="req">*</span></label>
+                    <div class="rs-file-upload">
+                        <label class="btn-file" for="dniFotoDelantera">Seleccionar archivo</label>
+                        <span class="rs-file-name" id="dniDelanteraName">Sin archivo seleccionado</span>
+                        <input type="file" id="dniFotoDelantera" name="dniFotoDelantera" accept="image/jpeg,image/png" required
+                               onchange="document.getElementById('dniDelanteraName').textContent = this.files[0]?.name || 'Sin archivo seleccionado'">
+                    </div>
+                </div>
+
+                <!-- DNI - Parte Trasera -->
+                <div class="rs-field rs-form-full">
+                    <label>Foto DNI (Parte Trasera) <span class="req">*</span></label>
+                    <div class="rs-file-upload">
+                        <label class="btn-file" for="dniFotoTrasera">Seleccionar archivo</label>
+                        <span class="rs-file-name" id="dniTraseraName">Sin archivo seleccionado</span>
+                        <input type="file" id="dniFotoTrasera" name="dniFotoTrasera" accept="image/jpeg,image/png" required
+                               onchange="document.getElementById('dniTraseraName').textContent = this.files[0]?.name || 'Sin archivo seleccionado'">
+                    </div>
+                </div>
+
+                <!-- Carnet CONADIS -->
+                <div class="rs-field rs-form-full">
+                    <label>Foto Carnet CONADIS <span class="req">*</span></label>
+                    <div class="rs-file-upload">
+                        <label class="btn-file" for="conadisFoto">Seleccionar archivo</label>
+                        <span class="rs-file-name" id="conadisFotoName">Sin archivo seleccionado</span>
+                        <input type="file" id="conadisFoto" name="conadisFoto" accept="image/jpeg,image/png" required
+                               onchange="document.getElementById('conadisFotoName').textContent = this.files[0]?.name || 'Sin archivo seleccionado'">
+                    </div>
+                </div>
+
+                <div class="rs-form-full">
+                    <div class="rs-nota">
+                        <strong>Nota:</strong> Tus documentos serán verificados por nuestro equipo antes de activar tu cuenta.
+                    </div>
+                </div>
+                
                 <div class="rs-form-full">
                     <button type="submit" class="rs-btn-submit">Registrarse</button>
                 </div>
-
             </div>
         </form>
 
         <p class="rs-login-link">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a></p>
     </div>
 </div>
+
+<style>
+    .rs-documents-section {
+        background: #F0FDF4;
+        padding: 12px 16px;
+        border-radius: 12px;
+        margin: 16px 0 8px 0;
+    }
+    .rs-documents-section h3 {
+        margin: 0;
+        font-size: 1rem;
+        color: #059669;
+    }
+    .rs-documents-hint {
+        font-size: 0.75rem;
+        color: #6B7280;
+        margin: 4px 0 0 0;
+    }
+</style>
+
+<script>
+    function actualizarNombreArchivo(inputId, spanId) {
+        const input = document.getElementById(inputId);
+        const span = document.getElementById(spanId);
+        if (input && span) {
+            span.textContent = input.files[0]?.name || 'Sin archivo seleccionado';
+        }
+    }
+</script>
 
 </body>
 </html>
