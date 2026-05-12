@@ -2,6 +2,7 @@ package com.redsolidaria.enjambre.dto;
 
 import jakarta.validation.constraints.*;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 public class PersonaDiscapacitadaDTO {
@@ -39,6 +40,11 @@ public class PersonaDiscapacitadaDTO {
 
     @NotBlank(message = "Debe confirmar su contraseña")
     private String confirmPassword;
+
+    // Campos para las fotos
+    private MultipartFile dniFotoDelantera;
+    private MultipartFile dniFotoTrasera;
+    private MultipartFile conadisFoto;
 
     public boolean isPasswordMatching() {
         return password != null && password.equals(confirmPassword);

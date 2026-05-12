@@ -114,7 +114,7 @@ public class UsuarioService {
         System.out.println("✅ Voluntario guardado en BD: " + email);
     }
     
-    // Registrar persona con discapacidad (verificado = false)
+    // Registrar persona con discapacidad (verificado = false) - VERSIÓN SIN FOTOS
     public void registrarDiscapacitado(String nombres, String apellidos, String email,
                                        String password, String conadis, String tipoDiscapacidad,
                                        String telefono, String direccion) throws Exception {
@@ -133,6 +133,35 @@ public class UsuarioService {
         
         personaDiscapacitadaRepository.save(persona);
         System.out.println("✅ Persona con discapacidad guardada en BD: " + email);
+    }
+    
+    // ✅ NUEVO: Registrar persona con discapacidad CON FOTOS (DNI y CONADIS)
+    public void registrarDiscapacitadoConFotos(String nombres, String apellidos, String email,
+                                               String password, String conadis, String tipoDiscapacidad,
+                                               String telefono, String direccion,
+                                               String dniDelanteraUrl, String dniTraseraUrl, 
+                                               String conadisFotoUrl) throws Exception {
+        
+        if (usuarioRepository.existsByEmail(email)) {
+            throw new Exception("❌ El correo ya está registrado");
+        }
+        
+        if (personaDiscapacitadaRepository.existsByConadis(conadis)) {
+            throw new Exception("❌ El número CONADIS ya está registrado");
+        }
+        
+        PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
+                                                                conadis, tipoDiscapacidad, telefono, direccion);
+        persona.setDniDelanteraUrl(dniDelanteraUrl);
+        persona.setDniTraseraUrl(dniTraseraUrl);
+        persona.setConadisFotoUrl(conadisFotoUrl);
+        persona.setVerificado(false);
+        
+        personaDiscapacitadaRepository.save(persona);
+        System.out.println("✅ Persona con discapacidad CON FOTOS guardada en BD: " + email);
+        System.out.println("   📄 DNI Delantera: " + dniDelanteraUrl);
+        System.out.println("   📄 DNI Trasera: " + dniTraseraUrl);
+        System.out.println("   📄 CONADIS: " + conadisFotoUrl);
     }
     
     // Marcar usuario como verificado (después del código)
