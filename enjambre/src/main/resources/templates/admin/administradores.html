@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de Administradores'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">👑 Administradores del Sistema</h1>
+            <a th:href="@{/admin/admin/nuevo}" class="rs-btn-primary">+ Nuevo Administrador</a>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        
+        <table class="rs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Nivel de Acceso</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="admin : ${administradores}">
+                    <td th:text="${admin.id}"></td>
+                    <td th:text="${admin.nombreCompleto}"></td>
+                    <td th:text="${admin.email}"></td>
+                    <td><span class="badge-admin" th:text="${admin.nivelAcceso}"></span></td>
+                    <td>
+                        <a th:if="${admin.email != 'admin@redsolidaria.pe'}" 
+                           th:href="@{/admin/admin/eliminar/{id}(id=${admin.id})}" 
+                           class="btn-delete" 
+                           onclick="return confirm('¿Eliminar este administrador?')">🗑️</a>
+                        <span th:if="${admin.email == 'admin@redsolidaria.pe'}" 
+                              class="badge-principal">Principal</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <style>
+        .badge-admin {
+            background: #2563EB;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .badge-principal {
+            background: #3AAA6B;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+    </style>
+</body>
+</html>

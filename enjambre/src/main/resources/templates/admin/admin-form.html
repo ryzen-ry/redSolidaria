@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Nuevo Administrador'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div class="rs-card" style="max-width: 500px; margin: 0 auto;">
+            <div class="rs-card-header">
+                <h2>👑 Crear Nuevo Administrador</h2>
+                <p>Complete los datos del nuevo administrador</p>
+            </div>
+            
+            <form th:action="@{/admin/admin/crear}" th:object="${adminDTO}" method="post">
+                <div class="rs-field">
+                    <label>Nombres <span class="req">*</span></label>
+                    <input type="text" th:field="*{nombres}" required>
+                    <div th:if="${#fields.hasErrors('nombres')}" th:errors="*{nombres}" class="error"></div>
+                </div>
+                
+                <div class="rs-field">
+                    <label>Apellidos <span class="req">*</span></label>
+                    <input type="text" th:field="*{apellidos}" required>
+                    <div th:if="${#fields.hasErrors('apellidos')}" th:errors="*{apellidos}" class="error"></div>
+                </div>
+                
+                <div class="rs-field">
+                    <label>Correo Electrónico <span class="req">*</span></label>
+                    <input type="email" th:field="*{email}" required>
+                    <div th:if="${#fields.hasErrors('email')}" th:errors="*{email}" class="error"></div>
+                </div>
+                
+                <div class="rs-field">
+                    <label>Contraseña <span class="req">*</span></label>
+                    <input type="password" th:field="*{password}" required>
+                    <div th:if="${#fields.hasErrors('password')}" th:errors="*{password}" class="error"></div>
+                </div>
+                
+                <div class="rs-field">
+                    <label>Confirmar Contraseña <span class="req">*</span></label>
+                    <input type="password" th:field="*{confirmPassword}" required>
+                    <div th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}" class="error"></div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="rs-btn-submit">Crear Administrador</button>
+                    <a th:href="@{/admin/administradores}" class="rs-btn-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <style>
+        .error {
+            color: #EF4444;
+            font-size: 0.7rem;
+            margin-top: 4px;
+        }
+    </style>
+</body>
+</html>

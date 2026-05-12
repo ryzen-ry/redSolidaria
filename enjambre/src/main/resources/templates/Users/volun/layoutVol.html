@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${titulo} ?: 'Red Solidaria UTP - Voluntario'">Red Solidaria UTP - Voluntario</title>
+    <link rel="stylesheet" th:href="@{/css/estilo.css}">
+</head>
+<body>
+
+    <!-- NAVBAR VOLUNTARIO -->
+    <nav class="rs-nav">
+        <a th:href="@{/voluntario/inicio}" class="rs-nav-brand">
+            <div class="rs-nav-brand-icon">
+                <img th:src="@{/imagen/discapacidad.png}" alt="Logo" style="width: 33px; height: 33px; object-fit: contain;">
+            </div>
+            <span class="rs-nav-brand-name">Red Solidaria - Voluntario</span>
+        </a>
+        
+        <ul class="rs-nav-links">
+            <li><a th:href="@{/voluntario/capacitacion}">Capacitación</a></li>
+            <li><a th:href="@{/voluntario/donaciones}">Donaciones</a></li>
+            <li><a th:href="@{/voluntario/historial}">Mi Historial</a></li>
+            <li><a th:href="@{/voluntario/foro}">Foro</a></li>
+            <li><a th:href="@{/}" class="btn-sesion">Cerrar Sesión</a></li>
+        </ul>
+        
+        <!-- Identificador del usuario (Correo institucional) -->
+        <div class="user-info" th:if="${session.usuario != null}">
+            <span class="user-email" th:text="${session.usuario.email}"></span>
+            <span class="user-name" style="margin-left: 10px;" th:text="${session.usuario.nombres}"></span>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <div class="rs-page">
+        <div th:replace="${content} :: content"></div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="rs-footer">
+        <div class="rs-footer-grid">
+            <div>
+                <h4>Red Solidaria</h4>
+                <p>Conectando corazones solidarios para construir una comunidad más inclusiva.</p>
+            </div>
+            <div>
+                <h4>Contacto</h4>
+                <ul class="rs-footer-contact">
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                        contacto@redsolidaria.pe
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M6.62 10.79a15.05 15.05 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.01l-2.2 2.21z"/></svg>
+                        +51 999 888 777
+                    </li>
+                    <li>
+                        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 6.5 12 6.5s2.5 1.12 2.5 2.5S13.38 11.5 12 11.5z"/></svg>
+                        Lima, Perú
+                    </li>
+                </ul>
+            </div>
+            <div>
+                <h4>Síguenos</h4>
+                <div class="rs-footer-social">
+                    <a href="#" class="rs-social-btn" aria-label="Facebook">
+                        <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+                    </a>
+                    <a href="#" class="rs-social-btn" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1112.63 8 4 4 0 0116 11.37z"/><circle cx="17.5" cy="6.5" r="1.5" fill="white" stroke="none"/>
+                        </svg>
+                    </a>
+                    <a href="#" class="rs-social-btn" aria-label="Twitter">
+                        <svg viewBox="0 0 24 24"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div>
+                <h4>Enlaces</h4>
+                <ul>
+                    <li><a th:href="@{/volun/capacitacion}" style="color:#A0AEC0; text-decoration:none;">Capacitación</a></li>
+                    <li><a th:href="@{/volun/donaciones}" style="color:#A0AEC0; text-decoration:none;">Donaciones</a></li>
+                    <li><a th:href="@{/volun/historial}" style="color:#A0AEC0; text-decoration:none;">Mi Historial</a></li>
+                    <li><a th:href="@{/volun/foro}" style="color:#A0AEC0; text-decoration:none;">Foro</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="rs-footer-bottom">
+            <p>© 2026 Red Solidaria - Universidad Tecnológica del Perú. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <style>
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-left: 20px;
+        }
+        .user-email {
+            background: #3AAA6B;
+            color: white;
+            padding: 6px 15px;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        .rs-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 768px) {
+            .user-info {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+        }
+    </style>
+
+</body>
+</html>

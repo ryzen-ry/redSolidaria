@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/Users/Disca/layoutDis :: html}"
+      th:with="titulo='Solicitar Ayuda'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div class="rs-hero">
+            <h1>🆘 ¿Necesitas Ayuda?</h1>
+            <p>Presiona el botón y un voluntario se pondrá en contacto contigo.</p>
+            <button class="btn-ayuda" id="btnAyuda" style="background:#EF4444; color:white; padding:15px 40px; font-size:1.5rem; border:none; border-radius:50px; cursor:pointer;">¡Solicitar Ayuda Ahora!</button>
+        </div>
+    </div>
+    <script>
+        document.getElementById('btnAyuda')?.addEventListener('click', function() {
+            alert('🆘 ¡Alerta enviada! Un voluntario se pondrá en contacto contigo.');
+        });
+    </script>
+</body>
+</html>

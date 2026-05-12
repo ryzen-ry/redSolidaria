@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Dashboard - Admin'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <h1 class="rs-section-title">📊 Dashboard Administrador</h1>
+        <div class="rs-grid-4">
+            <div class="rs-feature-card">
+                <div class="rs-feature-icon">👥</div>
+                <h3>Usuarios</h3>
+                <p>Gestionar todos los usuarios</p>
+            </div>
+            <div class="rs-feature-card">
+                <div class="rs-feature-icon">🤝</div>
+                <h3>Voluntarios</h3>
+                <p>Ver y gestionar voluntarios</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

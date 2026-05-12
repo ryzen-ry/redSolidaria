@@ -15,6 +15,9 @@ public class VerificacionService {
 
     @Autowired
     private EmailService emailService;
+    
+    @Autowired
+    private UsuarioService usuarioService;  // ← NUEVO
 
     public String generarCodigo() {
         Random random = new Random();
@@ -25,28 +28,37 @@ public class VerificacionService {
     public void enviarCodigo(String email) {
         String codigo = generarCodigo();
         LocalDateTime expiracion = LocalDateTime.now().plusMinutes(10);
-        
+
         CodigoVerificacion cv = new CodigoVerificacion(email, codigo, expiracion);
         codigoRepository.save(cv);
-        
+
         emailService.enviarCodigoVerificacion(email, codigo);
     }
 
     public boolean verificarCodigo(String email, String codigoIngresado) {
         var optionalCodigo = codigoRepository.findByEmailAndCodigoAndUsadoFalse(email, codigoIngresado);
-        
+
         if (optionalCodigo.isEmpty()) {
             return false;
         }
-        
+
         CodigoVerificacion cv = optionalCodigo.get();
-        
+
         if (cv.getFechaExpiracion().isBefore(LocalDateTime.now())) {
             return false;
         }
-        
+
         cv.setUsado(true);
         codigoRepository.save(cv);
+        
+        // ✅ Marcar usuario como verificado en la BD
+        try {
+            usuarioService.marcarComoVerificado(email);
+        } catch (Exception e) {
+            System.err.println("Error al marcar usuario como verificado: " + e.getMessage());
+            return false;
+        }
+        
         return true;
     }
 }

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de Donaciones'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">💰 Donaciones</h1>
+            <a th:href="@{/admin/donacion/nueva}" class="rs-btn-primary">+ Nueva Donación</a>
+        </div>
+        
+        <div class="rs-metas-container">
+            <div class="rs-meta-card">
+                <h3>🦽 Silla de Ruedas</h3>
+                <div class="rs-meta-falta">Meta: S/ 1000</div>
+                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 80%;"></div></div>
+                <div class="rs-progress-stats"><span>Recaudado: S/ 800</span><span>Meta: S/ 1000</span></div>
+            </div>
+            <div class="rs-meta-card">
+                <h3>🩼 Par de Muletas</h3>
+                <div class="rs-meta-falta">Meta: S/ 250</div>
+                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 48%;"></div></div>
+                <div class="rs-progress-stats"><span>Recaudado: S/ 120</span><span>Meta: S/ 250</span></div>
+            </div>
+            <div class="rs-meta-card">
+                <h3>🦯 Bastón Guía</h3>
+                <div class="rs-meta-falta">Meta: S/ 150</div>
+                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 33%;"></div></div>
+                <div class="rs-progress-stats"><span>Recaudado: S/ 50</span><span>Meta: S/ 150</span></div>
+            </div>
+            <div class="rs-meta-card">
+                <h3>🎧 Audífonos</h3>
+                <div class="rs-meta-falta">Meta: S/ 800</div>
+                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 37%;"></div></div>
+                <div class="rs-progress-stats"><span>Recaudado: S/ 300</span><span>Meta: S/ 800</span></div>
+            </div>
+        </div>
+        
+        <div class="rs-donation-options" style="grid-template-columns: 1fr;">
+            <div class="rs-donation-card">
+                <h3>📋 Lista de Donaciones Recientes</h3>
+                <p>Aquí aparecerán las donaciones realizadas por los usuarios.</p>
+                <table class="rs-table">
+                    <thead>
+                        <tr><th>Donante</th><th>Monto/Producto</th><th>Fecha</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4" style="text-align: center;">No hay donaciones registradas aún</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

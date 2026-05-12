@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de Voluntarios'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">🤝 Voluntarios Registrados</h1>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        
+        <table class="rs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Código</th>
+                    <th>Carrera</th>
+                    <th>Puntos</th>
+                    <th>Verificado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="vol : ${voluntarios}">
+                    <td th:text="${vol.id}"></td>
+                    <td th:text="${vol.nombreCompleto}"></td>
+                    <td th:text="${vol.email}"></td>
+                    <td th:text="${vol.codigo}"></td>
+                    <td th:text="${vol.carrera}"></td>
+                    <td th:text="${vol.puntos}"></td>
+                    <td>
+                        <span th:if="${vol.verificado}" class="badge-success">✅ Verificado</span>
+                        <span th:unless="${vol.verificado}" class="badge-warning">⏳ Pendiente</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${vol.id})}" 
+                           class="btn-delete" 
+                           onclick="return confirm('¿Eliminar este voluntario?')">🗑️</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <style>
+        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+    </style>
+</body>
+</html>

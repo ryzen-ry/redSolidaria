@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de Usuarios'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">👥 Todos los Usuarios</h1>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        
+        <table class="rs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Verificado</th>
+                    <th>Fecha Registro</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="usuario : ${usuarios}">
+                    <td th:text="${usuario.id}"></td>
+                    <td th:text="${usuario.nombreCompleto}"></td>
+                    <td th:text="${usuario.email}"></td>
+                    <td>
+                        <span th:if="${usuario.rol == 'ADMIN'}" class="badge-admin">👑 ADMIN</span>
+                        <span th:if="${usuario.rol == 'VOLUNTARIO'}" class="badge-vol">🤝 VOLUNTARIO</span>
+                        <span th:if="${usuario.rol == 'DISCAPACITADO'}" class="badge-dis">🫂 DISCAPACITADO</span>
+                    </td>
+                    <td>
+                        <span th:if="${usuario.verificado}" class="badge-success">✅ Verificado</span>
+                        <span th:unless="${usuario.verificado}" class="badge-warning">⏳ Pendiente</span>
+                    </td>
+                    <td th:text="${#temporals.format(usuario.fechaRegistro, 'dd/MM/yyyy')}"></td>
+                    <td>
+                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${usuario.id})}" 
+                           class="btn-delete" 
+                           onclick="return confirm('¿Eliminar este usuario?')">🗑️</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <style>
+        .badge-admin { background: #8B5CF6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-vol { background: #3AAA6B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-dis { background: #2563EB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+    </style>
+</body>
+</html>
