@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión del Foro'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">💬 Gestión del Foro</h1>
+            <a th:href="@{/admin/foro/nuevo}" class="rs-btn-primary">+ Nueva Publicación</a>
+        </div>
+        
+        <div class="rs-post-card">
+            <div class="rs-post-header">
+                <div class="rs-post-avatar">MG</div>
+                <div>
+                    <div class="rs-post-author">María González</div>
+                    <div class="rs-post-date">Voluntaria • Hace 2 horas</div>
+                </div>
+            </div>
+            <div class="rs-post-title">¿Cómo mejorar la comunicación con personas con discapacidad auditiva?</div>
+            <div class="rs-post-content">Hola a todos, soy nueva como voluntaria y me gustaría aprender más...</div>
+            <div class="rs-post-stats">
+                <span>❤️ 15</span>
+                <span>💬 8 Respuestas</span>
+                <span class="admin-action">✏️ Editar</span>
+                <span class="admin-action-delete">🗑️ Eliminar</span>
+            </div>
+        </div>
+        
+        <div class="rs-post-card">
+            <div class="rs-post-header">
+                <div class="rs-post-avatar">RT</div>
+                <div>
+                    <div class="rs-post-author">Ricardo Torres</div>
+                    <div class="rs-post-date">Voluntario • Hace 5 días</div>
+                </div>
+            </div>
+            <div class="rs-post-title">Mi primera experiencia ayudando a cruzar la calle</div>
+            <div class="rs-post-content">Hoy ayudé a don José, un adulto mayor con discapacidad motriz...</div>
+            <div class="rs-post-stats">
+                <span>❤️ 42</span>
+                <span>💬 12 Respuestas</span>
+                <span class="admin-action">✏️ Editar</span>
+                <span class="admin-action-delete">🗑️ Eliminar</span>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .admin-action {
+            color: #2563EB;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
+        .admin-action-delete {
+            color: #EF4444;
+            cursor: pointer;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
+        .admin-action:hover, .admin-action-delete:hover {
+            text-decoration: underline;
+        }
+    </style>
+</body>
+</html>

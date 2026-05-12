@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/Users/volun/layoutVol :: html}"
+      th:with="titulo='Capacitación - Voluntario'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <h1 class="rs-section-title">📚 Capacitación para Voluntarios</h1>
+        <div class="rs-cursos-grid">
+            <div class="rs-curso-card">
+                <div class="rs-curso-badge">Básico</div>
+                <h3>Lenguaje de Señas Peruano - Nivel 1</h3>
+                <p>Curso completo de introducción al lenguaje de señas.</p>
+                <a th:href="@{/login}" class="rs-btn-green">Comenzar</a>
+            </div>
+            <div class="rs-curso-card">
+                <div class="rs-curso-badge">Intermedio</div>
+                <h3>Asistencia a Personas con Discapacidad Motriz</h3>
+                <p>Aprende técnicas seguras para asistir a personas con movilidad reducida.</p>
+                <a th:href="@{/login}" class="rs-btn-green">Comenzar</a>
+            </div>
+
+            <div class="rs-curso-card">
+               <div class="rs-curso-badge">Básico</div>
+                 <h3>Primeros Auxilios</h3>
+                   <p>Curso esencial de primeros auxilios para situaciones de emergencia.</p>
+               <div class="rs-curso-duration">⏱️ 4 horas</div>
+                 <a th:href="@{/login}" class="rs-btn-green" style="width: 100%; display: inline-block; text-align: center;">Comenzar</a>
+             </div>
+        </div>
+    </div>
+</body>
+</html>

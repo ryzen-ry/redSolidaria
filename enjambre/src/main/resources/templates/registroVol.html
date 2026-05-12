@@ -77,6 +77,62 @@
         <p class="rs-login-link">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a></p>
     </div>
 </div>
+<!-- Agrega esto al final de tu registroVol.html, antes de cerrar body -->
+<script th:src="@{/js/global.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('registroForm');
+        
+        // Validación de contraseñas coincidentes en tiempo real
+        const password = document.querySelector('[name="password"]');
+        const confirmPassword = document.querySelector('[name="confirmPassword"]');
+        
+        function validatePasswordsMatch() {
+            const errorDiv = document.getElementById('passwordMatchError');
+            if (!errorDiv) return;
+            
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.classList.add('invalid');
+                confirmPassword.classList.remove('valid');
+                errorDiv.innerHTML = '<span class="validation-icon">⚠️</span> Las contraseñas no coinciden';
+                errorDiv.className = 'validation-message error';
+                return false;
+            } else if (confirmPassword.value !== '') {
+                confirmPassword.classList.add('valid');
+                confirmPassword.classList.remove('invalid');
+                errorDiv.innerHTML = '<span class="validation-icon">✓</span> Las contraseñas coinciden';
+                errorDiv.className = 'validation-message success';
+                return true;
+            }
+            return true;
+        }
+        
+        if (confirmPassword) {
+            // Crear el div para mensaje si no existe
+            if (!document.getElementById('passwordMatchError')) {
+                const div = document.createElement('div');
+                div.id = 'passwordMatchError';
+                div.className = 'validation-message';
+                confirmPassword.parentElement.appendChild(div);
+            }
+            
+            password.addEventListener('input', validatePasswordsMatch);
+            confirmPassword.addEventListener('input', validatePasswordsMatch);
+        }
+        
+        // Validar antes de enviar
+        form.addEventListener('submit', function(e) {
+            if (!validatePasswordsMatch()) {
+                e.preventDefault();
+                Modal.show({
+                    title: 'Error de validación',
+                    message: 'Las contraseñas no coinciden. Por favor, verifica.',
+                    type: 'error'
+                });
+            }
+        });
+    });
+</script>
 
 </body>
 </html>

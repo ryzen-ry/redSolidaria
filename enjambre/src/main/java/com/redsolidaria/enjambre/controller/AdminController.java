@@ -1,0 +1,126 @@
+package com.redsolidaria.enjambre.controller;
+
+import com.redsolidaria.enjambre.dto.AdminDTO;
+import com.redsolidaria.enjambre.model.Administrador;
+import com.redsolidaria.enjambre.service.UsuarioService;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+
+    @Autowired
+    private UsuarioService usuarioService;
+
+    // ========== DASHBOARD ==========
+    
+    @GetMapping("/dashboard")
+    public String dashboard(Model model) {
+        model.addAttribute("totalUsuarios", usuarioService.listarTodosUsuarios().size());
+        model.addAttribute("totalVoluntarios", usuarioService.listarVoluntarios().size());
+        model.addAttribute("totalDiscapacitados", usuarioService.listarDiscapacitados().size());
+        model.addAttribute("totalAdministradores", usuarioService.listarAdministradores().size());
+        return "/admin/dashboardAdm";
+    }
+    
+    // ========== GESTIÓN DE USUARIOS ==========
+    
+    @GetMapping("/usuarios")
+    public String usuarios(Model model) {
+        model.addAttribute("usuarios", usuarioService.listarTodosUsuarios());
+        return "/admin/usuarios";
+    }
+    
+    @GetMapping("/voluntarios")
+    public String voluntarios(Model model) {
+        model.addAttribute("voluntarios", usuarioService.listarVoluntarios());
+        return "/admin/voluntarios";
+    }
+    
+    @GetMapping("/discapacitados")
+    public String discapacitados(Model model) {
+        model.addAttribute("discapacitados", usuarioService.listarDiscapacitados());
+        return "/admin/discapacitados";
+    }
+    
+    // ========== GESTIÓN DE ADMINISTRADORES ==========
+    
+    @GetMapping("/administradores")
+    public String administradores(Model model) {
+        model.addAttribute("administradores", usuarioService.listarAdministradores());
+        return "/admin/administradores";
+    }
+    
+    @GetMapping("/admin/nuevo")
+    public String nuevoAdmin(Model model) {
+        model.addAttribute("adminDTO", new AdminDTO());
+        return "/admin/admin-form";
+    }
+    
+    @PostMapping("/admin/crear")
+    public String crearAdmin(@Valid @ModelAttribute AdminDTO adminDTO,
+                             BindingResult result,
+                             RedirectAttributes redirectAttributes) {
+        
+        if (!adminDTO.isPasswordMatching()) {
+            result.rejectValue("confirmPassword", "error", "Las contraseñas no coinciden");
+            return "/admin/admin-form";
+        }
+        
+        if (result.hasErrors()) {
+            return "/admin/admin-form";
+        }
+        
+        try {
+            usuarioService.registrarAdministrador(
+                adminDTO.getNombres(),
+                adminDTO.getApellidos(),
+                adminDTO.getEmail(),
+                adminDTO.getPassword()
+            );
+            redirectAttributes.addFlashAttribute("success", "✅ Administrador creado exitosamente");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        
+        return "redirect:/admin/administradores";
+    }
+    
+    @GetMapping("/admin/eliminar/{id}")
+    public String eliminarAdmin(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            usuarioService.eliminarAdministrador(id);
+            redirectAttributes.addFlashAttribute("success", "✅ Administrador eliminado");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/administradores";
+    }
+    
+    @GetMapping("/donaciones")
+    public String donaciones() {
+        return "/admin/donaciones";
+    }
+    
+    @GetMapping("/foro")
+    public String foro() {
+        return "/admin/foro";
+    }
+    
+    @GetMapping("/usuario/eliminar/{id}")
+    public String eliminarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            usuarioService.eliminarUsuario(id);
+            redirectAttributes.addFlashAttribute("success", "✅ Usuario eliminado");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", e.getMessage());
+        }
+        return "redirect:/admin/usuarios";
+    }
+}

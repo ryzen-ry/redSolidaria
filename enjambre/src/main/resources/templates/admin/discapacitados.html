@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de Personas con Discapacidad'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="rs-section-title">🫂 Personas con Discapacidad</h1>
+        </div>
+        
+        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+        
+        <table class="rs-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>CONADIS</th>
+                    <th>Tipo Discapacidad</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Verificado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="dis : ${discapacitados}">
+                    <td th:text="${dis.id}"></td>
+                    <td th:text="${dis.nombreCompleto}"></td>
+                    <td th:text="${dis.email}"></td>
+                    <td th:text="${dis.conadis}"></td>
+                    <td th:text="${dis.tipoDiscapacidad}"></td>
+                    <td th:text="${dis.telefono}"></td>
+                    <td th:text="${dis.direccion}"></td>
+                    <td>
+                        <span th:if="${dis.verificado}" class="badge-success">✅ Verificado</span>
+                        <span th:unless="${dis.verificado}" class="badge-warning">⏳ Pendiente</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${dis.id})}" 
+                           class="btn-delete" 
+                           onclick="return confirm('¿Eliminar esta persona?')">🗑️</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <style>
+        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
+    </style>
+</body>
+</html>
