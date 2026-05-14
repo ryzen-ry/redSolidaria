@@ -20,6 +20,10 @@ public class CodigoVerificacion {
     private String codigo;
     private LocalDateTime fechaExpiracion;
     private boolean usado;
+    
+    @ManyToOne
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     public CodigoVerificacion(String email, String codigo, LocalDateTime fechaExpiracion) {
         this.email = email;
