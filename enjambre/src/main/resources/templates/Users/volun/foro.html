@@ -25,12 +25,32 @@
             <div class="modal-header"><h3>Nueva Publicación</h3><span class="modal-close" onclick="cerrarModal('modalCrear')">&times;</span></div>
             <input type="text" id="titulo" placeholder="Título" class="modal-input">
             <select id="categoria" class="modal-input">
-                <option value="Experiencia">Experiencia</option><option value="Consejo">Consejo</option>
-                <option value="Capacitación">Capacitación</option><option value="Agradecimiento">Agradecimiento</option>
+                <option value="Experiencia">Experiencia</option>
+                <option value="Consejo">Consejo</option>
+                <option value="Capacitación">Capacitación</option>
+                <option value="Agradecimiento">Agradecimiento</option>
                 <option value="Pregunta">Pregunta</option>
             </select>
             <textarea id="contenido" rows="5" placeholder="Contenido..." class="modal-input"></textarea>
             <button id="guardarBtn" class="rs-btn-primary">Publicar</button>
+        </div>
+    </div>
+
+    <!-- Modal Editar Publicación -->
+    <div id="modalEditar" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Editar Publicación</h3><span class="modal-close" onclick="cerrarModal('modalEditar')">&times;</span></div>
+            <input type="hidden" id="editId">
+            <input type="text" id="editTitulo" placeholder="Título" class="modal-input">
+            <select id="editCategoria" class="modal-input">
+                <option value="Experiencia">Experiencia</option>
+                <option value="Consejo">Consejo</option>
+                <option value="Capacitación">Capacitación</option>
+                <option value="Agradecimiento">Agradecimiento</option>
+                <option value="Pregunta">Pregunta</option>
+            </select>
+            <textarea id="editContenido" rows="5" placeholder="Contenido..." class="modal-input"></textarea>
+            <button id="actualizarBtn" class="rs-btn-primary">Actualizar</button>
         </div>
     </div>
 
@@ -118,6 +138,32 @@
             document.getElementById('modalComentarios').style.display = 'flex';
         }
 
+        function abrirEditar(post) {
+            document.getElementById('editId').value = post.id;
+            document.getElementById('editTitulo').value = post.titulo;
+            document.getElementById('editCategoria').value = post.categoria;
+            document.getElementById('editContenido').value = post.contenido;
+            document.getElementById('modalEditar').style.display = 'flex';
+        }
+
+        async function actualizarPublicacion() {
+            const id = document.getElementById('editId').value;
+            const data = {
+                titulo: document.getElementById('editTitulo').value,
+                categoria: document.getElementById('editCategoria').value,
+                contenido: document.getElementById('editContenido').value
+            };
+            if (!data.titulo || !data.contenido) { alert('Completa todos los campos'); return; }
+            const res = await fetch(`/api/foro/publicaciones/${id}`, {
+                method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            if (res.ok) {
+                cerrarModal('modalEditar');
+                cargarPublicaciones();
+            } else { alert('Error al actualizar'); }
+        }
+
         function renderizarPosts() {
             const filtered = currentFilter === 'Todos' ? allPosts : allPosts.filter(p => p.categoria === currentFilter);
             const container = document.getElementById('postsList');
@@ -128,14 +174,21 @@
                     <div class="rs-post-card">
                         <div class="rs-post-header">
                             <div class="rs-post-avatar">${p.usuario?.nombres?.charAt(0) || 'U'}</div>
-                            <div><div class="rs-post-author">${p.usuario?.nombres || 'Usuario'} ${p.usuario?.apellidos || ''}</div>
-                            <div class="rs-post-date">${p.categoria} • ${new Date(p.fechaCreacion).toLocaleDateString()}</div></div>
-                            ${esMiPost ? `<div><span style="color:#EF4444; cursor:pointer" onclick="eliminarPublicacion(${p.id})">🗑️</span></div>` : ''}
+                            <div style="flex:1;">
+                                <div class="rs-post-author">${p.usuario?.nombres || 'Usuario'} ${p.usuario?.apellidos || ''}</div>
+                                <div class="rs-post-date">${p.categoria} • ${new Date(p.fechaCreacion).toLocaleDateString()}</div>
+                            </div>
+                            ${esMiPost ? `
+                                <div style="display:flex; gap:8px;">
+                                    <span style="color:#2563EB; cursor:pointer;" onclick='abrirEditar(${JSON.stringify(p).replace(/'/g, "\\'")})'>✏️ editar</span>
+                                    <span style="color:#EF4444; cursor:pointer;" onclick="eliminarPublicacion(${p.id})">🗑️ Eliminar</span>
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="rs-post-title">${escapeHtml(p.titulo)}</div>
                         <div class="rs-post-content">${escapeHtml(p.contenido)}</div>
                         <div class="rs-post-stats">
-                            <span style="cursor:pointer" onclick="darLike(${p.id})">❤️ ${p.likes || 0}</span>
+                            <span style="cursor:pointer" onclick="darLike(${p.id})">❤️ me gusta ${p.likes || 0}</span>
                             <span style="cursor:pointer" onclick="verComentarios(${p.id})">💬 ${p.comentariosCount || 0}</span>
                         </div>
                     </div>
@@ -157,6 +210,7 @@
             if (res.ok) { cerrarModal('modalCrear'); document.getElementById('titulo').value = ''; document.getElementById('contenido').value = ''; cargarPublicaciones(); } 
             else { alert('Error al crear'); }
         };
+        document.getElementById('actualizarBtn').onclick = actualizarPublicacion;
         document.getElementById('enviarComentarioBtn').onclick = enviarComentario;
 
         obtenerUsuarioActual().then(() => cargarPublicaciones());
