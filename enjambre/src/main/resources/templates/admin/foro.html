@@ -4,65 +4,150 @@
       th:with="titulo='Gestión del Foro'">
 <head></head>
 <body>
-    <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+<div th:fragment="content">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
             <h1 class="rs-section-title">💬 Gestión del Foro</h1>
-            <a th:href="@{/admin/foro/nuevo}" class="rs-btn-primary">+ Nueva Publicación</a>
+            <button id="newPostBtn" class="rs-btn-primary">+ Nueva Publicación</button>
         </div>
-        
-        <div class="rs-post-card">
-            <div class="rs-post-header">
-                <div class="rs-post-avatar">MG</div>
-                <div>
-                    <div class="rs-post-author">María González</div>
-                    <div class="rs-post-date">Voluntaria • Hace 2 horas</div>
-                </div>
+
+        <div class="rs-foro-filters" id="filters" style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2rem;"></div>
+        <div id="postsList" style="display: flex; flex-direction: column; gap: 1.5rem;"></div>
+    </div>
+
+    <!-- Modal Crear/Editar -->
+    <div id="modalForm" class="modal" style="display:none;">
+        <div style="background:white; border-radius:16px; padding:24px; max-width:500px; width:90%;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                <h3 id="modalTitulo">Nueva Publicación</h3>
+                <span onclick="cerrarModal()" style="cursor:pointer; font-size:1.5rem;">&times;</span>
             </div>
-            <div class="rs-post-title">¿Cómo mejorar la comunicación con personas con discapacidad auditiva?</div>
-            <div class="rs-post-content">Hola a todos, soy nueva como voluntaria y me gustaría aprender más...</div>
-            <div class="rs-post-stats">
-                <span>❤️ 15</span>
-                <span>💬 8 Respuestas</span>
-                <span class="admin-action">✏️ Editar</span>
-                <span class="admin-action-delete">🗑️ Eliminar</span>
-            </div>
-        </div>
-        
-        <div class="rs-post-card">
-            <div class="rs-post-header">
-                <div class="rs-post-avatar">RT</div>
-                <div>
-                    <div class="rs-post-author">Ricardo Torres</div>
-                    <div class="rs-post-date">Voluntario • Hace 5 días</div>
-                </div>
-            </div>
-            <div class="rs-post-title">Mi primera experiencia ayudando a cruzar la calle</div>
-            <div class="rs-post-content">Hoy ayudé a don José, un adulto mayor con discapacidad motriz...</div>
-            <div class="rs-post-stats">
-                <span>❤️ 42</span>
-                <span>💬 12 Respuestas</span>
-                <span class="admin-action">✏️ Editar</span>
-                <span class="admin-action-delete">🗑️ Eliminar</span>
-            </div>
+            <input type="hidden" id="editId">
+            <input type="text" id="titulo" placeholder="Título" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:8px;">
+            <select id="categoria" style="width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:8px;">
+                <option value="Experiencia">Experiencia</option>
+                <option value="Consejo">Consejo</option>
+                <option value="Capacitación">Capacitación</option>
+                <option value="Agradecimiento">Agradecimiento</option>
+                <option value="Pregunta">Pregunta</option>
+            </select>
+            <textarea id="contenido" rows="5" placeholder="Contenido..." style="width:100%; padding:10px; margin:10px 0; border:1px solid #ccc; border-radius:8px;"></textarea>
+            <button id="guardarBtn" class="rs-btn-primary" style="width:100%;">Guardar</button>
         </div>
     </div>
-    
-    <style>
-        .admin-action {
-            color: #2563EB;
-            cursor: pointer;
-            font-size: 0.7rem;
-            margin-left: 10px;
+
+    <script>
+        let allPosts = [];
+        let currentFilter = 'Todos';
+
+        async function cargarPublicaciones() {
+            try {
+                const res = await fetch('/api/foro/publicaciones');
+                const data = await res.json();
+                allPosts = Array.isArray(data) ? data : [];
+                renderizarPosts();
+                renderizarFiltros();
+            } catch (error) {
+                console.error('Error:', error);
+            }
         }
-        .admin-action-delete {
-            color: #EF4444;
-            cursor: pointer;
-            font-size: 0.7rem;
-            margin-left: 10px;
+
+        function renderizarFiltros() {
+            const categorias = ['Todos', 'Experiencia', 'Consejo', 'Capacitación', 'Agradecimiento', 'Pregunta'];
+            const container = document.getElementById('filters');
+            container.innerHTML = categorias.map(cat => `
+                <button class="rs-filter-btn ${currentFilter === cat ? 'active' : ''}" data-categoria="${cat}">${cat}</button>
+            `).join('');
+            document.querySelectorAll('.rs-filter-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    currentFilter = btn.dataset.categoria;
+                    renderizarFiltros();
+                    renderizarPosts();
+                });
+            });
         }
-        .admin-action:hover, .admin-action-delete:hover {
-            text-decoration: underline;
+
+        function renderizarPosts() {
+            const filtered = currentFilter === 'Todos' ? allPosts : allPosts.filter(p => p.categoria === currentFilter);
+            const container = document.getElementById('postsList');
+            if (!filtered.length) {
+                container.innerHTML = '<div style="text-align:center; padding:3rem;"><p>No hay publicaciones</p></div>';
+                return;
+            }
+            container.innerHTML = filtered.map(p => `
+                <div class="rs-post-card">
+                    <div class="rs-post-header">
+                        <div class="rs-post-avatar">${p.usuario?.nombres?.charAt(0) || 'U'}</div>
+                        <div>
+                            <div class="rs-post-author">${p.usuario?.nombres || 'Usuario'} ${p.usuario?.apellidos || ''}</div>
+                            <div class="rs-post-date">${p.categoria} • ${new Date(p.fechaCreacion).toLocaleDateString()}</div>
+                        </div>
+                        <div>
+                            <span style="color:blue; cursor:pointer" onclick="editarPublicacion(${p.id})">✏️</span>
+                            <span style="color:red; cursor:pointer" onclick="eliminarPublicacion(${p.id})">🗑️</span>
+                        </div>
+                    </div>
+                    <div class="rs-post-title">${escapeHtml(p.titulo)}</div>
+                    <div class="rs-post-content">${escapeHtml(p.contenido)}</div>
+                    <div class="rs-post-stats">
+                        <span>❤️ ${p.likes || 0}</span>
+                        <span>💬 ${p.comentariosCount || 0}</span>
+                    </div>
+                </div>
+            `).join('');
         }
-    </style>
+
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function abrirModalCrear() {
+            document.getElementById('editId').value = '';
+            document.getElementById('titulo').value = '';
+            document.getElementById('contenido').value = '';
+            document.getElementById('modalTitulo').innerText = 'Nueva Publicación';
+            document.getElementById('modalForm').style.display = 'flex';
+        }
+
+        function editarPublicacion(id) {
+            const post = allPosts.find(p => p.id === id);
+            if (post) {
+                document.getElementById('editId').value = post.id;
+                document.getElementById('titulo').value = post.titulo;
+                document.getElementById('categoria').value = post.categoria;
+                document.getElementById('contenido').value = post.contenido;
+                document.getElementById('modalTitulo').innerText = 'Editar Publicación';
+                document.getElementById('modalForm').style.display = 'flex';
+            }
+        }
+
+        async function eliminarPublicacion(id) {
+            if (confirm('¿Eliminar esta publicación?')) {
+                await fetch(`/api/foro/publicaciones/${id}`, { method: 'DELETE' });
+                cargarPublicaciones();
+            }
+        }
+
+        function cerrarModal() { document.getElementById('modalForm').style.display = 'none'; }
+
+        document.getElementById('newPostBtn').onclick = abrirModalCrear;
+        document.getElementById('guardarBtn').onclick = async () => {
+            const id = document.getElementById('editId').value;
+            const data = {
+                titulo: document.getElementById('titulo').value,
+                categoria: document.getElementById('categoria').value,
+                contenido: document.getElementById('contenido').value
+            };
+            const url = id ? `/api/foro/publicaciones/${id}` : '/api/foro/publicaciones';
+            const method = id ? 'PUT' : 'POST';
+            const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+            if (res.ok) {
+                cerrarModal();
+                cargarPublicaciones();
+            } else { alert('Error al guardar'); }
+        };
+
+        cargarPublicaciones();
+    </script>
+    <style>.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:1000}</style>
+</div>
 </body>
 </html>

@@ -30,27 +30,22 @@ public class UsuarioService {
 
     // ========== MÉTODOS PARA ADMIN CONTROLLER ==========
     
-    // Listar todos los usuarios
     public List<Usuario> listarTodosUsuarios() {
         return usuarioRepository.findAll();
     }
     
-    // Listar voluntarios
     public List<Voluntario> listarVoluntarios() {
         return voluntarioRepository.findAll();
     }
     
-    // Listar discapacitados
     public List<PersonaDiscapacitada> listarDiscapacitados() {
         return personaDiscapacitadaRepository.findAll();
     }
     
-    // Listar administradores
     public List<Administrador> listarAdministradores() {
         return administradorRepository.findAll();
     }
     
-    // Registrar administrador
     public void registrarAdministrador(String nombres, String apellidos, String email, String password) throws Exception {
         
         if (usuarioRepository.existsByEmail(email)) {
@@ -62,24 +57,20 @@ public class UsuarioService {
         System.out.println("✅ Administrador registrado: " + email);
     }
     
-    // Eliminar administrador
     public void eliminarAdministrador(Long id) throws Exception {
         Administrador admin = administradorRepository.findById(id)
             .orElseThrow(() -> new Exception("Administrador no encontrado"));
         
-        // No permitir eliminar al admin principal
         if ("admin@redsolidaria.pe".equals(admin.getEmail())) {
             throw new Exception("❌ No se puede eliminar la cuenta principal de administrador");
         }
         administradorRepository.deleteById(id);
     }
     
-    // Eliminar cualquier usuario por ID
     public void eliminarUsuario(Long id) throws Exception {
         Usuario usuario = usuarioRepository.findById(id)
             .orElseThrow(() -> new Exception("Usuario no encontrado"));
         
-        // Verificar que no sea el admin principal
         if (usuario instanceof Administrador && "admin@redsolidaria.pe".equals(usuario.getEmail())) {
             throw new Exception("❌ No se puede eliminar la cuenta principal de administrador");
         }
@@ -88,16 +79,22 @@ public class UsuarioService {
         System.out.println("✅ Usuario eliminado: " + usuario.getEmail());
     }
     
-    // Buscar usuario por email
     public Usuario buscarPorEmail(String email) {
         return usuarioRepository.findByEmail(email).orElse(null);
     }
 
     // ========== MÉTODOS PARA REGISTRO ==========
     
-    // Registrar voluntario (verificado = false)
+    // Versión original (registro temporal con verificado = false)
     public void registrarVoluntario(String nombres, String apellidos, String email, 
                                     String password, String codigo, String carrera) throws Exception {
+        registrarVoluntario(nombres, apellidos, email, password, codigo, carrera, false);
+    }
+    
+    // ✅ NUEVO: Registrar voluntario con verificado personalizado
+    public void registrarVoluntario(String nombres, String apellidos, String email, 
+                                    String password, String codigo, String carrera, 
+                                    boolean verificado) throws Exception {
         
         if (usuarioRepository.existsByEmail(email)) {
             throw new Exception("❌ El correo ya está registrado");
@@ -108,16 +105,25 @@ public class UsuarioService {
         }
         
         Voluntario voluntario = new Voluntario(nombres, apellidos, email, password, codigo, carrera);
-        voluntario.setVerificado(false);
+        voluntario.setVerificado(verificado);
         
         voluntarioRepository.save(voluntario);
-        System.out.println("✅ Voluntario guardado en BD: " + email);
+        System.out.println("✅ Voluntario guardado en BD: " + email + " | Verificado: " + verificado);
     }
     
-    // Registrar persona con discapacidad (verificado = false) - VERSIÓN SIN FOTOS
+    // Versión original (registro temporal con verificado = false)
     public void registrarDiscapacitado(String nombres, String apellidos, String email,
                                        String password, String conadis, String tipoDiscapacidad,
                                        String telefono, String direccion) throws Exception {
+        registrarDiscapacitado(nombres, apellidos, email, password, conadis, tipoDiscapacidad,
+                               telefono, direccion, false);
+    }
+    
+    // ✅ NUEVO: Registrar discapacitado con verificado personalizado
+    public void registrarDiscapacitado(String nombres, String apellidos, String email,
+                                       String password, String conadis, String tipoDiscapacidad,
+                                       String telefono, String direccion,
+                                       boolean verificado) throws Exception {
         
         if (usuarioRepository.existsByEmail(email)) {
             throw new Exception("❌ El correo ya está registrado");
@@ -129,18 +135,29 @@ public class UsuarioService {
         
         PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
                                                                 conadis, tipoDiscapacidad, telefono, direccion);
-        persona.setVerificado(false);
+        persona.setVerificado(verificado);
         
         personaDiscapacitadaRepository.save(persona);
-        System.out.println("✅ Persona con discapacidad guardada en BD: " + email);
+        System.out.println("✅ Persona con discapacidad guardada en BD: " + email + " | Verificado: " + verificado);
     }
     
-    // ✅ NUEVO: Registrar persona con discapacidad CON FOTOS (DNI y CONADIS)
+    // ✅ NUEVO: Registrar discapacitado CON FOTOS con verificado personalizado
     public void registrarDiscapacitadoConFotos(String nombres, String apellidos, String email,
                                                String password, String conadis, String tipoDiscapacidad,
                                                String telefono, String direccion,
                                                String dniDelanteraUrl, String dniTraseraUrl, 
                                                String conadisFotoUrl) throws Exception {
+        registrarDiscapacitadoConFotos(nombres, apellidos, email, password, conadis, tipoDiscapacidad,
+                                       telefono, direccion, dniDelanteraUrl, dniTraseraUrl, conadisFotoUrl, false);
+    }
+    
+    // ✅ NUEVO: Registrar discapacitado CON FOTOS con verificado personalizado
+    public void registrarDiscapacitadoConFotos(String nombres, String apellidos, String email,
+                                               String password, String conadis, String tipoDiscapacidad,
+                                               String telefono, String direccion,
+                                               String dniDelanteraUrl, String dniTraseraUrl, 
+                                               String conadisFotoUrl,
+                                               boolean verificado) throws Exception {
         
         if (usuarioRepository.existsByEmail(email)) {
             throw new Exception("❌ El correo ya está registrado");
@@ -155,21 +172,36 @@ public class UsuarioService {
         persona.setDniDelanteraUrl(dniDelanteraUrl);
         persona.setDniTraseraUrl(dniTraseraUrl);
         persona.setConadisFotoUrl(conadisFotoUrl);
-        persona.setVerificado(false);
+        persona.setVerificado(verificado);
         
         personaDiscapacitadaRepository.save(persona);
-        System.out.println("✅ Persona con discapacidad CON FOTOS guardada en BD: " + email);
+        System.out.println("✅ Persona con discapacidad CON FOTOS guardada en BD: " + email + " | Verificado: " + verificado);
         System.out.println("   📄 DNI Delantera: " + dniDelanteraUrl);
         System.out.println("   📄 DNI Trasera: " + dniTraseraUrl);
         System.out.println("   📄 CONADIS: " + conadisFotoUrl);
     }
     
-    // Marcar usuario como verificado (después del código)
     public void marcarComoVerificado(String email) throws Exception {
         Usuario usuario = usuarioRepository.findByEmail(email)
             .orElseThrow(() -> new Exception("Usuario no encontrado"));
         usuario.setVerificado(true);
         usuarioRepository.save(usuario);
         System.out.println("✅ Usuario verificado: " + email);
+    }
+    
+    public boolean existeEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+    
+    public boolean existeCodigoVoluntario(String codigo) {
+        return voluntarioRepository.existsByCodigo(codigo);
+    }
+    
+    public boolean existeConadis(String conadis) {
+        return personaDiscapacitadaRepository.existsByConadis(conadis);
+    }
+    // Buscar usuario por ID
+     public Usuario buscarPorId(Long id) {
+    return usuarioRepository.findById(id).orElse(null);
     }
 }
