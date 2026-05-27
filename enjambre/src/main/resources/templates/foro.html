@@ -4,111 +4,61 @@
       th:with="titulo='Foro | Red Solidaria UTP'">
 <head></head>
 <body>
+
 <div th:fragment="content">
-    <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
-        <div class="header" style="text-align: center; margin-bottom: 2rem;">
-            <h1 class="rs-section-title" style="margin-bottom: 0.5rem;">💬 Foro Comunitario</h1>
-            <p style="color: #6B7280;">Comparte experiencias, haz preguntas y conecta con la comunidad</p>
-        </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <h1 class="rs-section-title" style="margin-bottom: 0;">Foro Comunitario</h1>
+        <a th:href="@{/login}" class="rs-btn-primary">+ Crear Nueva Publicación</a>
+    </div>
+    <p class="rs-section-subtitle" style="text-align: center; color: #6B7280; margin-bottom: 32px;">Comparte experiencias, haz preguntas y conecta con la comunidad</p>
 
-        <!-- Botón nueva publicación (redirige a login) -->
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <a th:href="@{/login}" class="rs-btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
-                ✍️ Crear Nueva Publicación
-            </a>
-        </div>
-
-        <!-- Mensaje para no autenticados -->
-        <div class="login-message" style="background-color: #DBEAFE; border: 1px solid #93C5FD; border-radius: 12px; padding: 1rem; text-align: center; margin-bottom: 2rem;">
-            <p>🔐 <strong>Inicia sesión</strong> para crear publicaciones y participar en el foro</p>
-            <a th:href="@{/login}" class="rs-btn-secondary" style="margin-top: 0.5rem; display: inline-block;">Iniciar Sesión</a>
-        </div>
-
-        <!-- Filtros -->
-        <div class="rs-foro-filters" id="filters" style="display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin-bottom: 2rem;"></div>
-
-        <!-- Lista de posts -->
-        <div id="postsList" class="posts-list" style="display: flex; flex-direction: column; gap: 1.5rem;"></div>
+    <!-- FILTROS -->
+    <div class="rs-foro-filters">
+        <button class="rs-filter-btn active">Todos</button>
+        <button class="rs-filter-btn">Experiencias</button>
+        <button class="rs-filter-btn">Consejos</button>
+        <button class="rs-filter-btn">Capacitación</button>
+        <button class="rs-filter-btn">Agradecimientos</button>
+        <button class="rs-filter-btn">Preguntas</button>
     </div>
 
-    <script>
-        let allPosts = [];
-        let currentFilter = 'Todos';
+    <!-- POSTS -->
+    <div class="rs-post-card">
+        <div class="rs-post-header">
+            <div class="rs-post-avatar">MG</div>
+            <div>
+                <div class="rs-post-author">María González</div>
+                <div class="rs-post-date">Voluntaria • Hace 2 horas</div>
+            </div>
+        </div>
+        <div class="rs-post-title">¿Cómo mejorar la comunicación con personas con discapacidad auditiva?</div>
+        <div class="rs-post-content">
+            Hola a todos, soy nueva como voluntaria y me gustaría aprender más sobre cómo comunicarme efectivamente con personas con discapacidad auditiva.
+        </div>
+        <div class="rs-post-stats">
+            <span>❤️ 15</span>
+            <span>💬 8 Respuestas</span>
+        </div>
+    </div>
 
-        async function cargarPublicaciones() {
-            try {
-                const res = await fetch('/api/foro/publicaciones');
-                const data = await res.json();
-                allPosts = Array.isArray(data) ? data : [];
-                renderizarPosts();
-                renderizarFiltros();
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('postsList').innerHTML = '<div style="text-align:center; padding:3rem;"><p>Error al cargar publicaciones</p></div>';
-            }
-        }
-
-        function renderizarFiltros() {
-            const categorias = ['Todos', 'Experiencia', 'Consejo', 'Capacitación', 'Agradecimiento', 'Pregunta'];
-            const container = document.getElementById('filters');
-            if (!container) return;
-            
-            container.innerHTML = categorias.map(cat => `
-                <button class="rs-filter-btn ${currentFilter === cat ? 'active' : ''}" data-categoria="${cat}">
-                    ${cat}
-                </button>
-            `).join('');
-            
-            document.querySelectorAll('.rs-filter-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    currentFilter = btn.dataset.categoria;
-                    renderizarFiltros();
-                    renderizarPosts();
-                });
-            });
-        }
-
-        function renderizarPosts() {
-            const filtered = currentFilter === 'Todos' 
-                ? allPosts 
-                : allPosts.filter(p => p.categoria === currentFilter);
-            
-            const container = document.getElementById('postsList');
-            if (!container) return;
-            
-            if (!filtered.length) {
-                container.innerHTML = '<div style="text-align:center; padding:3rem;"><p>No hay publicaciones en esta categoría</p></div>';
-                return;
-            }
-            
-            container.innerHTML = filtered.map(p => `
-                <div class="rs-post-card">
-                    <div class="rs-post-header">
-                        <div class="rs-post-avatar">${p.usuario?.nombres?.charAt(0) || 'U'}</div>
-                        <div>
-                            <div class="rs-post-author">${p.usuario?.nombres || 'Usuario'} ${p.usuario?.apellidos || ''}</div>
-                            <div class="rs-post-date">${p.categoria} • ${new Date(p.fechaCreacion).toLocaleDateString()}</div>
-                        </div>
-                    </div>
-                    <div class="rs-post-title">${escapeHtml(p.titulo)}</div>
-                    <div class="rs-post-content">${escapeHtml(p.contenido)}</div>
-                    <div class="rs-post-stats">
-                        <span>❤️ ${p.likes || 0}</span>
-                        <span>💬 ${p.comentariosCount || 0}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        cargarPublicaciones();
-    </script>
+    <div class="rs-post-card">
+        <div class="rs-post-header">
+            <div class="rs-post-avatar">RT</div>
+            <div>
+                <div class="rs-post-author">Ricardo Torres</div>
+                <div class="rs-post-date">Voluntario • Hace 5 días</div>
+            </div>
+        </div>
+        <div class="rs-post-title">Mi primera experiencia ayudando a cruzar la calle</div>
+        <div class="rs-post-content">
+            Hoy ayudé a don José, un adulto mayor con discapacidad motriz. Fue una experiencia muy bonita. Anímense a ser voluntarios.
+        </div>
+        <div class="rs-post-stats">
+            <span>❤️ 42</span>
+            <span>💬 12 Respuestas</span>
+        </div>
+    </div>
 </div>
+
 </body>
 </html>
