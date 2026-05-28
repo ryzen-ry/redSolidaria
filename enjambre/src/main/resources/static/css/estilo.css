@@ -1,8 +1,4 @@
-/* ============================================
-   RED SOLIDARIA UTP - DISEÑO MODERNO
-   Colores: Principal AZUL con acento VERDE
-   Basado en el código fuente proporcionado
-   ============================================ */
+
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,100;0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap');
 
@@ -75,6 +71,31 @@ body {
     color: white;
     font-size: 1.1rem;
     font-weight: 700;
+}
+
+.rs-nav-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.8rem;
+    cursor: pointer;
+    outline: none;
+    padding: 5px;
+    z-index: 101;
+    transition: color 0.2s;
+}
+
+.rs-nav-toggle:hover {
+    color: #3AAA6B;
+}
+
+.rs-nav-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    flex-grow: 1;
 }
 
 .rs-nav-links {
@@ -931,19 +952,67 @@ body {
     }
 }
 
-@media (max-width: 768px) {
+/* ========== RESPONSIVE NAVBAR ========== */
+@media (max-width: 1100px) {
     .rs-nav {
+        padding: 0 1.5rem;
+        height: 64px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .rs-nav-toggle {
+        display: block;
+    }
+
+    .rs-nav-collapse {
+        display: none;
         flex-direction: column;
-        height: auto;
-        padding: 12px 20px;
-        gap: 12px;
+        align-items: stretch;
+        position: absolute;
+        top: 64px;
+        left: 0;
+        width: 100%;
+        background-color: #1E2D4A;
+        padding: 1.5rem;
+        gap: 1.25rem;
+        border-top: 1px solid #2D3F5E;
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+        z-index: 99;
+    }
+
+    .rs-nav-collapse.active {
+        display: flex;
     }
     
     .rs-nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-direction: column;
+        align-items: stretch;
+        width: 100%;
+        gap: 0.5rem;
     }
     
+    .rs-nav-links a {
+        width: 100%;
+        display: block;
+        text-align: center;
+        padding: 0.75rem 1rem;
+        font-size: 1.05rem;
+    }
+
+    .user-info {
+        margin-left: 0 !important;
+        margin-top: 0.5rem;
+        justify-content: center;
+        width: 100%;
+        border-top: 1px solid #2D3F5E;
+        padding-top: 1rem;
+    }
+}
+
+@media (max-width: 768px) {
     .rs-hero {
         padding: 40px 24px;
     }

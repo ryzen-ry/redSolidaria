@@ -17,18 +17,23 @@
             <span class="rs-nav-brand-name">Red Solidaria - Voluntario</span>
         </a>
         
-        <ul class="rs-nav-links">
-            <li><a th:href="@{/voluntario/capacitacion}">Capacitación</a></li>
-            <li><a th:href="@{/voluntario/donaciones}">Donaciones</a></li>
-            <li><a th:href="@{/voluntario/historial}">Mi Historial</a></li>
-            <li><a th:href="@{/voluntario/foro}">Foro</a></li>
-            <li><a th:href="@{/}" class="btn-sesion">Cerrar Sesión</a></li>
-        </ul>
+        <button class="rs-nav-toggle" aria-label="Toggle navigation">☰</button>
         
-        <!-- Identificador del usuario (Correo institucional) -->
-        <div class="user-info" th:if="${session.usuario != null}">
-            <span class="user-email" th:text="${session.usuario.email}"></span>
-            <span class="user-name" style="margin-left: 10px;" th:text="${session.usuario.nombres}"></span>
+        <div class="rs-nav-collapse">
+            <ul class="rs-nav-links">
+              <li><a th:href="@{/voluntario/alertas}">Alertas de Ayuda</a></li>
+              <li><a th:href="@{/voluntario/capacitacion}">Capacitación</a></li>
+              <li><a th:href="@{/voluntario/donaciones}">Donaciones</a></li>
+              <li><a th:href="@{/voluntario/historial}">Mi Historial</a></li>
+              <li><a th:href="@{/voluntario/foro}">Foro</a></li>
+              <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
+            </ul>
+            
+            <!-- Identificador del usuario (Correo institucional) -->
+            <div class="user-info" th:if="${session.usuario != null}">
+                <span class="user-email" th:text="${session.usuario.email}"></span>
+                <span class="user-name" style="margin-left: 10px;" th:text="${session.usuario.nombres}"></span>
+            </div>
         </div>
     </nav>
 
@@ -120,5 +125,21 @@
         }
     </style>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.querySelector('.rs-nav-toggle');
+            const collapseMenu = document.querySelector('.rs-nav-collapse');
+            if (toggleBtn && collapseMenu) {
+                toggleBtn.addEventListener('click', () => {
+                    collapseMenu.classList.toggle('active');
+                    if (collapseMenu.classList.contains('active')) {
+                        toggleBtn.textContent = '✕';
+                    } else {
+                        toggleBtn.textContent = '☰';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

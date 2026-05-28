@@ -10,7 +10,7 @@ public class VoluntarioController {
 
     @GetMapping("/inicio")
     public String inicio() {
-        return "/Users/volun/capacitacion";
+        return "/Users/volun/alertadeAyuda";
     }
     
     @GetMapping("/capacitacion")
@@ -31,5 +31,9 @@ public class VoluntarioController {
     @GetMapping("/foro")
     public String foro() {
         return "/Users/volun/foro";
+    }
+    @GetMapping("/alertas")
+    public String alertas() {
+    return "/Users/volun/alertadeAyuda";
     }
 }

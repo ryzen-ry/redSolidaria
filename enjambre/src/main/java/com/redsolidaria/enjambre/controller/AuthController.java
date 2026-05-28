@@ -1,6 +1,8 @@
 package com.redsolidaria.enjambre.controller;
 
 import com.redsolidaria.enjambre.dto.PersonaDiscapacitadaDTO;
+import com.redsolidaria.enjambre.model.RegistroTemporalDiscapacitado;
+import com.redsolidaria.enjambre.model.RegistroTemporalVoluntario;
 import com.redsolidaria.enjambre.model.Usuario;
 import com.redsolidaria.enjambre.service.UsuarioService;
 import com.redsolidaria.enjambre.service.VerificacionService;
@@ -54,7 +56,7 @@ public class AuthController {
         return "registroDis";
     }
 
-    // ========== PROCESAR REGISTRO VOLUNTARIO ==========
+    // ========== PROCESAR REGISTRO VOLUNTARIO (GUARDA EN SESIÓN) ==========
     
     @PostMapping("/registro/voluntario")
     public String procesarRegistroVoluntario(@RequestParam String email,
@@ -64,6 +66,7 @@ public class AuthController {
                                               @RequestParam String carrera,
                                               @RequestParam String password,
                                               @RequestParam(required = false) String confirmPassword,
+                                              HttpSession session,
                                               Model model) {
         
         if (!email.endsWith("@utp.edu.pe")) {
@@ -81,8 +84,31 @@ public class AuthController {
             return "registroVol";
         }
         
+        // Validar que el email no esté ya registrado en BD
+        if (usuarioService.existeEmail(email)) {
+            model.addAttribute("error", "❌ El correo ya está registrado");
+            return "registroVol";
+        }
+        
+        // Validar que el código no esté ya registrado
+        if (usuarioService.existeCodigoVoluntario(codigo)) {
+            model.addAttribute("error", "❌ El código de estudiante ya está registrado");
+            return "registroVol";
+        }
+        
         try {
-            usuarioService.registrarVoluntario(nombres, apellidos, email, password, codigo, carrera);
+            // ✅ Guardar datos temporalmente en sesión (NO en BD)
+            RegistroTemporalVoluntario temp = new RegistroTemporalVoluntario();
+            temp.setNombres(nombres);
+            temp.setApellidos(apellidos);
+            temp.setEmail(email);
+            temp.setCodigo(codigo);
+            temp.setCarrera(carrera);
+            temp.setPassword(password);
+            
+            session.setAttribute("registroTempVol", temp);
+            
+            // ✅ Enviar código de verificación
             verificacionService.enviarCodigo(email);
             
             model.addAttribute("email", email);
@@ -90,17 +116,19 @@ public class AuthController {
             model.addAttribute("tipoUsuario", "voluntario");
             
             return "verificar-codigo";
+            
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             return "registroVol";
         }
     }
 
-    // ========== PROCESAR REGISTRO DISCAPACITADO (CON FOTOS) ==========
+    // ========== PROCESAR REGISTRO DISCAPACITADO (GUARDA EN SESIÓN) ==========
     
     @PostMapping("/registro/discapacitado")
     public String procesarRegistroDiscapacitado(@Valid PersonaDiscapacitadaDTO dto,
                                                 BindingResult result,
+                                                HttpSession session,
                                                 Model model) {
         
         // Validar que las contraseñas coinciden
@@ -108,9 +136,18 @@ public class AuthController {
             result.rejectValue("confirmPassword", "error", "Las contraseñas no coinciden");
         }
         
-        // ✅ CORREGIDO: usar dto.getPassword() en lugar de password
         if (dto.getPassword() != null && dto.getPassword().length() < 6) {
             result.rejectValue("password", "error", "La contraseña debe tener al menos 6 caracteres");
+        }
+        
+        // Validar que el email no esté ya registrado en BD
+        if (usuarioService.existeEmail(dto.getEmail())) {
+            result.rejectValue("email", "error", "❌ El correo ya está registrado");
+        }
+        
+        // Validar que el CONADIS no esté ya registrado
+        if (usuarioService.existeConadis(dto.getConadis())) {
+            result.rejectValue("conadis", "error", "❌ El número CONADIS ya está registrado");
         }
         
         if (result.hasErrors()) {
@@ -118,20 +155,28 @@ public class AuthController {
         }
         
         try {
-            // Guardar las fotos en el servidor
+            // Guardar las fotos temporalmente en el servidor
             String dniDelanteraPath = guardarFoto(dto.getDniFotoDelantera(), "dni_delantera");
             String dniTraseraPath = guardarFoto(dto.getDniFotoTrasera(), "dni_trasera");
             String conadisPath = guardarFoto(dto.getConadisFoto(), "conadis");
             
-            // Registrar al usuario con las rutas de las fotos
-            usuarioService.registrarDiscapacitadoConFotos(
-                dto.getNombres(), dto.getApellidos(), dto.getEmail(), 
-                dto.getPassword(), dto.getConadis(), dto.getTipoDiscapacidad(),
-                dto.getTelefono(), dto.getDireccion(),
-                dniDelanteraPath, dniTraseraPath, conadisPath
-            );
+            // ✅ Guardar datos temporalmente en sesión (NO en BD)
+            RegistroTemporalDiscapacitado temp = new RegistroTemporalDiscapacitado();
+            temp.setNombres(dto.getNombres());
+            temp.setApellidos(dto.getApellidos());
+            temp.setEmail(dto.getEmail());
+            temp.setConadis(dto.getConadis());
+            temp.setTipoDiscapacidad(dto.getTipoDiscapacidad());
+            temp.setTelefono(dto.getTelefono());
+            temp.setDireccion(dto.getDireccion());
+            temp.setPassword(dto.getPassword());
+            temp.setDniDelanteraPath(dniDelanteraPath);
+            temp.setDniTraseraPath(dniTraseraPath);
+            temp.setConadisFotoPath(conadisPath);
             
-            // Enviar código de verificación
+            session.setAttribute("registroTempDis", temp);
+            
+            // ✅ Enviar código de verificación
             verificacionService.enviarCodigo(dto.getEmail());
             
             model.addAttribute("email", dto.getEmail());
@@ -171,17 +216,57 @@ public class AuthController {
         return "/uploads/documentos/" + nombreArchivo;
     }
 
-    // ========== VERIFICAR CÓDIGO ==========
+    // ========== VERIFICAR CÓDIGO (AQUÍ SE GUARDA EN BD CON verificado = TRUE) ==========
     
     @PostMapping("/verificar-codigo")
     public String verificarCodigo(@RequestParam String email,
                                    @RequestParam String codigo,
                                    @RequestParam String tipoUsuario,
+                                   HttpSession session,
                                    Model model) {
         
         boolean valido = verificacionService.verificarCodigo(email, codigo);
         
         if (valido) {
+            // ✅ Recuperar datos temporales de la sesión y guardar en BD con verificado = TRUE
+            if ("voluntario".equals(tipoUsuario)) {
+                RegistroTemporalVoluntario temp = (RegistroTemporalVoluntario) session.getAttribute("registroTempVol");
+                
+                if (temp != null && temp.getEmail().equals(email)) {
+                    try {
+                        // ✅ verificado = TRUE
+                        usuarioService.registrarVoluntario(
+                            temp.getNombres(), temp.getApellidos(), temp.getEmail(),
+                            temp.getPassword(), temp.getCodigo(), temp.getCarrera(),
+                            true
+                        );
+                        session.removeAttribute("registroTempVol");
+                    } catch (Exception e) {
+                        model.addAttribute("error", "Error al guardar usuario: " + e.getMessage());
+                        return "verificar-codigo";
+                    }
+                }
+            } else if ("discapacitado".equals(tipoUsuario)) {
+                RegistroTemporalDiscapacitado temp = (RegistroTemporalDiscapacitado) session.getAttribute("registroTempDis");
+                
+                if (temp != null && temp.getEmail().equals(email)) {
+                    try {
+                        // ✅ verificado = TRUE
+                        usuarioService.registrarDiscapacitadoConFotos(
+                            temp.getNombres(), temp.getApellidos(), temp.getEmail(),
+                            temp.getPassword(), temp.getConadis(), temp.getTipoDiscapacidad(),
+                            temp.getTelefono(), temp.getDireccion(),
+                            temp.getDniDelanteraPath(), temp.getDniTraseraPath(), temp.getConadisFotoPath(),
+                            true
+                        );
+                        session.removeAttribute("registroTempDis");
+                    } catch (Exception e) {
+                        model.addAttribute("error", "Error al guardar usuario: " + e.getMessage());
+                        return "verificar-codigo";
+                    }
+                }
+            }
+            
             model.addAttribute("mensaje", "✅ ¡Cuenta verificada con éxito! Ya puedes iniciar sesión.");
             return "login";
         } else {
@@ -240,6 +325,6 @@ public class AuthController {
     @GetMapping("/logout")
     public String cerrarSesion(HttpSession session) {
         session.invalidate();
-        return "redirect:/login?logout=true";
+        return "redirect:/";
     }
 }

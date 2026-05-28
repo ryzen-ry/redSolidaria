@@ -64,17 +64,21 @@
             <span class="rs-nav-brand-name">Red Solidaria-Beneficiados</span>
         </a>
         
-        <ul class="rs-nav-links">
-            <li><a th:href="@{/discapacitado/ayuda}">Solicitar Ayuda</a></li>
-            <li><a th:href="@{/discapacitado/donaciones}">Donaciones</a></li>
-            <li><a th:href="@{/discapacitado/foro}">Foro</a></li>
-            <li><a th:href="@{/discapacitado/historial}">Mi Historial</a></li>
-            <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
-        </ul>
+        <button class="rs-nav-toggle" aria-label="Toggle navigation">☰</button>
         
-        <!-- Identificador del usuario (Nombre completo) -->
-        <div class="user-info" th:if="${session.usuario != null}">
-            <span class="user-name" th:text="${session.usuario.nombreCompleto}"></span>
+        <div class="rs-nav-collapse">
+            <ul class="rs-nav-links">
+                <li><a th:href="@{/discapacitado/ayuda}">Solicitar Ayuda</a></li>
+                <li><a th:href="@{/discapacitado/donaciones}">Donaciones</a></li>
+                <li><a th:href="@{/discapacitado/foro}">Foro</a></li>
+                <li><a th:href="@{/discapacitado/historial}">Mi Historial</a></li>
+                <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
+            </ul>
+            
+            <!-- Identificador del usuario (Nombre completo) -->
+            <div class="user-info" th:if="${session.usuario != null}">
+                <span class="user-name" th:text="${session.usuario.nombreCompleto}"></span>
+            </div>
         </div>
     </nav>
 
@@ -146,6 +150,21 @@
     <script>
         document.getElementById('btnAyudaEmergencia')?.addEventListener('click', function() {
             alert('🆘 ¡Alerta enviada! Un voluntario se pondrá en contacto contigo.');
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.querySelector('.rs-nav-toggle');
+            const collapseMenu = document.querySelector('.rs-nav-collapse');
+            if (toggleBtn && collapseMenu) {
+                toggleBtn.addEventListener('click', () => {
+                    collapseMenu.classList.toggle('active');
+                    if (collapseMenu.classList.contains('active')) {
+                        toggleBtn.textContent = '✕';
+                    } else {
+                        toggleBtn.textContent = '☰';
+                    }
+                });
+            }
         });
     </script>
 

@@ -20,6 +20,8 @@ public class CodigoVerificacion {
     private String codigo;
     private LocalDateTime fechaExpiracion;
     private boolean usado;
+    
+
 
     public CodigoVerificacion(String email, String codigo, LocalDateTime fechaExpiracion) {
         this.email = email;
