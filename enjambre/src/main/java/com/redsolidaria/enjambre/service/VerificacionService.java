@@ -15,9 +15,6 @@ public class VerificacionService {
 
     @Autowired
     private EmailService emailService;
-    
-    @Autowired
-    private UsuarioService usuarioService;  // ← NUEVO
 
     public String generarCodigo() {
         Random random = new Random();
@@ -51,13 +48,9 @@ public class VerificacionService {
         cv.setUsado(true);
         codigoRepository.save(cv);
         
-        // ✅ Marcar usuario como verificado en la BD
-        try {
-            usuarioService.marcarComoVerificado(email);
-        } catch (Exception e) {
-            System.err.println("Error al marcar usuario como verificado: " + e.getMessage());
-            return false;
-        }
+        // ❌ ELIMINADO: Ya no se marca como verificado aquí
+        // El guardado en BD y marcado como verificado ahora se hace en AuthController
+        // después de que el código es válido
         
         return true;
     }
