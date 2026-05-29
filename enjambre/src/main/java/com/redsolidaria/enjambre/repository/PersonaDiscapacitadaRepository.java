@@ -10,4 +10,5 @@ public interface PersonaDiscapacitadaRepository extends JpaRepository<PersonaDis
     Optional<PersonaDiscapacitada> findByEmail(String email);
     Optional<PersonaDiscapacitada> findByConadis(String conadis);
     boolean existsByConadis(String conadis);
+    boolean existsByCertificadoDiscapacidad(String certificadoDiscapacidad);
 }

@@ -2,7 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="layout :: html"
       th:with="titulo='Registro Persona con Discapacidad | Red Solidaria UTP'">
-<head></head>
+<head>
+</head>
 <body>
 
 <div th:fragment="content">
@@ -32,10 +33,22 @@
                     <label>Correo electrónico <span class="req">*</span></label>
                     <input type="email" name="email" required />
                 </div>
+                
+                <!-- CAMPO MODIFICADO: Nro. DNI -->
                 <div class="rs-field rs-form-full">
-                    <label>Número RUI de Carnet CONADIS <span class="req">*</span></label>
-                    <input type="text" name="conadis" placeholder="Ej: 00123456-2024" required />
-                    <span class="rs-field-hint">Número del Registro Único de Identidad</span>
+                    <label>Nro. DNI <span class="req">*</span></label>
+                    <input type="text" name="conadis" placeholder="Ej: 12345678" required />
+                    <span class="rs-field-hint">Ingresa tu número de DNI (8 dígitos)</span>
+                </div>
+
+                <!-- CAMPO CON TOOLTIP: Nro. certificado de discapacidad -->
+                <div class="rs-field rs-form-full">
+                    <label>
+                        Nro. certificado de discapacidad: 
+                        <span class="icono-ayuda" id="iconoAyuda">❓</span>
+                    </label>
+                    <input type="text" name="certificadoDiscapacidad" placeholder="Ej: CERT-2024-001" required />
+                    <span class="rs-field-hint">Ingresa el número que aparece en tu certificado</span>
                 </div>
                 
                 <!-- Tipo de discapacidad con opción múltiple -->
@@ -45,7 +58,6 @@
                         <option value="">Selecciona</option>
                         <option>Auditiva</option>
                         <option>Motriz</option>
-                        <option>Visual</option>
                         <option>Del habla</option>
                         <option>Discapacidad Múltiple</option>
                     </select>
@@ -63,11 +75,12 @@
                 <!-- Contraseñas -->
                 <div class="rs-field">
                     <label>Contraseña <span class="req">*</span></label>
-                    <input type="password" name="password" required />
+                    <input type="password" name="password" id="password" required />
                 </div>
                 <div class="rs-field">
                     <label>Confirmar Contraseña <span class="req">*</span></label>
-                    <input type="password" name="confirmPassword" required />
+                    <input type="password" name="confirmPassword" id="confirmPassword" required />
+                    <div id="passwordMatchError" class="validation-message"></div>
                 </div>
 
                 <!-- SECCIÓN DE DOCUMENTOS -->
@@ -124,37 +137,264 @@
         </form>
 
         <p class="rs-login-link">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a></p>
+
+        <!-- Estilos movidos dentro del contenido -->
+        <style>
+            .rs-documents-section {
+                background: #F0FDF4;
+                padding: 12px 16px;
+                border-radius: 12px;
+                margin: 16px 0 8px 0;
+            }
+            .rs-documents-section h3 {
+                margin: 0;
+                font-size: 1rem;
+                color: #059669;
+            }
+            .rs-documents-hint {
+                font-size: 0.75rem;
+                color: #6B7280;
+                margin: 4px 0 0 0;
+            }
+
+            /* ============================================ */
+            /* ESTILOS PARA EL TOOLTIP CON IMAGEN (❓)       */
+            /* ============================================ */
+            .icono-ayuda {
+                display: inline-block;
+                background: #1e3c72;
+                color: white;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                text-align: center;
+                line-height: 18px;
+                font-size: 14px;
+                font-weight: bold;
+                margin-left: 8px;
+                cursor: help;
+                transition: all 0.2s;
+            }
+
+            .icono-ayuda:hover {
+                background: #2a5298;
+                transform: scale(1.1);
+            }
+
+            /* Tooltip flotante con imagen */
+            .tooltip-imagen {
+                visibility: hidden;
+                position: fixed;
+                background: white;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+                padding: 10px;
+                z-index: 10000;
+                opacity: 0;
+                border: 1px solid #ddd;
+                pointer-events: none;
+                transition: opacity 0.2s ease;
+            }
+
+            .tooltip-imagen img {
+                max-width: 500px;
+                max-height: 300px;
+                border-radius: 10px;
+                display: block;
+            }
+
+            .tooltip-imagen.visible {
+                visibility: visible;
+                opacity: 1;
+            }
+
+            /* Estilos para validación de contraseña */
+            .validation-message {
+                font-size: 0.875rem;
+                margin-top: 4px;
+                border-radius: 6px;
+                padding: 8px 12px;
+                display: none;
+            }
+
+            .validation-message.error {
+                background-color: #fee;
+                color: #c33;
+                display: block;
+            }
+
+            .validation-message.success {
+                background-color: #efe;
+                color: #3c3;
+                display: block;
+            }
+
+            .validation-icon {
+                margin-right: 6px;
+            }
+
+            input.invalid {
+                border-color: #f87171 !important;
+            }
+
+            input.valid {
+                border-color: #10b981 !important;
+            }
+
+            .documents-validation {
+                font-size: 0.875rem;
+                margin-top: 8px;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: #fee;
+                color: #c33;
+                display: none;
+            }
+
+            .documents-validation.show {
+                display: block;
+            }
+
+            .rs-field-hint {
+                display: block;
+                font-size: 0.75rem;
+                color: #6c757d;
+                margin-top: 4px;
+            }
+        </style>
+
+        <!-- Tooltip flotante con la imagen local -->
+        <div class="tooltip-imagen" id="tooltipCertificado">
+            <img th:src="@{/imagen/modeloCertificado.png}" alt="Certificado de Discapacidad">
+        </div>
+
+        <script>
+            // ============================================
+            // TOOLTIP PARA EL ❓
+            // ============================================
+            (function() {
+                const icono = document.getElementById('iconoAyuda');
+                const tooltip = document.getElementById('tooltipCertificado');
+                
+                if (!icono || !tooltip) {
+                    console.log('Elementos no encontrados');
+                    return;
+                }
+                
+                function moverTooltip(event) {
+                    let x = event.clientX + 15;
+                    let y = event.clientY + 15;
+                    
+                    const rect = tooltip.getBoundingClientRect();
+                    
+                    if (x + rect.width > window.innerWidth) {
+                        x = event.clientX - rect.width - 15;
+                    }
+                    if (y + rect.height > window.innerHeight) {
+                        y = event.clientY - rect.height - 15;
+                    }
+                    
+                    tooltip.style.left = x + 'px';
+                    tooltip.style.top = y + 'px';
+                }
+                
+                icono.addEventListener('mouseenter', function(e) {
+                    tooltip.classList.add('visible');
+                    moverTooltip(e);
+                });
+                
+                icono.addEventListener('mousemove', function(e) {
+                    moverTooltip(e);
+                });
+                
+                icono.addEventListener('mouseleave', function() {
+                    tooltip.classList.remove('visible');
+                });
+                
+                console.log('✅ Tooltip funcionando para el ❓');
+            })();
+        </script>
+
+        <!-- Validación de contraseñas y documentos -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.querySelector('form');
+                const password = document.querySelector('[name="password"]');
+                const confirmPassword = document.querySelector('[name="confirmPassword"]');
+                
+                function validatePasswordsMatch() {
+                    const errorDiv = document.getElementById('passwordMatchError');
+                    if (!errorDiv || !password || !confirmPassword) return true;
+                    
+                    if (password.value !== confirmPassword.value) {
+                        confirmPassword.classList.add('invalid');
+                        confirmPassword.classList.remove('valid');
+                        errorDiv.innerHTML = '<span class="validation-icon">⚠️</span> Las contraseñas no coinciden';
+                        errorDiv.className = 'validation-message error';
+                        return false;
+                    } else if (confirmPassword.value !== '') {
+                        confirmPassword.classList.add('valid');
+                        confirmPassword.classList.remove('invalid');
+                        errorDiv.innerHTML = '<span class="validation-icon">✓</span> Las contraseñas coinciden';
+                        errorDiv.className = 'validation-message success';
+                        return true;
+                    }
+                    return true;
+                }
+
+                if (confirmPassword && password) {
+                    password.addEventListener('input', validatePasswordsMatch);
+                    confirmPassword.addEventListener('input', validatePasswordsMatch);
+                }
+
+                function validateDocuments() {
+                    const dniFotoDelantera = document.getElementById('dniFotoDelantera');
+                    const dniFotoTrasera = document.getElementById('dniFotoTrasera');
+                    const conadisFoto = document.getElementById('conadisFoto');
+                    
+                    if ((dniFotoDelantera && !dniFotoDelantera.files.length) ||
+                        (dniFotoTrasera && !dniFotoTrasera.files.length) ||
+                        (conadisFoto && !conadisFoto.files.length)) {
+                        return false;
+                    }
+                    return true;
+                }
+
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        // Validar campos requeridos vacíos
+                        const requiredInputs = form.querySelectorAll('[required]');
+                        let emptyFields = [];
+                        requiredInputs.forEach(input => {
+                            if (!input.value.trim() || (input.type === 'file' && !input.files.length)) {
+                                const labelText = input.closest('.rs-field')?.querySelector('label')?.innerText.replace('*', '').trim() || input.name;
+                                emptyFields.push(labelText);
+                            }
+                        });
+                        
+                        if (emptyFields.length > 0) {
+                            e.preventDefault();
+                            alert('⚠️ Por favor complete los siguientes campos requeridos:\n- ' + emptyFields.join('\n- '));
+                            return false;
+                        }
+
+                        if (!validatePasswordsMatch()) {
+                            e.preventDefault();
+                            alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
+                            return false;
+                        }
+                        
+                        if (!validateDocuments()) {
+                            e.preventDefault();
+                            alert('⚠️ Debes cargar todos los documentos requeridos (DNI y Carnet CONADIS).');
+                            return false;
+                        }
+                    });
+                }
+            });
+        </script>
     </div>
 </div>
-
-<style>
-    .rs-documents-section {
-        background: #F0FDF4;
-        padding: 12px 16px;
-        border-radius: 12px;
-        margin: 16px 0 8px 0;
-    }
-    .rs-documents-section h3 {
-        margin: 0;
-        font-size: 1rem;
-        color: #059669;
-    }
-    .rs-documents-hint {
-        font-size: 0.75rem;
-        color: #6B7280;
-        margin: 4px 0 0 0;
-    }
-</style>
-
-<script>
-    function actualizarNombreArchivo(inputId, spanId) {
-        const input = document.getElementById(inputId);
-        const span = document.getElementById(spanId);
-        if (input && span) {
-            span.textContent = input.files[0]?.name || 'Sin archivo seleccionado';
-        }
-    }
-</script>
 
 </body>
 </html>

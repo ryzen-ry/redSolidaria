@@ -10,4 +10,6 @@ public class RegistroTemporalVoluntario {
     private String codigo;
     private String carrera;
     private String password;
+    private String fotoPerfilPath;           // ✅ NUEVO - Ruta de la foto de perfil
+    private String certificadoLaboralPath;   // ✅ NUEVO - Ruta del Certificado Único Laboral
 }
