@@ -5,6 +5,14 @@
 <head></head>
 <body>
 <div th:fragment="content">
+    <!-- Contenedor con información del usuario logueado en la sesión -->
+    <div id="usuario-actual-data"
+         th:if="${session.usuario != null}"
+         th:data-id="${session.usuario.id}"
+         th:data-nombres="${session.usuario.nombres}"
+         th:data-apellidos="${session.usuario.apellidos}"
+         th:data-rol="${session.usuario.rol}"
+         style="display: none;"></div>
     <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
         <div class="header" style="text-align: center; margin-bottom: 2rem;">
             <h1 class="rs-section-title" style="margin-bottom: 0.5rem;">💬 Foro Comunitario</h1>
@@ -64,16 +72,32 @@
         </div>
     </div>
 
+    <!-- Modal Editar Comentario -->
+    <div id="modalEditarComentario" class="modal" style="display:none;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header"><h3>Editar Comentario</h3><span class="modal-close" onclick="cerrarModal('modalEditarComentario')">&times;</span></div>
+            <input type="hidden" id="editComentarioId">
+            <textarea id="editComentarioTexto" rows="3" placeholder="Editar comentario..." class="modal-input"></textarea>
+            <button id="actualizarComentarioBtn" class="rs-btn-primary">Actualizar Comentario</button>
+        </div>
+    </div>
+
     <script>
         let allPosts = [];
         let currentFilter = 'Todos';
         let usuarioActual = null;
         let publicacionActualId = null;
+        let currentComments = [];
 
         async function obtenerUsuarioActual() {
-            const usuarioElem = document.querySelector('[data-usuario]');
-            if (usuarioElem) {
-                try { usuarioActual = JSON.parse(usuarioElem.getAttribute('data-usuario')); } catch(e) {}
+            const el = document.getElementById('usuario-actual-data');
+            if (el) {
+                usuarioActual = {
+                    id: parseInt(el.getAttribute('data-id')),
+                    nombres: el.getAttribute('data-nombres'),
+                    apellidos: el.getAttribute('data-apellidos'),
+                    rol: el.getAttribute('data-rol')
+                };
             }
         }
 
@@ -103,19 +127,72 @@
                 const res = await fetch(`/api/foro/publicaciones/${id}/comentarios`);
                 const data = await res.json();
                 const comentarios = data.comentarios || [];
+                currentComments = comentarios;
                 const container = document.getElementById('listaComentarios');
                 if (!comentarios.length) {
                     container.innerHTML = '<p style="text-align:center; color:#666;">No hay comentarios aún. ¡Sé el primero!</p>';
                 } else {
-                    container.innerHTML = comentarios.map(c => `
-                        <div style="border-bottom:1px solid #eee; padding:10px 0;">
-                            <b>${c.usuario?.nombres || 'Usuario'} ${c.usuario?.apellidos || ''}</b>
-                            <p style="margin:5px 0;">${escapeHtml(c.contenido)}</p>
-                            <small style="color:#666;">${new Date(c.fechaCreacion).toLocaleDateString()}</small>
-                        </div>
-                    `).join('');
+                    container.innerHTML = comentarios.map(c => {
+                        const esMiComentario = usuarioActual && c.usuario?.id === usuarioActual.id;
+                        return `
+                            <div style="border-bottom:1px solid #eee; padding:10px 0; position:relative;">
+                                <b>${c.usuario?.nombres || 'Usuario'} ${c.usuario?.apellidos || ''}</b>
+                                <p style="margin:5px 0;">${escapeHtml(c.contenido)}</p>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <small style="color:#666;">${new Date(c.fechaCreacion).toLocaleDateString()}</small>
+                                    ${esMiComentario ? `
+                                        <div style="display:flex; gap:10px;">
+                                            <span style="color:#2563EB; cursor:pointer; font-size:0.85rem;" onclick="abrirEditarComentario(${c.id})">✏️ editar</span>
+                                            <span style="color:#EF4444; cursor:pointer; font-size:0.85rem;" onclick="eliminarComentario(${c.id})">🗑️ Eliminar</span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
                 }
             } catch (error) { container.innerHTML = '<p>Error al cargar comentarios</p>'; }
+        }
+
+        function abrirEditarComentario(id) {
+            const comment = currentComments.find(c => c.id === id);
+            if (!comment) return;
+            document.getElementById('editComentarioId').value = comment.id;
+            document.getElementById('editComentarioTexto').value = comment.contenido;
+            document.getElementById('modalEditarComentario').style.display = 'flex';
+        }
+
+        async function actualizarComentario() {
+            const id = document.getElementById('editComentarioId').value;
+            const contenido = document.getElementById('editComentarioTexto').value;
+            if (!contenido.trim()) { alert('El comentario no puede estar vacío'); return; }
+            
+            const res = await fetch(`/api/foro/comentarios/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contenido: contenido })
+            });
+            if (res.ok) {
+                cerrarModal('modalEditarComentario');
+                cargarComentarios(publicacionActualId);
+                cargarPublicaciones();
+            } else {
+                alert('Error al actualizar el comentario');
+            }
+        }
+
+        async function eliminarComentario(id) {
+            if (confirm('¿Eliminar este comentario?')) {
+                const res = await fetch(`/api/foro/comentarios/${id}`, {
+                    method: 'DELETE'
+                });
+                if (res.ok) {
+                    cargarComentarios(publicacionActualId);
+                    cargarPublicaciones();
+                } else {
+                    alert('Error al eliminar el comentario');
+                }
+            }
         }
 
         async function enviarComentario() {
@@ -212,6 +289,7 @@
         };
         document.getElementById('actualizarBtn').onclick = actualizarPublicacion;
         document.getElementById('enviarComentarioBtn').onclick = enviarComentario;
+        document.getElementById('actualizarComentarioBtn').onclick = actualizarComentario;
 
         obtenerUsuarioActual().then(() => cargarPublicaciones());
     </script>

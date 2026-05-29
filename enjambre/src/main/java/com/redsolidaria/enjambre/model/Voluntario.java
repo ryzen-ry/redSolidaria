@@ -19,6 +19,9 @@ public class Voluntario extends Usuario {
     @Column(name = "foto_perfil")
     private String fotoPerfil;
 
+    @Column(name = "certificado_laboral")  // ✅ AGREGAR ESTA LÍNEA
+    private String certificadoLaboral;      // ✅ AGREGAR ESTA LÍNEA
+
     @Column(name = "puntos")
     private int puntos = 0;
 

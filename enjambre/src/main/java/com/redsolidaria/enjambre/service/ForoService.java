@@ -125,6 +125,19 @@ public class ForoService {
         comentarioRepository.deleteById(id);
     }
 
+    public Comentario actualizarComentario(Long id, ComentarioDTO dto, Long usuarioId) throws Exception {
+        Comentario comentario = comentarioRepository.findById(id)
+            .orElseThrow(() -> new Exception("Comentario no encontrado"));
+
+        Usuario usuario = usuarioService.buscarPorId(usuarioId);
+        if (!comentario.getUsuario().getId().equals(usuarioId) && !"ADMIN".equals(usuario.getRol())) {
+            throw new Exception("No tienes permiso para editar este comentario");
+        }
+
+        comentario.setContenido(dto.getContenido());
+        return comentarioRepository.save(comentario);
+    }
+
     public long contarComentarios(Long publicacionId) {
         Publicacion publicacion = publicacionRepository.findById(publicacionId).orElse(null);
         if (publicacion == null) return 0;

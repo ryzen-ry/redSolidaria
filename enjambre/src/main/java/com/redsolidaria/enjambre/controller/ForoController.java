@@ -172,4 +172,18 @@ public class ForoController {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
+
+    @PutMapping("/comentarios/{id}")
+    public ResponseEntity<?> actualizarComentario(@PathVariable Long id, @Valid @RequestBody ComentarioDTO dto, HttpSession session) {
+        try {
+            Usuario usuario = (Usuario) session.getAttribute("usuario");
+            if (usuario == null) {
+                return ResponseEntity.status(401).body(Map.of("error", "Debes iniciar sesión"));
+            }
+            Comentario comentario = foroService.actualizarComentario(id, dto, usuario.getId());
+            return ResponseEntity.ok(comentario);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
 }

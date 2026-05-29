@@ -16,15 +16,18 @@
              </div>
             <span class="rs-nav-brand-name">Red Solidaria</span>
         </a>
-        <ul class="rs-nav-links">
-            <li><a th:href="@{/}">Inicio</a></li>
-            <li><a th:href="@{/nosotros}">Sobre Nosotros</a></li>
-            <li><a th:href="@{/foro}">Foro</a></li>
-            <li><a th:href="@{/capacitacion}">Capacitación</a></li>
-            <li><a th:href="@{/donaciones}" class="btn-donaciones">Donaciones</a></li>
-            <li><a th:href="@{/login}" class="btn-sesion">Iniciar Sesión</a></li>
-            <li><a th:href="@{/registro}" class="btn-registro">Registro</a></li>
-        </ul>
+        <button class="rs-nav-toggle" aria-label="Toggle navigation">☰</button>
+        <div class="rs-nav-collapse">
+            <ul class="rs-nav-links">
+                <li><a th:href="@{/}">Inicio</a></li>
+                <li><a th:href="@{/nosotros}">Sobre Nosotros</a></li>
+                <li><a th:href="@{/foro}">Foro</a></li>
+                <li><a th:href="@{/capacitacion}">Capacitación</a></li>
+                <li><a th:href="@{/donaciones}" class="btn-donaciones">Donaciones</a></li>
+                <li><a th:href="@{/login}" class="btn-sesion">Iniciar Sesión</a></li>
+                <li><a th:href="@{/registro}" class="btn-registro">Registro</a></li>
+            </ul>
+        </div>
     </nav>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -88,5 +91,21 @@
         </div>
     </footer>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.querySelector('.rs-nav-toggle');
+            const collapseMenu = document.querySelector('.rs-nav-collapse');
+            if (toggleBtn && collapseMenu) {
+                toggleBtn.addEventListener('click', () => {
+                    collapseMenu.classList.toggle('active');
+                    if (collapseMenu.classList.contains('active')) {
+                        toggleBtn.textContent = '✕';
+                    } else {
+                        toggleBtn.textContent = '☰';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

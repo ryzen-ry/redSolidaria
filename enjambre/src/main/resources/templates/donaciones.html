@@ -2,6 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="layout :: html"
       th:with="titulo='Donaciones | Red Solidaria UTP'">
+
 <head></head>
 <body>
 
@@ -41,49 +42,62 @@
         </div>
     </div>
 
-    <div class="rs-donation-options">
-        <div class="rs-donation-card">
-            <h3>💰 Donación Monetaria</h3>
-            <p>Dona la cantidad que desees para ayudar a comprar productos de apoyo</p>
-            <form th:action="@{/donaciones/procesar}" method="post">
-                <div class="rs-field">
-                    <label>Monto a donar</label>
-                    <input type="number" name="monto" placeholder="S/ 0.00" min="1" required>
-                </div>
-                <div class="rs-field">
-                    <label>Tu nombre (opcional)</label>
-                    <input type="text" name="nombre">
-                </div>
-                <div class="rs-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="email" required>
-                </div>
-                <button type="button" class="rs-btn-submit" style="margin-top: 16px;" onclick="window.location.href='/login'">Donar Ahora</button>
-            </form>
-        </div>
+    <!-- VERIFICAR SI HAY USUARIO EN SESIÓN -->
+    <div th:if="${session.usuario != null}">
+        <div class="rs-donation-options">
+            <!-- DONACIÓN MONETARIA -->
+            <div class="rs-donation-card">
+                <h3>💰 Donación Monetaria</h3>
+                <p>Dona la cantidad que desees para ayudar a comprar productos de apoyo</p>
+                <form th:action="@{/donaciones/monetaria}" method="post">
+                    <div class="rs-field">
+                        <label>Monto a donar (S/.)</label>
+                        <input type="number" name="monto" placeholder="S/ 0.00" min="1" required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Tu nombre</label>
+                        <input type="text" name="nombre" th:value="${session.usuario.nombres}" required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Correo electrónico</label>
+                        <input type="email" name="email" th:value="${session.usuario.email}" required>
+                    </div>
+                    <button type="submit" class="rs-btn-submit" style="margin-top: 16px;">Donar Ahora</button>
+                </form>
+            </div>
 
-        <div class="rs-donation-card">
-            <h3>📦 Donación de Productos</h3>
-            <p>Dona productos físicos como sillas de ruedas, muletas, etc.</p>
-            <form th:action="@{/donaciones/productos}" method="post">
-                <div class="rs-field">
-                    <label>Producto a donar</label>
-                    <input type="text" name="producto" required>
-                </div>
-                <div class="rs-field">
-                    <label>Tu nombre</label>
-                    <input type="text" name="nombre" required>
-                </div>
-                <div class="rs-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="email" required>
-                </div>
-                <div class="rs-field">
-                    <label>Teléfono de contacto</label>
-                    <input type="tel" name="telefono" required>
-                </div>
-                <button type="button" class="rs-btn-submit" style="margin-top: 16px;" onclick="window.location.href='/login'">Coordinar Donación</button>
-            </form>
+            <!-- DONACIÓN DE PRODUCTOS -->
+            <div class="rs-donation-card">
+                <h3>📦 Donación de Productos</h3>
+                <p>Dona productos físicos como sillas de ruedas, muletas, etc.</p>
+                <form th:action="@{/donaciones/productos}" method="post">
+                    <div class="rs-field">
+                        <label>Producto a donar</label>
+                        <input type="text" name="producto" placeholder="Ej: Silla de ruedas, muletas, bastón..." required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Tu nombre</label>
+                        <input type="text" name="nombre" th:value="${session.usuario.nombres}" required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Correo electrónico</label>
+                        <input type="email" name="email" th:value="${session.usuario.email}" required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Teléfono de contacto</label>
+                        <input type="tel" name="telefono" required>
+                    </div>
+                    <button type="submit" class="rs-btn-submit" style="margin-top: 16px;">Coordinar Donación</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- SI NO HAY USUARIO LOGUEADO -->
+    <div th:if="${session.usuario == null}">
+        <div style="text-align: center; padding: 40px; background: #fef2f2; border-radius: 16px; margin-top: 20px;">
+            <p style="color: #dc2626;">🔐 Para donar, primero debes <a th:href="@{/login}" style="color: #4f46e5;">iniciar sesión</a></p>
+            <p>¿No tienes cuenta? <a th:href="@{/registro}" style="color: #4f46e5;">Regístrate aquí</a></p>
         </div>
     </div>
 </div>

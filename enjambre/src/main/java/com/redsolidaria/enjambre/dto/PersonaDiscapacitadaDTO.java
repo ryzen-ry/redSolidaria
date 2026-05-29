@@ -19,9 +19,13 @@ public class PersonaDiscapacitadaDTO {
     @Email(message = "Debe ingresar un correo electrónico válido")
     private String email;
 
-    @NotBlank(message = "El número RUI de CONADIS es obligatorio")
-    @Pattern(regexp = "^\\d{8}-\\d{4}$", message = "Formato inválido. Ejemplo: 00123456-2024")
+    @NotBlank(message = "El número de DNI es obligatorio")
+    @Pattern(regexp = "^\\d{8}$", message = "El número de DNI debe tener exactamente 8 dígitos")
     private String conadis;
+
+    @NotBlank(message = "El número de certificado de discapacidad es obligatorio")
+    @Size(min = 3, max = 50, message = "El certificado debe tener entre 3 y 50 caracteres")
+    private String certificadoDiscapacidad;
 
     @NotBlank(message = "Debe seleccionar el tipo de discapacidad")
     private String tipoDiscapacidad;
