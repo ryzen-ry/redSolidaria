@@ -1312,7 +1312,7 @@ body {
 .btn-loading .btn-text {
     visibility: hidden;
 }
-
+/* ========== comentario nuevo========== */
 .btn-loading::after {
     content: "";
     position: absolute;
