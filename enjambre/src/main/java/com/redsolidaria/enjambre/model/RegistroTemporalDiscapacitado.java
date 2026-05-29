@@ -9,6 +9,7 @@ public class RegistroTemporalDiscapacitado {
     private String apellidos;
     private String email;
     private String conadis;
+    private String certificadoDiscapacidad;
     private String tipoDiscapacidad;
     private String telefono;
     private String direccion;

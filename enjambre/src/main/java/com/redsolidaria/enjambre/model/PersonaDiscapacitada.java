@@ -13,6 +13,9 @@ public class PersonaDiscapacitada extends Usuario {
     @Column(unique = true, nullable = false)
     private String conadis;
 
+    @Column(unique = true, nullable = true)
+    private String certificadoDiscapacidad;
+
     @Column(name = "tipo_discapacidad", nullable = false)
     private String tipoDiscapacidad;
 

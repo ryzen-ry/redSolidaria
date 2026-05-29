@@ -55,6 +55,18 @@
                                onchange="document.getElementById('fileNameDisplay').textContent = this.files[0]?.name || 'Sin archivos seleccionados'" />
                     </div>
                 </div>
+                <!-- NUEVO CAMPO: Certificado Único Laboral -->
+                <div class="rs-field rs-form-full">
+                    <label>Certificado Único Laboral <span class="req">*</span></label>
+                    <div class="rs-file-upload">
+                        <label class="btn-file" for="certificadoLaboral">Seleccionar PDF</label>
+                        <span class="rs-file-name" id="certificadoFileNameDisplay">Sin archivos seleccionados</span>
+                        <input type="file" id="certificadoLaboral" name="certificadoLaboral" accept="application/pdf" required
+                               onchange="document.getElementById('certificadoFileNameDisplay').textContent = this.files[0]?.name || 'Sin archivos seleccionados'" />
+                    </div>
+                    <span class="rs-field-hint">Sube tu Certificado Único Laboral en formato PDF</span>
+                </div>
+                <!-- FIN DEL NUEVO CAMPO -->
                 <div class="rs-field">
                     <label>Contraseña <span class="req">*</span></label>
                     <input type="password" name="password" required />
@@ -75,64 +87,143 @@
         </form>
 
         <p class="rs-login-link">¿Ya tienes cuenta? <a th:href="@{/login}">Inicia sesión aquí</a></p>
+
+        <style>
+            .validation-message {
+                font-size: 0.875rem;
+                margin-top: 4px;
+                border-radius: 6px;
+                padding: 8px 12px;
+                display: none;
+            }
+
+            .validation-message.error {
+                background-color: #fee;
+                color: #c33;
+                display: block;
+            }
+
+            .validation-message.success {
+                background-color: #efe;
+                color: #3c3;
+                display: block;
+            }
+
+            .validation-icon {
+                margin-right: 6px;
+            }
+
+            input.invalid {
+                border-color: #f87171 !important;
+            }
+
+            input.valid {
+                border-color: #10b981 !important;
+            }
+
+            .documents-validation {
+                font-size: 0.875rem;
+                margin-top: 8px;
+                border-radius: 6px;
+                padding: 8px 12px;
+                background-color: #fee;
+                color: #c33;
+                display: none;
+            }
+
+            .documents-validation.show {
+                display: block;
+            }
+        </style>
+
+        <script th:src="@{/js/global.js}"></script>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const form = document.querySelector('form');
+                
+                // Validación de contraseñas coincidentes en tiempo real
+                const password = document.querySelector('[name="password"]');
+                const confirmPassword = document.querySelector('[name="confirmPassword"]');
+                
+                function validatePasswordsMatch() {
+                    const errorDiv = document.getElementById('passwordMatchError');
+                    if (!errorDiv || !password || !confirmPassword) return true;
+                    
+                    if (password.value !== confirmPassword.value) {
+                        confirmPassword.classList.add('invalid');
+                        confirmPassword.classList.remove('valid');
+                        errorDiv.innerHTML = '<span class="validation-icon">⚠️</span> Las contraseñas no coinciden';
+                        errorDiv.className = 'validation-message error';
+                        return false;
+                    } else if (confirmPassword.value !== '') {
+                        confirmPassword.classList.add('valid');
+                        confirmPassword.classList.remove('invalid');
+                        errorDiv.innerHTML = '<span class="validation-icon">✓</span> Las contraseñas coinciden';
+                        errorDiv.className = 'validation-message success';
+                        return true;
+                    }
+                    return true;
+                }
+                
+                if (confirmPassword && password) {
+                    // Crear el div para mensaje si no existe
+                    if (!document.getElementById('passwordMatchError')) {
+                        const div = document.createElement('div');
+                        div.id = 'passwordMatchError';
+                        div.className = 'validation-message';
+                        confirmPassword.parentElement.appendChild(div);
+                    }
+                    
+                    password.addEventListener('input', validatePasswordsMatch);
+                    confirmPassword.addEventListener('input', validatePasswordsMatch);
+                }
+
+                // Validar documentos requeridos antes de enviar
+                function validateDocuments() {
+                    const certificadoLaboral = document.getElementById('certificadoLaboral');
+                    
+                    if (!certificadoLaboral || !certificadoLaboral.files.length) {
+                        return false;
+                    }
+                    return true;
+                }
+                
+                // Validar antes de enviar
+                if (form) {
+                    form.addEventListener('submit', function(e) {
+                        // Validar campos requeridos vacíos
+                        const requiredInputs = form.querySelectorAll('[required]');
+                        let emptyFields = [];
+                        requiredInputs.forEach(input => {
+                            if (!input.value.trim() || (input.type === 'file' && !input.files.length)) {
+                                const labelText = input.closest('.rs-field')?.querySelector('label')?.innerText.replace('*', '').trim() || input.name;
+                                emptyFields.push(labelText);
+                            }
+                        });
+                        
+                        if (emptyFields.length > 0) {
+                            e.preventDefault();
+                            alert('⚠️ Por favor complete los siguientes campos requeridos:\n- ' + emptyFields.join('\n- '));
+                            return false;
+                        }
+
+                        if (!validatePasswordsMatch()) {
+                            e.preventDefault();
+                            alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
+                            return false;
+                        }
+
+                        if (!validateDocuments()) {
+                            e.preventDefault();
+                            alert('⚠️ Debes cargar el Certificado Único Laboral (PDF) antes de registrarte.');
+                            return false;
+                        }
+                    });
+                }
+            });
+        </script>
     </div>
 </div>
-<!-- Agrega esto al final de tu registroVol.html, antes de cerrar body -->
-<script th:src="@{/js/global.js}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('registroForm');
-        
-        // Validación de contraseñas coincidentes en tiempo real
-        const password = document.querySelector('[name="password"]');
-        const confirmPassword = document.querySelector('[name="confirmPassword"]');
-        
-        function validatePasswordsMatch() {
-            const errorDiv = document.getElementById('passwordMatchError');
-            if (!errorDiv) return;
-            
-            if (password.value !== confirmPassword.value) {
-                confirmPassword.classList.add('invalid');
-                confirmPassword.classList.remove('valid');
-                errorDiv.innerHTML = '<span class="validation-icon">⚠️</span> Las contraseñas no coinciden';
-                errorDiv.className = 'validation-message error';
-                return false;
-            } else if (confirmPassword.value !== '') {
-                confirmPassword.classList.add('valid');
-                confirmPassword.classList.remove('invalid');
-                errorDiv.innerHTML = '<span class="validation-icon">✓</span> Las contraseñas coinciden';
-                errorDiv.className = 'validation-message success';
-                return true;
-            }
-            return true;
-        }
-        
-        if (confirmPassword) {
-            // Crear el div para mensaje si no existe
-            if (!document.getElementById('passwordMatchError')) {
-                const div = document.createElement('div');
-                div.id = 'passwordMatchError';
-                div.className = 'validation-message';
-                confirmPassword.parentElement.appendChild(div);
-            }
-            
-            password.addEventListener('input', validatePasswordsMatch);
-            confirmPassword.addEventListener('input', validatePasswordsMatch);
-        }
-        
-        // Validar antes de enviar
-        form.addEventListener('submit', function(e) {
-            if (!validatePasswordsMatch()) {
-                e.preventDefault();
-                Modal.show({
-                    title: 'Error de validación',
-                    message: 'Las contraseñas no coinciden. Por favor, verifica.',
-                    type: 'error'
-                });
-            }
-        });
-    });
-</script>
 
 </body>
 </html>

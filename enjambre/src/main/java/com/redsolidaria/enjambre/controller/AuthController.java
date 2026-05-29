@@ -66,6 +66,8 @@ public class AuthController {
                                               @RequestParam String carrera,
                                               @RequestParam String password,
                                               @RequestParam(required = false) String confirmPassword,
+                                              @RequestParam(required = false) MultipartFile fotoPerfil,
+                                              @RequestParam(required = false) MultipartFile certificadoLaboral, // ✅ NUEVO CAMPO
                                               HttpSession session,
                                               Model model) {
         
@@ -96,7 +98,34 @@ public class AuthController {
             return "registroVol";
         }
         
+        // ✅ Validar que se haya subido el Certificado Único Laboral
+        if (certificadoLaboral == null || certificadoLaboral.isEmpty()) {
+            model.addAttribute("error", "❌ Debes subir tu Certificado Único Laboral (PDF)");
+            return "registroVol";
+        }
+        
+        // ✅ Validar que el archivo sea PDF
+        if (!certificadoLaboral.getContentType().equals("application/pdf")) {
+            model.addAttribute("error", "❌ El Certificado Único Laboral debe ser un archivo PDF válido");
+            return "registroVol";
+        }
+        
+        // ✅ Validar tamaño máximo (ejemplo: 5MB)
+        if (certificadoLaboral.getSize() > 5 * 1024 * 1024) {
+            model.addAttribute("error", "❌ El archivo PDF no debe superar los 5MB");
+            return "registroVol";
+        }
+        
         try {
+            // ✅ Guardar foto de perfil si se subió
+            String fotoPerfilPath = null;
+            if (fotoPerfil != null && !fotoPerfil.isEmpty()) {
+                fotoPerfilPath = guardarFoto(fotoPerfil, "foto_perfil");
+            }
+            
+            // ✅ Guardar Certificado Único Laboral
+            String certificadoPath = guardarFoto(certificadoLaboral, "certificado_laboral");
+            
             // ✅ Guardar datos temporalmente en sesión (NO en BD)
             RegistroTemporalVoluntario temp = new RegistroTemporalVoluntario();
             temp.setNombres(nombres);
@@ -105,6 +134,8 @@ public class AuthController {
             temp.setCodigo(codigo);
             temp.setCarrera(carrera);
             temp.setPassword(password);
+            temp.setFotoPerfilPath(fotoPerfilPath);        // ✅ AGREGAR ESTE CAMPO
+            temp.setCertificadoLaboralPath(certificadoPath); // ✅ AGREGAR ESTE CAMPO
             
             session.setAttribute("registroTempVol", temp);
             
@@ -145,9 +176,14 @@ public class AuthController {
             result.rejectValue("email", "error", "❌ El correo ya está registrado");
         }
         
-        // Validar que el CONADIS no esté ya registrado
+        // Validar que el DNI no esté ya registrado
         if (usuarioService.existeConadis(dto.getConadis())) {
-            result.rejectValue("conadis", "error", "❌ El número CONADIS ya está registrado");
+            result.rejectValue("conadis", "error", "❌ El número de DNI ya está registrado");
+        }
+        
+        // Validar que el certificado de discapacidad no esté ya registrado
+        if (usuarioService.existeCertificadoDiscapacidad(dto.getCertificadoDiscapacidad())) {
+            result.rejectValue("certificadoDiscapacidad", "error", "❌ El certificado de discapacidad ya está registrado");
         }
         
         if (result.hasErrors()) {
@@ -166,6 +202,7 @@ public class AuthController {
             temp.setApellidos(dto.getApellidos());
             temp.setEmail(dto.getEmail());
             temp.setConadis(dto.getConadis());
+            temp.setCertificadoDiscapacidad(dto.getCertificadoDiscapacidad());
             temp.setTipoDiscapacidad(dto.getTipoDiscapacidad());
             temp.setTelefono(dto.getTelefono());
             temp.setDireccion(dto.getDireccion());
@@ -191,7 +228,7 @@ public class AuthController {
         }
     }
     
-    // Método auxiliar para guardar fotos
+    // Método auxiliar para guardar fotos/documentos
     private String guardarFoto(MultipartFile file, String prefijo) throws IOException {
         if (file == null || file.isEmpty()) {
             return null;
@@ -204,8 +241,15 @@ public class AuthController {
             directorio.mkdirs();
         }
         
+        // Obtener la extensión del archivo
+        String extension = "";
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+        
         // Generar nombre único para el archivo
-        String nombreArchivo = prefijo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + "_" + file.getOriginalFilename();
+        String nombreArchivo = prefijo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
         String rutaCompleta = uploadDir + nombreArchivo;
         
         // Guardar el archivo
@@ -234,10 +278,12 @@ public class AuthController {
                 
                 if (temp != null && temp.getEmail().equals(email)) {
                     try {
-                        // ✅ verificado = TRUE
+                        // ✅ verificado = TRUE (pasando también la ruta del certificado)
                         usuarioService.registrarVoluntario(
                             temp.getNombres(), temp.getApellidos(), temp.getEmail(),
                             temp.getPassword(), temp.getCodigo(), temp.getCarrera(),
+                            temp.getFotoPerfilPath(),      // ✅ NUEVO PARÁMETRO
+                            temp.getCertificadoLaboralPath(), // ✅ NUEVO PARÁMETRO
                             true
                         );
                         session.removeAttribute("registroTempVol");
@@ -254,8 +300,8 @@ public class AuthController {
                         // ✅ verificado = TRUE
                         usuarioService.registrarDiscapacitadoConFotos(
                             temp.getNombres(), temp.getApellidos(), temp.getEmail(),
-                            temp.getPassword(), temp.getConadis(), temp.getTipoDiscapacidad(),
-                            temp.getTelefono(), temp.getDireccion(),
+                            temp.getPassword(), temp.getConadis(), temp.getCertificadoDiscapacidad(),
+                            temp.getTipoDiscapacidad(), temp.getTelefono(), temp.getDireccion(),
                             temp.getDniDelanteraPath(), temp.getDniTraseraPath(), temp.getConadisFotoPath(),
                             true
                         );

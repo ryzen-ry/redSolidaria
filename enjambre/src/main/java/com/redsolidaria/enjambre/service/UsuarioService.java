@@ -85,15 +85,23 @@ public class UsuarioService {
 
     // ========== MÉTODOS PARA REGISTRO ==========
     
-    // Versión original (registro temporal con verificado = false)
+    // Versión original (sin foto ni certificado) - Mantener por compatibilidad
     public void registrarVoluntario(String nombres, String apellidos, String email, 
                                     String password, String codigo, String carrera) throws Exception {
-        registrarVoluntario(nombres, apellidos, email, password, codigo, carrera, false);
+        registrarVoluntario(nombres, apellidos, email, password, codigo, carrera, null, null, false);
     }
     
-    // ✅ NUEVO: Registrar voluntario con verificado personalizado
+    // Versión con foto (sin certificado) - Mantener por compatibilidad
     public void registrarVoluntario(String nombres, String apellidos, String email, 
                                     String password, String codigo, String carrera, 
+                                    String fotoPerfilPath) throws Exception {
+        registrarVoluntario(nombres, apellidos, email, password, codigo, carrera, fotoPerfilPath, null, false);
+    }
+    
+    // ✅ VERSIÓN COMPLETA: Registrar voluntario con foto y certificado laboral
+    public void registrarVoluntario(String nombres, String apellidos, String email, 
+                                    String password, String codigo, String carrera, 
+                                    String fotoPerfilPath, String certificadoLaboralPath,
                                     boolean verificado) throws Exception {
         
         if (usuarioRepository.existsByEmail(email)) {
@@ -107,8 +115,19 @@ public class UsuarioService {
         Voluntario voluntario = new Voluntario(nombres, apellidos, email, password, codigo, carrera);
         voluntario.setVerificado(verificado);
         
+        // ✅ Guardar las rutas de los archivos
+        if (fotoPerfilPath != null && !fotoPerfilPath.isEmpty()) {
+            voluntario.setFotoPerfil(fotoPerfilPath);
+        }
+        
+        if (certificadoLaboralPath != null && !certificadoLaboralPath.isEmpty()) {
+            voluntario.setCertificadoLaboral(certificadoLaboralPath);
+        }
+        
         voluntarioRepository.save(voluntario);
         System.out.println("✅ Voluntario guardado en BD: " + email + " | Verificado: " + verificado);
+        System.out.println("   📸 Foto perfil: " + (fotoPerfilPath != null ? fotoPerfilPath : "No subida"));
+        System.out.println("   📄 Certificado Laboral: " + (certificadoLaboralPath != null ? certificadoLaboralPath : "No subido"));
     }
     
     // Versión original (registro temporal con verificado = false)
@@ -130,7 +149,7 @@ public class UsuarioService {
         }
         
         if (personaDiscapacitadaRepository.existsByConadis(conadis)) {
-            throw new Exception("❌ El número CONADIS ya está registrado");
+            throw new Exception("❌ El número de DNI ya está registrado");
         }
         
         PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
@@ -143,18 +162,18 @@ public class UsuarioService {
     
     // ✅ NUEVO: Registrar discapacitado CON FOTOS con verificado personalizado
     public void registrarDiscapacitadoConFotos(String nombres, String apellidos, String email,
-                                               String password, String conadis, String tipoDiscapacidad,
-                                               String telefono, String direccion,
+                                               String password, String conadis, String certificadoDiscapacidad,
+                                               String tipoDiscapacidad, String telefono, String direccion,
                                                String dniDelanteraUrl, String dniTraseraUrl, 
                                                String conadisFotoUrl) throws Exception {
-        registrarDiscapacitadoConFotos(nombres, apellidos, email, password, conadis, tipoDiscapacidad,
-                                       telefono, direccion, dniDelanteraUrl, dniTraseraUrl, conadisFotoUrl, false);
+        registrarDiscapacitadoConFotos(nombres, apellidos, email, password, conadis, certificadoDiscapacidad,
+                                       tipoDiscapacidad, telefono, direccion, dniDelanteraUrl, dniTraseraUrl, conadisFotoUrl, false);
     }
     
     // ✅ NUEVO: Registrar discapacitado CON FOTOS con verificado personalizado
     public void registrarDiscapacitadoConFotos(String nombres, String apellidos, String email,
-                                               String password, String conadis, String tipoDiscapacidad,
-                                               String telefono, String direccion,
+                                               String password, String conadis, String certificadoDiscapacidad,
+                                               String tipoDiscapacidad, String telefono, String direccion,
                                                String dniDelanteraUrl, String dniTraseraUrl, 
                                                String conadisFotoUrl,
                                                boolean verificado) throws Exception {
@@ -164,11 +183,12 @@ public class UsuarioService {
         }
         
         if (personaDiscapacitadaRepository.existsByConadis(conadis)) {
-            throw new Exception("❌ El número CONADIS ya está registrado");
+            throw new Exception("❌ El número de DNI ya está registrado");
         }
         
         PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
                                                                 conadis, tipoDiscapacidad, telefono, direccion);
+        persona.setCertificadoDiscapacidad(certificadoDiscapacidad);
         persona.setDniDelanteraUrl(dniDelanteraUrl);
         persona.setDniTraseraUrl(dniTraseraUrl);
         persona.setConadisFotoUrl(conadisFotoUrl);
@@ -176,9 +196,11 @@ public class UsuarioService {
         
         personaDiscapacitadaRepository.save(persona);
         System.out.println("✅ Persona con discapacidad CON FOTOS guardada en BD: " + email + " | Verificado: " + verificado);
+        System.out.println("   📄 DNI: " + conadis);
+        System.out.println("   📄 Certificado: " + certificadoDiscapacidad);
         System.out.println("   📄 DNI Delantera: " + dniDelanteraUrl);
         System.out.println("   📄 DNI Trasera: " + dniTraseraUrl);
-        System.out.println("   📄 CONADIS: " + conadisFotoUrl);
+        System.out.println("   📄 CONADIS Foto: " + conadisFotoUrl);
     }
     
     public void marcarComoVerificado(String email) throws Exception {
@@ -200,8 +222,13 @@ public class UsuarioService {
     public boolean existeConadis(String conadis) {
         return personaDiscapacitadaRepository.existsByConadis(conadis);
     }
+    
+    public boolean existeCertificadoDiscapacidad(String certificadoDiscapacidad) {
+        return personaDiscapacitadaRepository.existsByCertificadoDiscapacidad(certificadoDiscapacidad);
+    }
+    
     // Buscar usuario por ID
-     public Usuario buscarPorId(Long id) {
-    return usuarioRepository.findById(id).orElse(null);
+    public Usuario buscarPorId(Long id) {
+        return usuarioRepository.findById(id).orElse(null);
     }
 }
