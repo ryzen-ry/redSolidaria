@@ -75,6 +75,9 @@ public class UsuarioService {
             throw new Exception("❌ No se puede eliminar la cuenta principal de administrador");
         }
         
+        // Eliminar archivos físicos del disco si existen
+        eliminarArchivosUsuario(usuario);
+        
         usuarioRepository.deleteById(id);
         System.out.println("✅ Usuario eliminado: " + usuario.getEmail());
     }
@@ -230,5 +233,53 @@ public class UsuarioService {
     // Buscar usuario por ID
     public Usuario buscarPorId(Long id) {
         return usuarioRepository.findById(id).orElse(null);
+    }
+    
+    // Listar todos los usuarios pendientes de activación
+    public List<Usuario> listarUsuariosPendientes() {
+        return usuarioRepository.findByEstado("PENDIENTE");
+    }
+    
+    // Activar una cuenta de usuario
+    public void activarUsuario(Long id) throws Exception {
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new Exception("Usuario no encontrado"));
+        usuario.setEstado("ACTIVO");
+        usuarioRepository.save(usuario);
+        System.out.println("✅ Cuenta activada para: " + usuario.getEmail());
+    }
+
+    // ========== MÉTODOS AUXILIARES PARA ELIMINACIÓN DE ARCHIVOS ==========
+
+    private void eliminarArchivosUsuario(Usuario usuario) {
+        if (usuario instanceof Voluntario) {
+            Voluntario vol = (Voluntario) usuario;
+            eliminarArchivoFisico(vol.getFotoPerfil());
+            eliminarArchivoFisico(vol.getCertificadoLaboral());
+        } else if (usuario instanceof PersonaDiscapacitada) {
+            PersonaDiscapacitada disc = (PersonaDiscapacitada) usuario;
+            eliminarArchivoFisico(disc.getDniDelanteraUrl());
+            eliminarArchivoFisico(disc.getDniTraseraUrl());
+            eliminarArchivoFisico(disc.getConadisFotoUrl());
+        }
+    }
+
+    private void eliminarArchivoFisico(String rutaRelativa) {
+        if (rutaRelativa != null && !rutaRelativa.isEmpty()) {
+            try {
+                // Convertir ruta relativa (/uploads/documentos/...) a ruta del sistema
+                String rutaCompleta = "src/main/resources/static" + rutaRelativa;
+                java.io.File file = new java.io.File(rutaCompleta);
+                if (file.exists() && file.isFile()) {
+                    if (file.delete()) {
+                        System.out.println("🗑️ Archivo eliminado de disco: " + rutaCompleta);
+                    } else {
+                        System.out.println("⚠️ No se pudo eliminar el archivo: " + rutaCompleta);
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("❌ Error al intentar eliminar archivo " + rutaRelativa + ": " + e.getMessage());
+            }
+        }
     }
 }

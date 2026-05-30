@@ -23,4 +23,26 @@ public class EmailService {
         mailSender.send(mensaje);
         System.out.println("✓ Correo enviado a: " + emailDestino + " | Código: " + codigo);
     }
+
+    public void enviarCorreoActivacion(String emailDestino) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setTo(emailDestino);
+        mensaje.setSubject("🎉 Tu cuenta ha sido activada - Red Solidaria UTP");
+        mensaje.setText("Hola,\n\nTu cuenta ha sido activada con éxito. Ya puedes iniciar sesión en la plataforma.\n\n" +
+                        "Saludos,\nEquipo Red Solidaria UTP");
+
+        mailSender.send(mensaje);
+        System.out.println("✓ Correo de activación enviado a: " + emailDestino);
+    }
+
+    public void enviarCorreoRechazo(String emailDestino) {
+        SimpleMailMessage mensaje = new SimpleMailMessage();
+        mensaje.setTo(emailDestino);
+        mensaje.setSubject("❌ Tu cuenta no fue activada - Red Solidaria UTP");
+        mensaje.setText("Hola,\n\nTu cuenta no fue activada porque no cumple los requisitos. Puedes volver a registrarte corrigiendo la información.\n\n" +
+                        "Saludos,\nEquipo Red Solidaria UTP");
+
+        mailSender.send(mensaje);
+        System.out.println("✓ Correo de rechazo enviado a: " + emailDestino);
+    }
 }

@@ -36,6 +36,9 @@ public abstract class Usuario {
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
 
+    @Column(name = "estado", nullable = false)
+    private String estado = "PENDIENTE";
+
     @Column(nullable = false)
     private String rol;
 
@@ -47,6 +50,7 @@ public abstract class Usuario {
         this.rol = rol;
         this.verificado = false;
         this.fechaRegistro = LocalDateTime.now();
+        this.estado = "ADMIN".equals(rol) ? "ACTIVO" : "PENDIENTE";
     }
 
     public String getNombreCompleto() {
