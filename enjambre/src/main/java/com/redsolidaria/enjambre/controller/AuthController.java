@@ -313,7 +313,7 @@ public class AuthController {
                 }
             }
             
-            model.addAttribute("mensaje", "✅ ¡Cuenta verificada con éxito! Ya puedes iniciar sesión.");
+            model.addAttribute("mensaje", "✅ ¡Código verificado con éxito! Tu cuenta está en revisión por el administrador. Te notificaremos por correo una vez activa.");
             return "login";
         } else {
             model.addAttribute("error", "❌ Código inválido o expirado. Vuelve a intentarlo.");
@@ -345,6 +345,11 @@ public class AuthController {
         
         if (!usuario.isVerificado()) {
             model.addAttribute("error", "❌ Debes verificar tu cuenta. Revisa tu correo.");
+            return "login";
+        }
+        
+        if ("PENDIENTE".equals(usuario.getEstado())) {
+            model.addAttribute("error", "❌ Cuenta en revisión por administrador");
             return "login";
         }
         

@@ -2,7 +2,9 @@ package com.redsolidaria.enjambre.controller;
 
 import com.redsolidaria.enjambre.dto.AdminDTO;
 import com.redsolidaria.enjambre.model.Administrador;
+import com.redsolidaria.enjambre.model.Usuario;
 import com.redsolidaria.enjambre.service.UsuarioService;
+import com.redsolidaria.enjambre.service.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,6 +19,9 @@ public class AdminController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    @Autowired
+    private EmailService emailService;
 
     // ========== DASHBOARD ==========
     
@@ -122,5 +127,48 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
         return "redirect:/admin/usuarios";
+    }
+
+    // ========== ACTIVACIÓN DE USUARIOS PENDIENTES ==========
+
+    @GetMapping("/activacion")
+    public String activacion(Model model) {
+        model.addAttribute("usuariosPendientes", usuarioService.listarUsuariosPendientes());
+        return "/admin/activacion-usuarios";
+    }
+
+    @PostMapping("/usuarios/{id}/activar")
+    public String activarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Usuario usuario = usuarioService.buscarPorId(id);
+            if (usuario == null) {
+                redirectAttributes.addFlashAttribute("error", "❌ Usuario no encontrado");
+                return "redirect:/admin/activacion";
+            }
+            usuarioService.activarUsuario(id);
+            emailService.enviarCorreoActivacion(usuario.getEmail());
+            redirectAttributes.addFlashAttribute("success", "✅ Cuenta activada exitosamente y notificación enviada por correo");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "❌ Error al activar la cuenta: " + e.getMessage());
+        }
+        return "redirect:/admin/activacion";
+    }
+
+    @PostMapping("/usuarios/{id}/rechazar")
+    public String rechazarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            Usuario usuario = usuarioService.buscarPorId(id);
+            if (usuario == null) {
+                redirectAttributes.addFlashAttribute("error", "❌ Usuario no encontrado");
+                return "redirect:/admin/activacion";
+            }
+            String email = usuario.getEmail();
+            usuarioService.eliminarUsuario(id); // Elimina físicamente de la base de datos
+            emailService.enviarCorreoRechazo(email);
+            redirectAttributes.addFlashAttribute("success", "✅ Cuenta rechazada, eliminada de la base de datos y notificación enviada");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "❌ Error al rechazar la cuenta: " + e.getMessage());
+        }
+        return "redirect:/admin/activacion";
     }
 }
