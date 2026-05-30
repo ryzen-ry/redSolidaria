@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{/admin/layoutAdm :: html}"
+      th:with="titulo='Revisión y Activación de Usuarios'">
+<head></head>
+<body>
+    <div th:fragment="content">
+        <div class="activacion-container">
+            <!-- TÍTULO DE LA SECCIÓN -->
+            <div class="section-header">
+                <h1 class="rs-section-title">⏳ Aprobación Manual de Cuentas</h1>
+                <p class="rs-section-subtitle">Revisa los documentos adjuntos de los nuevos voluntarios y personas con discapacidad para activar o rechazar sus cuentas.</p>
+            </div>
+
+            <!-- ALERTAS DE ÉXITO O ERROR -->
+            <div th:if="${success}" class="alert alert-success" style="margin-bottom: 20px; padding: 12px 16px; background-color: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; border-radius: 8px;" th:text="${success}"></div>
+            <div th:if="${error}" class="alert alert-danger" style="margin-bottom: 20px; padding: 12px 16px; background-color: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; border-radius: 8px;" th:text="${error}"></div>
+
+            <!-- DISEÑO SPLIT LAYOUT -->
+            <div class="split-layout" th:if="${not #lists.isEmpty(usuariosPendientes)}">
+                
+                <!-- PANEL IZQUIERDO: LISTA DE USUARIOS PENDIENTES -->
+                <div class="split-left">
+                    <div class="panel-title">Usuarios Pendientes (<span th:text="${#lists.size(usuariosPendientes)}">0</span>)</div>
+                    <div class="user-list">
+                        <div class="user-item" th:each="user : ${usuariosPendientes}" th:onclick="'showUserDetails(' + ${user.id} + ', this)'">
+                            <div class="user-avatar-initial" th:text="${#strings.substring(user.nombres, 0, 1)}">U</div>
+                            <div class="user-item-info">
+                                <div class="user-item-name" th:text="${user.nombreCompleto}">Nombre Completo</div>
+                                <div class="user-item-email" th:text="${user.email}">correo@utp.edu.pe</div>
+                                <div class="user-item-badge-container">
+                                    <span class="badge" th:classappend="${user.rol == 'VOLUNTARIO'} ? 'badge-vol' : 'badge-dis'" th:text="${user.rol}">ROL</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANEL DERECHO: DETALLES Y DOCUMENTOS -->
+                <div class="split-right">
+                    <!-- Mensaje por defecto cuando no hay selección -->
+                    <div id="no-selection" class="no-selection-card">
+                        <div class="no-selection-icon">🔍</div>
+                        <h3>Selecciona un usuario</h3>
+                        <p>Haz clic en cualquiera de los usuarios de la lista de la izquierda para revisar detalladamente sus datos personales, fotos de DNI o certificados cargados.</p>
+                    </div>
+
+                    <!-- Paneles de detalles precargados (se controlan con Javascript) -->
+                    <div th:each="user : ${usuariosPendientes}" th:id="'details-' + ${user.id}" class="user-detail-panel" style="display: none;">
+                        
+                        <!-- Cabecera del detalle -->
+                        <div class="detail-header">
+                            <h2 th:text="${user.nombreCompleto}">Nombre del Usuario</h2>
+                            <span class="badge" th:classappend="${user.rol == 'VOLUNTARIO'} ? 'badge-vol' : 'badge-dis'" th:text="${user.rol}">ROL</span>
+                        </div>
+
+                        <!-- Información básica -->
+                        <div class="detail-grid">
+                            <div class="info-group">
+                                <label>Nombres</label>
+                                <div class="info-value" th:text="${user.nombres}">Nombres</div>
+                            </div>
+                            <div class="info-group">
+                                <label>Apellidos</label>
+                                <div class="info-value" th:text="${user.apellidos}">Apellidos</div>
+                            </div>
+                            <div class="info-group">
+                                <label>Correo Electrónico</label>
+                                <div class="info-value" th:text="${user.email}">Correo</div>
+                            </div>
+                            <div class="info-group">
+                                <label>Fecha de Registro</label>
+                                <div class="info-value" th:text="${#temporals.format(user.fechaRegistro, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                            </div>
+
+                            <!-- Campos específicos para Voluntarios -->
+                            <th:block th:if="${user.rol == 'VOLUNTARIO'}">
+                                <div class="info-group">
+                                    <label>Código de Estudiante</label>
+                                    <div class="info-value" th:text="${user.codigo}">U12345678</div>
+                                </div>
+                                <div class="info-group">
+                                    <label>Carrera</label>
+                                    <div class="info-value" th:text="${user.carrera}">Carrera</div>
+                                </div>
+                            </th:block>
+
+                            <!-- Campos específicos para Personas con Discapacidad -->
+                            <th:block th:if="${user.rol == 'DISCAPACITADO'}">
+                                <div class="info-group">
+                                    <label>Número de DNI</label>
+                                    <div class="info-value" th:text="${user.conadis}">12345678</div>
+                                </div>
+                                <div class="info-group">
+                                    <label>Tipo de Discapacidad</label>
+                                    <div class="info-value" th:text="${user.tipoDiscapacidad}">Tipo</div>
+                                </div>
+                                <div class="info-group">
+                                    <label>Teléfono</label>
+                                    <div class="info-value" th:text="${user.telefono}">999999999</div>
+                                </div>
+                                <div class="info-group">
+                                    <label>Dirección</label>
+                                    <div class="info-value" th:text="${user.direccion}">Dirección</div>
+                                </div>
+                                <div class="info-group rs-form-full">
+                                    <label>Nro. Certificado de Discapacidad</label>
+                                    <div class="info-value font-bold" th:text="${user.certificadoDiscapacidad}">CERT-000</div>
+                                </div>
+                            </th:block>
+                        </div>
+
+                        <!-- SECCIÓN DE DOCUMENTOS -->
+                        <div class="documents-section">
+                            <h3>📄 Documentos Adjuntos</h3>
+                            
+                            <!-- Documentos de Voluntario -->
+                            <div th:if="${user.rol == 'VOLUNTARIO'}" class="volunteer-docs">
+                                <!-- Foto de perfil opcional -->
+                                <div class="profile-photo-container" th:if="${user.fotoPerfil != null}">
+                                    <label class="doc-label">📸 Foto de Perfil:</label>
+                                    <div class="photo-wrapper">
+                                        <img th:src="${user.fotoPerfil}" alt="Foto de perfil" class="doc-img-preview">
+                                    </div>
+                                </div>
+                                
+                                <!-- Certificado laboral PDF -->
+                                <div class="pdf-container">
+                                    <label class="doc-label">📜 Certificado Único Laboral (PDF):</label>
+                                    <div class="pdf-box">
+                                        <div class="pdf-icon">📕</div>
+                                        <div class="pdf-details">
+                                            <span class="pdf-title">Certificado Único Laboral</span>
+                                            <a th:href="${user.certificadoLaboral}" target="_blank" class="btn-view-pdf">Abrir PDF en nueva pestaña ↗</a>
+                                        </div>
+                                    </div>
+                                    <!-- Visor de PDF integrado -->
+                                    <div class="pdf-iframe-wrapper">
+                                        <iframe th:src="${user.certificadoLaboral}" class="pdf-iframe"></iframe>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Documentos de Persona Discapacitada -->
+                            <div th:if="${user.rol == 'DISCAPACITADO'}" class="disabled-docs">
+                                <div class="dni-photos-grid">
+                                    <!-- DNI Delantera -->
+                                    <div class="doc-photo-box">
+                                        <label class="doc-label">💳 DNI - Parte Delantera:</label>
+                                        <div class="photo-wrapper">
+                                            <img th:src="${user.dniDelanteraUrl}" alt="DNI Delantera" class="doc-img-preview img-expandable" onclick="expandImage(this)">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- DNI Trasera -->
+                                    <div class="doc-photo-box">
+                                        <label class="doc-label">💳 DNI - Parte Trasera:</label>
+                                        <div class="photo-wrapper">
+                                            <img th:src="${user.dniTraseraUrl}" alt="DNI Trasera" class="doc-img-preview img-expandable" onclick="expandImage(this)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Carnet CONADIS -->
+                                <div class="conadis-photo-box" style="margin-top: 20px;">
+                                    <label class="doc-label">🎖️ Carnet CONADIS:</label>
+                                    <div class="photo-wrapper" style="max-width: 400px; margin: 0 auto;">
+                                        <img th:src="${user.conadisFotoUrl}" alt="Foto Carnet CONADIS" class="doc-img-preview img-expandable" onclick="expandImage(this)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- BOTONES DE ACCIÓN -->
+                        <div class="action-buttons-container">
+                            <form th:action="@{/admin/usuarios/{id}/activar(id=${user.id})}" method="post" onsubmit="return confirm('¿Estás seguro de activar esta cuenta? El usuario será notificado por correo y podrá acceder a la plataforma.')">
+                                <button type="submit" class="btn-action btn-approve">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right: 8px;"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+                                    Activar Cuenta
+                                </button>
+                            </form>
+                            
+                            <form th:action="@{/admin/usuarios/{id}/rechazar(id=${user.id})}" method="post" onsubmit="return confirm('¿Estás seguro de rechazar y eliminar permanentemente esta cuenta? Esta acción eliminará físicamente todos los datos y documentos asociados.')">
+                                <button type="submit" class="btn-action btn-reject">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="white" style="margin-right: 8px;"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    Rechazar y Eliminar
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- CONTENEDOR DE LISTA VACÍA -->
+            <div class="empty-state" th:if="${#lists.isEmpty(usuariosPendientes)}">
+                <div class="empty-state-icon">🎉</div>
+                <h2>¡Todo al día!</h2>
+                <p>No hay cuentas de usuarios pendientes de revisión en este momento.</p>
+            </div>
+        </div>
+
+        <!-- MODAL PARA EXPANDIR IMÁGENES -->
+        <div id="imageModal" class="image-modal" onclick="closeImageModal()">
+            <span class="close-modal">&times;</span>
+            <img class="image-modal-content" id="modalImg">
+        </div>
+
+        <!-- ESTILOS EXCLUSIVOS DE LA INTERFAZ DE ACTIVACIÓN -->
+        <style>
+            .activacion-container {
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 10px 0;
+            }
+            .section-header {
+                margin-bottom: 25px;
+            }
+            .rs-section-subtitle {
+                color: #6b7280;
+                font-size: 0.95rem;
+                margin-top: 4px;
+            }
+            .split-layout {
+                display: flex;
+                gap: 24px;
+                min-height: 600px;
+                background: white;
+                border-radius: 16px;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                border: 1px solid #f3f4f6;
+                overflow: hidden;
+            }
+            .split-left {
+                width: 35%;
+                border-right: 1px solid #f3f4f6;
+                background: #f9fafb;
+                display: flex;
+                flex-direction: column;
+            }
+            .split-right {
+                width: 65%;
+                padding: 24px;
+                overflow-y: auto;
+                background: white;
+            }
+            .panel-title {
+                padding: 16px 20px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                color: #374151;
+                border-bottom: 1px solid #e5e7eb;
+                background: #f3f4f6;
+            }
+            .user-list {
+                overflow-y: auto;
+                flex-grow: 1;
+                max-height: 650px;
+            }
+            .user-item {
+                display: flex;
+                align-items: center;
+                padding: 16px 20px;
+                border-bottom: 1px solid #f3f4f6;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            .user-item:hover {
+                background: #f0fdf4;
+            }
+            .user-item.active {
+                background: #e6f4ea;
+                border-left: 4px solid #3aaa6b;
+                padding-left: 16px;
+            }
+            .user-avatar-initial {
+                width: 42px;
+                height: 42px;
+                background: #1e3c72;
+                color: white;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 1.1rem;
+                margin-right: 15px;
+                box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            }
+            .user-item-info {
+                flex-grow: 1;
+            }
+            .user-item-name {
+                font-weight: 600;
+                color: #1f2937;
+                font-size: 0.9rem;
+            }
+            .user-item-email {
+                font-size: 0.75rem;
+                color: #6b7280;
+                margin-top: 2px;
+            }
+            .user-item-badge-container {
+                margin-top: 6px;
+            }
+            
+            /* Badges */
+            .badge {
+                display: inline-block;
+                font-size: 0.65rem;
+                font-weight: 600;
+                padding: 4px 10px;
+                border-radius: 20px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+            .badge-vol {
+                background-color: #d1fae5;
+                color: #065f46;
+            }
+            .badge-dis {
+                background-color: #dbeafe;
+                color: #1e40af;
+            }
+
+            /* No selection */
+            .no-selection-card {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                text-align: center;
+                color: #6b7280;
+                padding: 40px;
+            }
+            .no-selection-icon {
+                font-size: 3.5rem;
+                margin-bottom: 15px;
+            }
+            .no-selection-card h3 {
+                font-size: 1.2rem;
+                color: #374151;
+                margin-bottom: 8px;
+            }
+            .no-selection-card p {
+                font-size: 0.85rem;
+                max-width: 320px;
+                line-height: 1.4;
+            }
+
+            /* Detail panel */
+            .detail-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 2px solid #f3f4f6;
+                padding-bottom: 15px;
+                margin-bottom: 20px;
+            }
+            .detail-header h2 {
+                font-size: 1.4rem;
+                color: #1f2937;
+                margin: 0;
+            }
+            .detail-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+                margin-bottom: 25px;
+            }
+            .info-group {
+                display: flex;
+                flex-direction: column;
+            }
+            .info-group label {
+                font-size: 0.75rem;
+                color: #9ca3af;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 4px;
+            }
+            .info-value {
+                font-size: 0.95rem;
+                color: #1f2937;
+                font-weight: 500;
+                background: #f9fafb;
+                padding: 10px 14px;
+                border-radius: 8px;
+                border: 1px solid #f3f4f6;
+            }
+            .font-bold {
+                font-weight: bold;
+                color: #111827;
+                border-color: #e5e7eb;
+            }
+
+            /* Documents section */
+            .documents-section {
+                border-top: 1px solid #f3f4f6;
+                padding-top: 20px;
+                margin-bottom: 30px;
+            }
+            .documents-section h3 {
+                font-size: 1.05rem;
+                color: #374151;
+                margin-bottom: 15px;
+            }
+            .doc-label {
+                display: block;
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: #4b5563;
+                margin-bottom: 8px;
+            }
+            .photo-wrapper {
+                background: #f9fafb;
+                padding: 8px;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            .doc-img-preview {
+                max-width: 100%;
+                max-height: 250px;
+                border-radius: 8px;
+                object-fit: contain;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                transition: transform 0.2s ease;
+            }
+            .img-expandable {
+                cursor: zoom-in;
+            }
+            .img-expandable:hover {
+                transform: scale(1.02);
+            }
+            
+            /* DNI Grid */
+            .dni-photos-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 16px;
+            }
+
+            /* PDF Container */
+            .pdf-container {
+                margin-top: 15px;
+            }
+            .pdf-box {
+                display: flex;
+                align-items: center;
+                background: #fff8f8;
+                border: 1px solid #fee2e2;
+                padding: 12px 16px;
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
+            .pdf-icon {
+                font-size: 1.8rem;
+                margin-right: 15px;
+            }
+            .pdf-details {
+                display: flex;
+                flex-direction: column;
+            }
+            .pdf-title {
+                font-size: 0.9rem;
+                font-weight: 600;
+                color: #374151;
+            }
+            .btn-view-pdf {
+                font-size: 0.8rem;
+                color: #dc2626;
+                text-decoration: none;
+                font-weight: 500;
+                margin-top: 2px;
+            }
+            .btn-view-pdf:hover {
+                text-decoration: underline;
+            }
+            .pdf-iframe-wrapper {
+                border: 1px solid #e5e7eb;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            }
+            .pdf-iframe {
+                width: 100%;
+                height: 380px;
+                border: none;
+            }
+
+            /* Buttons */
+            .action-buttons-container {
+                display: flex;
+                gap: 16px;
+                border-top: 1px solid #f3f4f6;
+                padding-top: 20px;
+            }
+            .action-buttons-container form {
+                flex: 1;
+            }
+            .btn-action {
+                width: 100%;
+                padding: 12px 20px;
+                border: none;
+                border-radius: 10px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            }
+            .btn-approve {
+                background: #10b981;
+                color: white;
+            }
+            .btn-approve:hover {
+                background: #059669;
+                transform: translateY(-1px);
+            }
+            .btn-reject {
+                background: #ef4444;
+                color: white;
+            }
+            .btn-reject:hover {
+                background: #dc2626;
+                transform: translateY(-1px);
+            }
+
+            /* Empty state */
+            .empty-state {
+                background: white;
+                border-radius: 16px;
+                padding: 60px 40px;
+                text-align: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+                border: 1px solid #f3f4f6;
+                max-width: 500px;
+                margin: 40px auto;
+            }
+            .empty-state-icon {
+                font-size: 4rem;
+                margin-bottom: 15px;
+            }
+            .empty-state h2 {
+                color: #1f2937;
+                font-size: 1.4rem;
+                margin-bottom: 8px;
+            }
+            .empty-state p {
+                color: #6b7280;
+                font-size: 0.9rem;
+            }
+
+            /* Image Modal */
+            .image-modal {
+                display: none;
+                position: fixed;
+                z-index: 11000;
+                padding-top: 60px;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                overflow: auto;
+                background-color: rgba(0,0,0,0.9);
+            }
+            .image-modal-content {
+                margin: auto;
+                display: block;
+                max-width: 80%;
+                max-height: 80%;
+                border-radius: 8px;
+                box-shadow: 0 4px 30px rgba(0,0,0,0.5);
+            }
+            .close-modal {
+                position: absolute;
+                top: 25px;
+                right: 35px;
+                color: #f1f1f1;
+                font-size: 40px;
+                font-weight: bold;
+                transition: 0.3s;
+                cursor: pointer;
+            }
+            .close-modal:hover,
+            .close-modal:focus {
+                color: #bbb;
+                text-decoration: none;
+            }
+            @media only screen and (max-width: 700px){
+                .image-modal-content {
+                    width: 100%;
+                }
+            }
+        </style>
+
+        <!-- SCRIPT PARA CONTROL DE SELECCIÓN E IMÁGENES -->
+        <script>
+            function showUserDetails(id, element) {
+                // Ocultar mensaje por defecto
+                const noSel = document.getElementById('no-selection');
+                if (noSel) noSel.style.display = 'none';
+                
+                // Ocultar todos los paneles de detalles
+                const panels = document.querySelectorAll('.user-detail-panel');
+                panels.forEach(panel => panel.style.display = 'none');
+                
+                // Quitar clase active a todos los items de la lista
+                const items = document.querySelectorAll('.user-item');
+                items.forEach(item => item.classList.remove('active'));
+                
+                // Mostrar panel seleccionado
+                const activePanel = document.getElementById('details-' + id);
+                if (activePanel) {
+                    activePanel.style.display = 'block';
+                }
+                
+                // Añadir clase active al elemento seleccionado
+                element.classList.add('active');
+            }
+
+            // Expandir imágenes
+            const modal = document.getElementById("imageModal");
+            const modalImg = document.getElementById("modalImg");
+
+            function expandImage(imgElement) {
+                modal.style.display = "block";
+                modalImg.src = imgElement.src;
+            }
+
+            function closeImageModal() {
+                modal.style.display = "none";
+            }
+        </script>
+    </div>
+</body>
+</html>
