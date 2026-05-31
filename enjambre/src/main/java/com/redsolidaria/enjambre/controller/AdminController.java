@@ -108,11 +108,6 @@ public class AdminController {
         return "redirect:/admin/administradores";
     }
     
-    @GetMapping("/donaciones")
-    public String donaciones() {
-        return "/admin/donaciones";
-    }
-    
     @GetMapping("/foro")
     public String foro() {
         return "/admin/foro";

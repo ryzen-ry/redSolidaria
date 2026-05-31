@@ -5,52 +5,415 @@
 <head></head>
 <body>
     <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 class="rs-section-title">💰 Donaciones</h1>
-            <a th:href="@{/admin/donacion/nueva}" class="rs-btn-primary">+ Nueva Donación</a>
+        <!-- SweetAlert2 CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+        <style>
+            .badge {
+                padding: 6px 12px;
+                border-radius: 40px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                display: inline-block;
+                text-align: center;
+            }
+            .badge-pendiente {
+                background-color: #FEF3C7;
+                color: #D97706;
+            }
+            .badge-verificando {
+                background-color: #F3E8FF;
+                color: #7C3AED;
+            }
+            .badge-confirmado {
+                background-color: #D1FAE5;
+                color: #059669;
+            }
+            .badge-rechazado {
+                background-color: #FEE2E2;
+                color: #DC2626;
+            }
+            .btn-action {
+                padding: 6px 12px;
+                border: none;
+                border-radius: 6px;
+                font-size: 0.8rem;
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.2s;
+                margin-right: 5px;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .btn-confirm {
+                background-color: #3AAA6B;
+                color: white;
+            }
+            .btn-confirm:hover {
+                background-color: #2d8252;
+                transform: translateY(-1px);
+            }
+            .btn-reject {
+                background-color: #EF4444;
+                color: white;
+            }
+            .btn-reject:hover {
+                background-color: #dc2626;
+                transform: translateY(-1px);
+            }
+            .section-card {
+                background: white;
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+                margin-bottom: 32px;
+                border: 1px solid #E5E7EB;
+            }
+            .section-card h2 {
+                font-size: 1.25rem;
+                color: #1F2937;
+                margin-top: 0;
+                margin-bottom: 8px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .section-card p {
+                color: #6B7280;
+                margin-bottom: 20px;
+                font-size: 0.9rem;
+            }
+            .rs-table th {
+                background-color: #F9FAFB;
+                color: #374151;
+                font-weight: 600;
+            }
+            .rs-table td {
+                vertical-align: middle;
+            }
+        </style>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h1 class="rs-section-title" style="margin: 0; font-size: 1.8rem;">💰 Gestión de Donaciones</h1>
         </div>
         
-        <div class="rs-metas-container">
-            <div class="rs-meta-card">
-                <h3>🦽 Silla de Ruedas</h3>
-                <div class="rs-meta-falta">Meta: S/ 1000</div>
-                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 80%;"></div></div>
-                <div class="rs-progress-stats"><span>Recaudado: S/ 800</span><span>Meta: S/ 1000</span></div>
-            </div>
-            <div class="rs-meta-card">
-                <h3>🩼 Par de Muletas</h3>
-                <div class="rs-meta-falta">Meta: S/ 250</div>
-                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 48%;"></div></div>
-                <div class="rs-progress-stats"><span>Recaudado: S/ 120</span><span>Meta: S/ 250</span></div>
-            </div>
-            <div class="rs-meta-card">
-                <h3>🦯 Bastón Guía</h3>
-                <div class="rs-meta-falta">Meta: S/ 150</div>
-                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 33%;"></div></div>
-                <div class="rs-progress-stats"><span>Recaudado: S/ 50</span><span>Meta: S/ 150</span></div>
-            </div>
-            <div class="rs-meta-card">
-                <h3>🎧 Audífonos</h3>
-                <div class="rs-meta-falta">Meta: S/ 800</div>
-                <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 37%;"></div></div>
-                <div class="rs-progress-stats"><span>Recaudado: S/ 300</span><span>Meta: S/ 800</span></div>
-            </div>
-        </div>
-        
-        <div class="rs-donation-options" style="grid-template-columns: 1fr;">
-            <div class="rs-donation-card">
-                <h3>📋 Lista de Donaciones Recientes</h3>
-                <p>Aquí aparecerán las donaciones realizadas por los usuarios.</p>
-                <table class="rs-table">
+        <!-- SECCIÓN DONACIONES MONETARIAS -->
+        <div class="section-card">
+            <h2>💰 Donaciones Monetarias</h2>
+            <p>Listado de transferencias registradas y en espera de verificación del código Yape.</p>
+            <div style="overflow-x: auto;">
+                <table class="rs-table" style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr><th>Donante</th><th>Monto/Producto</th><th>Fecha</th><th>Estado</th></tr>
+                        <tr>
+                            <th>ID</th>
+                            <th>Donante</th>
+                            <th>Monto</th>
+                            <th>Código Yape</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th style="width: 220px; text-align: center;">Acciones</th>
+                        </tr>
                     </thead>
                     <tbody>
-                        <tr><td colspan="4" style="text-align: center;">No hay donaciones registradas aún</td></tr>
+                        <tr th:if="${#lists.isEmpty(donacionesMonetarias)}">
+                            <td colspan="7" style="text-align: center; color: #6B7280; padding: 20px;">No hay donaciones monetarias registradas.</td>
+                        </tr>
+                        <tr th:each="donacion : ${donacionesMonetarias}">
+                            <td th:text="${donacion.id}">1</td>
+                            <td>
+                                <strong th:text="${donacion.nombreCompleto}">Juan Pérez</strong><br>
+                                <span style="font-size: 0.8rem; color: #6B7280;" th:text="${donacion.email}">juan@gmail.com</span><br>
+                                <span style="font-size: 0.8rem; color: #6B7280;" th:text="${donacion.celular}">987654321</span>
+                            </td>
+                            <td>
+                                <strong style="color: #3AAA6B;" th:text="${'S/. ' + #numbers.formatDecimal(donacion.monto, 1, 2)}">S/. 50.00</strong>
+                            </td>
+                            <td>
+                                <code style="background: #F3F4F6; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-family: monospace;" 
+                                      th:text="${donacion.codigoYape ?: 'N/A'}">12345678</code>
+                            </td>
+                            <td>
+                                <span th:class="${'badge badge-' + #strings.toLowerCase(donacion.estado)}" 
+                                      th:text="${donacion.estado}">VERIFICANDO</span>
+                            </td>
+                            <td th:text="${#temporals.format(donacion.fechaDonacion, 'dd/MM/yyyy HH:mm')}">30/05/2026 15:30</td>
+                            <td style="text-align: center;">
+                                <div th:if="${donacion.estado == 'VERIFICANDO' || donacion.estado == 'PENDIENTE'}">
+                                    <button class="btn-action btn-confirm" th:onclick="'confirmarMonetaria(' + ${donacion.id} + ')'">
+                                        ✓ Confirmar
+                                    </button>
+                                    <button class="btn-action btn-reject" th:onclick="'rechazarMonetaria(' + ${donacion.id} + ')'">
+                                        ✕ Rechazar
+                                    </button>
+                                </div>
+                                <div th:unless="${donacion.estado == 'VERIFICANDO' || donacion.estado == 'PENDIENTE'}">
+                                    <span style="color: #9CA3AF; font-size: 0.85rem; font-style: italic;">Sin acciones</span>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- SECCIÓN DONACIONES PRODUCTOS -->
+        <div class="section-card">
+            <h2>📦 Donación de Productos Físicos</h2>
+            <p>Listado de implementos de apoyo ofrecidos por donantes con sus respectivas opciones de entrega.</p>
+            <div style="overflow-x: auto;">
+                <table class="rs-table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Donante</th>
+                            <th>Producto</th>
+                            <th>Opciones de Entrega</th>
+                            <th>Estado</th>
+                            <th>Fecha</th>
+                            <th style="width: 220px; text-align: center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:if="${#lists.isEmpty(donacionesProductos)}">
+                            <td colspan="7" style="text-align: center; color: #6B7280; padding: 20px;">No hay donaciones de productos registradas.</td>
+                        </tr>
+                        <tr th:each="donacion : ${donacionesProductos}">
+                            <td th:text="${donacion.id}">1</td>
+                            <td>
+                                <strong th:text="${donacion.nombreCompleto}">María Gómez</strong><br>
+                                <span style="font-size: 0.8rem; color: #6B7280;" th:text="${donacion.email}">maria@gmail.com</span><br>
+                                <span style="font-size: 0.8rem; color: #6B7280;" th:text="${donacion.telefono}">987654321</span>
+                            </td>
+                            <td>
+                                <span style="font-size: 1.1rem;" th:text="${
+                                    donacion.tipoProducto == 'silla_ruedas' ? '🦽 Silla de Ruedas' :
+                                    (donacion.tipoProducto == 'baston' ? '🦯 Bastón Guía' :
+                                    (donacion.tipoProducto == 'muletas' ? '🩼 Muletas' :
+                                    (donacion.tipoProducto == 'audifonos' ? '🦻 Audífonos' : '📦 Otros')))
+                                }">🦽 Silla de Ruedas</span><br>
+                                <span style="font-size: 0.8rem; color: #4B5563; background: #E5E7EB; padding: 2px 6px; border-radius: 4px;" 
+                                      th:text="${'Estado: ' + donacion.estadoProducto}">Seminuevo</span>
+                                <div th:if="${donacion.comentarios != null && !donacion.comentarios.isEmpty()}" style="margin-top: 6px; font-size: 0.8rem; color: #6B7280; max-width: 200px; word-wrap: break-word;">
+                                    💬 <span th:text="${donacion.comentarios}">Comentarios adicionales</span>
+                                </div>
+                            </td>
+                            <td>
+                                <strong th:text="${donacion.opcionEntrega == 'recoger' ? '🚗 Recoger en Domicilio' : '🏢 Llevar a Sede'}">Recoger</strong>
+                                <div th:if="${donacion.opcionEntrega == 'recoger'}" style="margin-top: 4px; font-size: 0.8rem; color: #4B5563;">
+                                    📍 <span th:text="${donacion.direccion}">Av. Real 450</span><br>
+                                    ⏰ Horario: <span th:text="${
+                                        donacion.horario == '8am_10am' ? '8:00 am - 10:00 am' :
+                                        (donacion.horario == '1pm_5pm' ? '1:00 pm - 5:00 pm' : '6:00 pm - 9:00 pm')
+                                    }">8am_10am</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span th:class="${'badge badge-' + #strings.toLowerCase(donacion.estado)}" 
+                                      th:text="${donacion.estado}">PENDIENTE</span>
+                            </td>
+                            <td th:text="${#temporals.format(donacion.fechaDonacion, 'dd/MM/yyyy HH:mm')}">30/05/2026 15:30</td>
+                            <td style="text-align: center;">
+                                <div th:if="${donacion.estado == 'PENDIENTE'}">
+                                    <button class="btn-action btn-confirm" th:onclick="'confirmarProducto(' + ${donacion.id} + ')'">
+                                        ✓ Aceptar
+                                    </button>
+                                    <button class="btn-action btn-reject" th:onclick="'rechazarProducto(' + ${donacion.id} + ')'">
+                                        ✕ Rechazar
+                                    </button>
+                                </div>
+                                <div th:unless="${donacion.estado == 'PENDIENTE'}">
+                                    <span style="color: #9CA3AF; font-size: 0.85rem; font-style: italic;">Sin acciones</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <script>
+        function reloadPageWithTimeout() {
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+        }
+
+        // --- ACCIONES DONACIONES MONETARIAS ---
+        function confirmarMonetaria(id) {
+            Swal.fire({
+                title: '¿Confirmar donación monetaria?',
+                text: "Se marcará la donación como CONFIRMADA y se enviará un correo de agradecimiento al donante.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3AAA6B',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, confirmar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('/admin/donaciones/monetaria/confirmar/' + id, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: '¡Confirmada! 💖',
+                            text: 'La donación ha sido confirmada y se ha notificado al donante por correo.',
+                            icon: 'success',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                        reloadPageWithTimeout();
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                    });
+                }
+            });
+        }
+
+        function rechazarMonetaria(id) {
+            Swal.fire({
+                title: '¿Rechazar donación monetaria?',
+                text: "La donación cambiará al estado RECHAZADO y se enviará una notificación por correo al donante.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Sí, rechazar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('/admin/donaciones/monetaria/rechazar/' + id, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: 'Rechazada ⚠️',
+                            text: 'La donación ha sido rechazada y se envió la notificación correspondiente.',
+                            icon: 'success',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                        reloadPageWithTimeout();
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                    });
+                }
+            });
+        }
+
+        // --- ACCIONES DONACIONES PRODUCTOS ---
+        function confirmarProducto(id) {
+            Swal.fire({
+                title: '¿Aceptar donación de producto?',
+                text: "Se confirmará la donación y se enviará un correo con la dirección de la sede o la confirmación de recojo.",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#3AAA6B',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, aceptar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('/admin/donaciones/producto/confirmar/' + id, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: '¡Donación Aceptada! 📦',
+                            text: 'Se ha confirmado la donación y enviado las instrucciones correspondientes por correo.',
+                            icon: 'success',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                        reloadPageWithTimeout();
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                    });
+                }
+            });
+        }
+
+        function rechazarProducto(id) {
+            Swal.fire({
+                title: '¿Rechazar donación de producto?',
+                text: "La donación cambiará al estado RECHAZADO y se enviará una notificación por correo al donante.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#EF4444',
+                cancelButtonColor: '#6B7280',
+                confirmButtonText: 'Sí, rechazar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.showLoading();
+                    fetch('/admin/donaciones/producto/rechazar/' + id, {
+                        method: 'POST'
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(err => { throw new Error(err.error || 'Error en el servidor'); });
+                        }
+                        return response.json();
+                    })
+                    .then(() => {
+                        Swal.fire({
+                            title: 'Rechazada ⚠️',
+                            text: 'La donación de producto ha sido rechazada y se notificó al donante.',
+                            icon: 'success',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                        reloadPageWithTimeout();
+                    })
+                    .catch(err => {
+                        Swal.fire({
+                            title: 'Error',
+                            text: err.message,
+                            icon: 'error',
+                            confirmButtonColor: '#3AAA6B'
+                        });
+                    });
+                }
+            });
+        }
+        </script>
     </div>
 </body>
 </html>

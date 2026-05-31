@@ -2,11 +2,14 @@
 <html xmlns:th="http://www.thymeleaf.org"
       th:replace="layout :: html"
       th:with="titulo='Donaciones | Red Solidaria UTP'">
-
-<head></head>
+<head>
+</head>
 <body>
 
 <div th:fragment="content">
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <div class="text-center mb-4">
         <h1 class="rs-section-title" style="font-size: 2rem;">Apoya Nuestra Causa</h1>
         <p style="color: #6B7280;">Tu donación ayuda a mantener los servicios que conectan voluntarios con personas que necesitan apoyo.</p>
@@ -22,23 +25,12 @@
             <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 80%;"></div></div>
             <div class="rs-progress-stats"><span>Recaudado: S/ 800</span><span>Meta: S/ 1000</span></div>
         </div>
-        <div class="rs-meta-card">
-            <h3>🩼 Par de Muletas</h3>
-            <div class="rs-meta-falta">Nos faltan S/ 130 soles</div>
-            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 48%;"></div></div>
-            <div class="rs-progress-stats"><span>Recaudado: S/ 120</span><span>Meta: S/ 250</span></div>
-        </div>
+        
         <div class="rs-meta-card">
             <h3>🦯 Bastón Guía</h3>
             <div class="rs-meta-falta">Nos faltan S/ 100 soles</div>
             <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 33%;"></div></div>
             <div class="rs-progress-stats"><span>Recaudado: S/ 50</span><span>Meta: S/ 150</span></div>
-        </div>
-        <div class="rs-meta-card">
-            <h3>🎧 Audífonos</h3>
-            <div class="rs-meta-falta">Nos faltan S/ 500 soles</div>
-            <div class="rs-progress-bar"><div class="rs-progress-fill" style="width: 37%;"></div></div>
-            <div class="rs-progress-stats"><span>Recaudado: S/ 300</span><span>Meta: S/ 800</span></div>
         </div>
     </div>
 
@@ -49,45 +41,118 @@
             <div class="rs-donation-card">
                 <h3>💰 Donación Monetaria</h3>
                 <p>Dona la cantidad que desees para ayudar a comprar productos de apoyo</p>
-                <form th:action="@{/donaciones/monetaria}" method="post">
+                <form id="formMonetaria" onsubmit="return false;">
+                    <!-- Método de pago agregado -->
                     <div class="rs-field">
-                        <label>Monto a donar (S/.)</label>
+                        <label>Método de pago:</label>
+                        <div>📱 Yape</div>
+                    </div>
+                    <div class="rs-field">
+                        <label>Monto a donar (S/.) *</label>
                         <input type="number" name="monto" placeholder="S/ 0.00" min="1" required>
                     </div>
                     <div class="rs-field">
-                        <label>Tu nombre</label>
-                        <input type="text" name="nombre" th:value="${session.usuario.nombres}" required>
+                        <label>Nombre Completo *</label>
+                        <input type="text" name="nombre" th:value="${session.usuario.nombreCompleto ?: (session.usuario.nombres + ' ' + session.usuario.apellidos)}" required>
                     </div>
                     <div class="rs-field">
-                        <label>Correo electrónico</label>
+                        <label>Teléfono de contacto *</label>
+                        <input type="text" name="celular" required>
+                    </div>
+                    <div class="rs-field">
+                        <label>Correo electrónico *</label>
                         <input type="email" name="email" th:value="${session.usuario.email}" required>
                     </div>
-                    <button type="submit" class="rs-btn-submit" style="margin-top: 16px;">Donar Ahora</button>
+                    <button type="button" id="btnDonarMonetaria" class="rs-btn-submit" style="margin-top: 16px;">Donar Ahora</button>
                 </form>
             </div>
 
             <!-- DONACIÓN DE PRODUCTOS -->
             <div class="rs-donation-card">
                 <h3>📦 Donación de Productos</h3>
-                <p>Dona productos físicos como sillas de ruedas, muletas, etc.</p>
-                <form th:action="@{/donaciones/productos}" method="post">
+                <p>Dona productos físicos como sillas de ruedas, muletas, bastones, audífonos u otros implementos de apoyo.</p>
+                <form id="formProducto" onsubmit="return false;">
+                    
                     <div class="rs-field">
-                        <label>Producto a donar</label>
-                        <input type="text" name="producto" placeholder="Ej: Silla de ruedas, muletas, bastón..." required>
+                        <label>Tipo de producto a donar *</label>
+                        <select name="tipoProducto" required>
+                            <option value="">Selecciona un producto</option>
+                            <option value="silla_ruedas">🦽 Silla de Ruedas</option>
+                            <option value="baston">🦯 Bastón Guía</option>
+                            <option value="muletas">🩼 Muletas</option>
+                            <option value="audifonos">🦻 Audífonos</option>
+                            <option value="otros">📦 Otros</option>
+                        </select>
                     </div>
+
                     <div class="rs-field">
-                        <label>Tu nombre</label>
-                        <input type="text" name="nombre" th:value="${session.usuario.nombres}" required>
+                        <label>Estado del producto *</label>
+                        <select name="estado" required>
+                            <option value="">Selecciona estado</option>
+                            <option value="nuevo">🆕 Nuevo</option>
+                            <option value="seminuevo">✨ Semi-nuevo</option>
+                            <option value="usado">👍 Usado - Buen estado</option>
+                        </select>
                     </div>
+
                     <div class="rs-field">
-                        <label>Correo electrónico</label>
-                        <input type="email" name="email" th:value="${session.usuario.email}" required>
+                        <label>Tu nombre completo *</label>
+                        <input type="text" name="nombreCompleto" placeholder="Ej: María López" th:value="${session.usuario.nombreCompleto ?: (session.usuario.nombres + ' ' + session.usuario.apellidos)}" required>
                     </div>
+
                     <div class="rs-field">
-                        <label>Teléfono de contacto</label>
-                        <input type="tel" name="telefono" required>
+                        <label>Correo electrónico *</label>
+                        <input type="email" name="email" placeholder="tu@email.com" th:value="${session.usuario.email}" required>
                     </div>
-                    <button type="submit" class="rs-btn-submit" style="margin-top: 16px;">Coordinar Donación</button>
+
+                    <div class="rs-field">
+                        <label>Teléfono de contacto *</label>
+                        <input type="tel" name="telefono" placeholder="987654321" required>
+                    </div>
+
+                    <div class="rs-field">
+                        <label>Opción de entrega *</label>
+                        <select name="opcionEntrega" id="opcionEntrega" required>
+                            <option value="">Selecciona una opción</option>
+                            <option value="recoger">🚗 Recoger en domicilio</option>
+                            <option value="llevar">🏢 Llevar a sede</option>
+                        </select>
+                    </div>
+
+                    <!-- Sección que se muestra cuando elige "Recoger en domicilio" -->
+                    <div id="seccionRecoger" style="display: none;">
+                        <div class="rs-field">
+                            <label>Dirección para recoger la donación *</label>
+                            <textarea name="direccion" placeholder="Tu dirección para coordinar la recogida..." rows="3"></textarea>
+                        </div>
+
+                        <div class="rs-field">
+                            <label>Horario disponible para coordinar *</label>
+                            <select name="horario">
+                                <option value="">Selecciona un horario</option>
+                                <option value="8am_10am">🕗 8:00 am - 10:00 am</option>
+                                <option value="1pm_5pm">🕐 1:00 pm - 5:00 pm</option>
+                                <option value="6pm_9pm">🕕 6:00 pm - 9:00 pm</option>
+                            </select>
+                        </div>
+
+                        <div class="rs-field">
+                            <label>Comentarios adicionales</label>
+                            <textarea name="comentarios" placeholder="Alguna información adicional..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Sección que se muestra cuando elige "Llevar a sede" -->
+                    <div id="seccionLlevar" style="display: none;">
+                        <div style="background: #f0fdf4; padding: 16px; border-radius: 12px; border-left: 4px solid #22c55e; margin: 16px 0;">
+                            <p style="margin: 0 0 8px 0;">🏢 <strong>Información importante:</strong></p>
+                            <p style="margin: 0 0 8px 0;">Se enviará la dirección de nuestra sede al correo que proporcionaste.</p>
+                            <p style="margin: 0 0 8px 0;">📍 Horario de atención: Lunes a Viernes de 9:00 am a 6:00 pm</p>
+                            <p style="margin: 0;">📞 Para más información: +51 987 654 321</p>
+                        </div>
+                    </div>
+
+                    <button type="button" id="btnCoordinarProducto" class="rs-btn-submit" style="margin-top: 16px;">Coordinar Donación</button>
                 </form>
             </div>
         </div>
@@ -100,6 +165,296 @@
             <p>¿No tienes cuenta? <a th:href="@{/registro}" style="color: #4f46e5;">Regístrate aquí</a></p>
         </div>
     </div>
+
+    <script>
+    function initDonaciones() {
+        // Delivery Options toggle
+        const opcionEntrega = document.getElementById('opcionEntrega');
+        const seccionRecoger = document.getElementById('seccionRecoger');
+        const seccionLlevar = document.getElementById('seccionLlevar');
+        
+        // Select elements in the hidden section
+        const txtDireccion = document.querySelector('textarea[name="direccion"]');
+        const selHorario = document.querySelector('select[name="horario"]');
+
+        if (opcionEntrega) {
+            opcionEntrega.addEventListener('change', function() {
+                if (this.value === 'recoger') {
+                    if (seccionRecoger) seccionRecoger.style.display = 'block';
+                    if (seccionLlevar) seccionLlevar.style.display = 'none';
+                    if (txtDireccion) txtDireccion.setAttribute('required', 'required');
+                    if (selHorario) selHorario.setAttribute('required', 'required');
+                } else if (this.value === 'llevar') {
+                    if (seccionRecoger) seccionRecoger.style.display = 'none';
+                    if (seccionLlevar) seccionLlevar.style.display = 'block';
+                    if (txtDireccion) txtDireccion.removeAttribute('required');
+                    if (selHorario) selHorario.removeAttribute('required');
+                } else {
+                    if (seccionRecoger) seccionRecoger.style.display = 'none';
+                    if (seccionLlevar) seccionLlevar.style.display = 'none';
+                    if (txtDireccion) txtDireccion.removeAttribute('required');
+                    if (selHorario) selHorario.removeAttribute('required');
+                }
+            });
+            // Initial call to sync state
+            opcionEntrega.dispatchEvent(new Event('change'));
+        }
+
+        // Monetary Donation Flow
+        const btnDonarMonetaria = document.getElementById('btnDonarMonetaria');
+        const formMonetaria = document.getElementById('formMonetaria');
+        
+        if (btnDonarMonetaria && formMonetaria) {
+            btnDonarMonetaria.addEventListener('click', () => {
+                if (!formMonetaria.checkValidity()) {
+                    formMonetaria.reportValidity();
+                    return;
+                }
+                
+                const monto = parseFloat(formMonetaria.querySelector('input[name="monto"]').value);
+                const nombre = formMonetaria.querySelector('input[name="nombre"]').value;
+                const celular = formMonetaria.querySelector('input[name="celular"]').value;
+                const email = formMonetaria.querySelector('input[name="email"]').value;
+                
+                // Step 1: Summary Modal
+                Swal.fire({
+                    title: '💰 Resumen de Donación',
+                    html: `
+                        <div style="text-align: left; font-size: 0.95rem;">
+                            <p><strong>Donante:</strong> ${nombre}</p>
+                            <p><strong>Monto:</strong> S/. ${monto.toFixed(2)}</p>
+                            <p><strong>Celular:</strong> ${celular}</p>
+                            <p><strong>Correo:</strong> ${email}</p>
+                            <p><strong>Método:</strong> Yape 📱</p>
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Confirmar y pagar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#3AAA6B',
+                    cancelButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.showLoading();
+                        // POST /donaciones/monetaria/guardar-temporal
+                        fetch('/donaciones/monetaria/guardar-temporal', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                monto: monto,
+                                nombreCompleto: nombre,
+                                celular: celular,
+                                email: email
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => { throw new Error(err.error || 'Error al procesar la donación'); });
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const donacionId = data.id;
+                            
+                            // Step 2: QR & Code Input Modal
+                            Swal.fire({
+                                title: '📱 Paga con Yape',
+                                html: `
+                                    <div style="text-align: center;">
+                                        <p>Escanea el código QR de Yape para transferir el monto de <strong>S/. ${monto.toFixed(2)}</strong>:</p>
+                                        <img src="/imagen/QRdonaciones.jpg" alt="QR Yape" style="width: 200px; height: 200px; object-fit: contain; margin: 15px auto; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1);" />
+                                        <p style="color: #6B7280; font-size: 0.85rem; margin-bottom: 15px;">Una vez realizado el pago, ingresa el código de operación de Yape:</p>
+                                        <input type="text" id="swal-codigo-yape" class="swal2-input" placeholder="Código de Yape (8 dígitos)" style="width: 80%; margin: 0 auto; text-align: center;" />
+                                    </div>
+                                `,
+                                showCancelButton: true,
+                                confirmButtonText: 'Enviar Código',
+                                cancelButtonText: 'Cancelar',
+                                confirmButtonColor: '#3AAA6B',
+                                preConfirm: () => {
+                                    const codigo = document.getElementById('swal-codigo-yape').value;
+                                    if (!codigo || codigo.trim() === "") {
+                                        Swal.showValidationMessage('El código de Yape es obligatorio');
+                                        return false;
+                                    }
+                                    if (!/^\d+$/.test(codigo)) {
+                                        Swal.showValidationMessage('El código debe contener solo números');
+                                        return false;
+                                    }
+                                    return codigo;
+                                }
+                            }).then((yapeResult) => {
+                                if (yapeResult.isConfirmed) {
+                                    Swal.showLoading();
+                                    const codigoYape = yapeResult.value;
+                                    
+                                    // POST /donaciones/monetaria/confirmar-codigo
+                                    fetch('/donaciones/monetaria/confirmar-codigo', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            id: donacionId,
+                                            codigoYape: codigoYape
+                                        })
+                                    })
+                                    .then(res => {
+                                        if (!res.ok) {
+                                            return res.json().then(err => { throw new Error(err.error || 'Error al confirmar código'); });
+                                        }
+                                        return res.json();
+                                    })
+                                    .then(() => {
+                                        // Step 3: Success Modal
+                                        Swal.fire({
+                                            title: '¡Muchas Gracias! ❤️',
+                                            text: '✅ Tu donación será procesada por el administrador. Recibirás un correo con la confirmación.',
+                                            icon: 'success',
+                                            confirmButtonColor: '#3AAA6B'
+                                        }).then(() => {
+                                            formMonetaria.reset();
+                                        });
+                                    })
+                                    .catch(err => {
+                                        Swal.fire({
+                                            title: 'Error',
+                                            html: err.message,
+                                            icon: 'error',
+                                            confirmButtonColor: '#3AAA6B'
+                                        });
+                                    });
+                                }
+                            });
+                        })
+                        .catch(err => {
+                            Swal.fire({
+                                title: 'Error',
+                                html: err.message,
+                                icon: 'error',
+                                confirmButtonColor: '#3AAA6B'
+                            });
+                        });
+                    }
+                });
+            });
+        }
+
+        // Product Donation Flow
+        const btnCoordinarProducto = document.getElementById('btnCoordinarProducto');
+        const formProducto = document.getElementById('formProducto');
+        
+        if (btnCoordinarProducto && formProducto) {
+            btnCoordinarProducto.addEventListener('click', () => {
+                if (!formProducto.checkValidity()) {
+                    formProducto.reportValidity();
+                    return;
+                }
+
+                const tipoProducto = formProducto.querySelector('select[name="tipoProducto"]').value;
+                const tipoProductoText = formProducto.querySelector('select[name="tipoProducto"] option:checked').textContent;
+                const estadoProducto = formProducto.querySelector('select[name="estado"]').value;
+                const estadoProductoText = formProducto.querySelector('select[name="estado"] option:checked').textContent;
+                const nombre = formProducto.querySelector('input[name="nombreCompleto"]').value;
+                const email = formProducto.querySelector('input[name="email"]').value;
+                const telefono = formProducto.querySelector('input[name="telefono"]').value;
+                const opcionEntregaVal = formProducto.querySelector('select[name="opcionEntrega"]').value;
+                const opcionEntregaText = formProducto.querySelector('select[name="opcionEntrega"] option:checked').textContent;
+                const direccion = formProducto.querySelector('textarea[name="direccion"]').value;
+                const horario = formProducto.querySelector('select[name="horario"]').value;
+                const horarioText = formProducto.querySelector('select[name="horario"] option:checked')?.textContent || '-';
+                const comentarios = formProducto.querySelector('textarea[name="comentarios"]').value;
+
+                // Summary content depending on delivery option
+                let entregaDetails = `<p><strong>Entrega:</strong> ${opcionEntregaText}</p>`;
+                if (opcionEntregaVal === 'recoger') {
+                    entregaDetails += `
+                        <p><strong>Dirección:</strong> ${direccion}</p>
+                        <p><strong>Horario Recojo:</strong> ${horarioText}</p>
+                    `;
+                }
+
+                Swal.fire({
+                    title: '📦 Coordinar Donación de Producto',
+                    html: `
+                        <div style="text-align: left; font-size: 0.95rem;">
+                            <p><strong>Donante:</strong> ${nombre}</p>
+                            <p><strong>Producto:</strong> ${tipoProductoText}</p>
+                            <p><strong>Estado:</strong> ${estadoProductoText}</p>
+                            <p><strong>Teléfono:</strong> ${telefono}</p>
+                            <p><strong>Correo:</strong> ${email}</p>
+                            ${entregaDetails}
+                        </div>
+                    `,
+                    icon: 'info',
+                    showCancelButton: true,
+                    confirmButtonText: 'Confirmar Coordinación',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#3AAA6B',
+                    cancelButtonColor: '#d33'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.showLoading();
+                        
+                        fetch('/donaciones/productos/guardar', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                tipoProducto: tipoProducto,
+                                estadoProducto: estadoProducto,
+                                nombreCompleto: nombre,
+                                email: email,
+                                telefono: telefono,
+                                opcionEntrega: opcionEntregaVal,
+                                direccion: opcionEntregaVal === 'recoger' ? direccion : null,
+                                horario: opcionEntregaVal === 'recoger' ? horario : null,
+                                comentarios: comentarios
+                            })
+                        })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => { throw new Error(err.error || 'Error al guardar la donación'); });
+                            }
+                            return response.json();
+                        })
+                        .then(() => {
+                            Swal.fire({
+                                title: '¡Coordinación Registrada! 📩',
+                                text: 'La coordinación de tu donación se enviará por correo electrónico.',
+                                icon: 'success',
+                                confirmButtonColor: '#3AAA6B'
+                            }).then(() => {
+                                formProducto.reset();
+                                // Reset active delivery section styles
+                                if (seccionRecoger) seccionRecoger.style.display = 'none';
+                                if (seccionLlevar) seccionLlevar.style.display = 'none';
+                            });
+                        })
+                        .catch(err => {
+                            Swal.fire({
+                                title: 'Error',
+                                html: err.message,
+                                icon: 'error',
+                                confirmButtonColor: '#3AAA6B'
+                            });
+                        });
+                    }
+                });
+            });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initDonaciones);
+    } else {
+        initDonaciones();
+    }
+    </script>
 </div>
 
 </body>
