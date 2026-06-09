@@ -3,7 +3,8 @@ package com.redsolidaria.enjambre.model;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,6 +18,7 @@ public class SolicitudAyuda {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "discapacitado_id", nullable = false)
     private PersonaDiscapacitada discapacitado;
 
