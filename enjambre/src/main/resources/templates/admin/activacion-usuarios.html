@@ -30,6 +30,14 @@
                 <div th:if="${success}" class="adm-alert adm-alert--success" th:text="${success}"></div>
                 <div th:if="${error}" class="adm-alert adm-alert--error" th:text="${error}"></div>
             </div>
+            <div class="adm-section-heading">
+                <h2>Herramienta para verificacion del Carnet del CONADIS</h2>
+                <p>Haga click en el enlace para redirigirlo a la hermanienta</p>
+                <button onclick="window.open('https://sihce.minsa.gob.pe/validadorfirmasihce/documentos-fisicos', '_blank')"
+                  style="background-color: #059669; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                  Validar certificado CONADIS
+            </button>
+            </div>
 
             <div class="adm-section-heading">
                 <h2>Cuentas pendientes de revisión</h2>
