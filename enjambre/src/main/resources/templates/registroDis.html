@@ -31,7 +31,8 @@
                 </div>
                 <div class="rs-field rs-form-full">
                     <label>Correo electrónico <span class="req">*</span></label>
-                    <input type="email" name="email" required />
+                    <input id="emailDis" type="email" name="email" required pattern="^[A-Za-z0-9._%+-]+@(gmail\\.com|hotmail\\.com)$" placeholder="usuario@gmail.com o usuario@hotmail.com" />
+                    <div id="emailDisMessage" class="validation-message" style="display:none"></div>
                 </div>
                 
                 <!-- CAMPO MODIFICADO: Nro. DNI -->
@@ -345,6 +346,43 @@
                 if (confirmPassword && password) {
                     password.addEventListener('input', validatePasswordsMatch);
                     confirmPassword.addEventListener('input', validatePasswordsMatch);
+                }
+
+                // Email existence + domain validation for persona con discapacidad
+                const emailDis = document.getElementById('emailDis');
+                const emailDisMessage = document.getElementById('emailDisMessage');
+                let emailDisTimeout;
+                if (emailDis) {
+                    emailDis.addEventListener('input', function() {
+                        clearTimeout(emailDisTimeout);
+                        emailDisMessage.style.display = 'none';
+                        emailDis.classList.remove('invalid');
+                        emailDis.classList.remove('valid');
+                        emailDisTimeout = setTimeout(() => {
+                            if (!emailDis.checkValidity()) {
+                                emailDis.classList.add('invalid');
+                                emailDisMessage.innerHTML = '<span class="validation-icon">⚠️</span> Usa un correo @gmail.com o @hotmail.com';
+                                emailDisMessage.className = 'validation-message error';
+                                emailDisMessage.style.display = 'block';
+                                return;
+                            }
+                            fetch('/api/auth/check-email?email=' + encodeURIComponent(emailDis.value.trim()))
+                                .then(r => r.json())
+                                .then(data => {
+                                    if (data.exists) {
+                                        emailDis.classList.add('invalid');
+                                        emailDisMessage.innerHTML = '<span class="validation-icon">❌</span> El correo ya está registrado';
+                                        emailDisMessage.className = 'validation-message error';
+                                        emailDisMessage.style.display = 'block';
+                                    } else {
+                                        emailDis.classList.add('valid');
+                                        emailDisMessage.innerHTML = '<span class="validation-icon">✓</span> Correo disponible';
+                                        emailDisMessage.className = 'validation-message success';
+                                        emailDisMessage.style.display = 'block';
+                                    }
+                                }).catch(()=>{});
+                        }, 400);
+                    });
                 }
 
                 function validateDocuments() {

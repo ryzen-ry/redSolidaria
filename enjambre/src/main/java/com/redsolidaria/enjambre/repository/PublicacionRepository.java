@@ -13,6 +13,8 @@ public interface PublicacionRepository extends JpaRepository<Publicacion, Long> 
     
     List<Publicacion> findByUsuario(Usuario usuario);
     
+    void deleteByUsuario_Id(Long usuarioId);
+    
     List<Publicacion> findByCategoria(String categoria);
     
     @Query("SELECT p FROM Publicacion p ORDER BY p.fechaCreacion DESC")

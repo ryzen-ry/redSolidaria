@@ -8,4 +8,5 @@ import java.util.List;
 @Repository
 public interface DonacionProductoRepository extends JpaRepository<DonacionProducto, Long> {
     List<DonacionProducto> findByEstado(String estado);
+    void deleteByUsuario_Id(Long usuarioId);
 }

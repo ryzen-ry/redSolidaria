@@ -1,20 +1,1164 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/Users/Disca/layoutDis :: html}"
+      th:replace="~{Users/Disca/layoutDis :: html(content=~{::content})}"
       th:with="titulo='Solicitar Ayuda'">
 <head></head>
 <body>
     <div th:fragment="content">
-        <div class="rs-hero">
-            <h1>🆘 ¿Necesitas Ayuda?</h1>
-            <p>Presiona el botón y un voluntario se pondrá en contacto contigo.</p>
-            <button class="btn-ayuda" id="btnAyuda" style="background:#EF4444; color:white; padding:15px 40px; font-size:1.5rem; border:none; border-radius:50px; cursor:pointer;">¡Solicitar Ayuda Ahora!</button>
+        <!-- Leaflet CSS ya está en layoutDis.html head, no duplicar -->
+        <style>
+            /* ── Map container ── */
+            .ml-map-wrapper {
+                display: none;
+                margin-top: 18px;
+                border-radius: 16px;
+                overflow: hidden;
+                border: 2px solid #d1fae5;
+                box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+            }
+            .ml-map-header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                background: #ecfdf5;
+                border-bottom: 1px solid #d1fae5;
+            }
+            .ml-map-header svg { width:20px; height:20px; color:#4a9d5f; flex-shrink:0; }
+            .ml-map-header span { font-weight: 800; color: #065f46; font-size: 0.95rem; }
+            .ml-map-ping {
+                margin-left: auto;
+                width: 10px; height: 10px;
+                border-radius: 999px;
+                background: #22c55e;
+                animation: mlPingDot 1.6s infinite;
+            }
+            @keyframes mlPingDot {
+                0%,100%{ transform:scale(1); opacity:1; }
+                50%{ transform:scale(1.6); opacity:0.5; }
+            }
+            #mapaVoluntario { height: 340px; min-height: 340px; width: 100%; }
+            .ml-map-wrapper.is-visible { display: block !important; visibility: visible !important; }
+
+            /* Toast de estado */
+            .ml-toast {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%) translateY(80px);
+                background: #1e3a5f;
+                color: white;
+                padding: 14px 24px;
+                border-radius: 999px;
+                font-weight: 700;
+                font-size: 0.95rem;
+                box-shadow: 0 8px 24px rgba(17,24,39,0.22);
+                z-index: 9999;
+                opacity: 0;
+                transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+                white-space: nowrap;
+                pointer-events: none;
+            }
+            .ml-toast.show {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            .ml-toast.success { background: #15803d; }
+            .ml-toast.warning { background: #b45309; }
+            .ml-toast.error   { background: #b91c1c; }
+
+            /* Leyenda del mapa */
+            .ml-map-legend {
+                display: flex;
+                gap: 14px;
+                padding: 8px 14px;
+                background: #f8fafc;
+                border-top: 1px solid #e5e7eb;
+                font-size: 0.82rem;
+                color: #4a5568;
+                flex-wrap: wrap;
+            }
+            .ml-map-legend span { display:flex; align-items:center; gap:5px; }
+            .ml-legend-dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+            .ml-map-distance {
+                margin-left: auto;
+                font-weight: 700;
+                color: #065f46;
+            }
+
+            :root {
+                --ml-bg-from: #f0f4f8;
+                --ml-bg-to: #ffffff;
+                --ml-title: #1e3a5f;
+                --ml-muted: #4a5568;
+                --ml-green: #4a9d5f;
+                --ml-green-dark: #3d8450;
+                --ml-blue: #3498db;
+                --ml-card: #ffffff;
+                --ml-border: #e5e7eb;
+                --ml-shadow-lg: 0 14px 35px rgba(17, 24, 39, 0.10);
+                --ml-shadow-md: 0 10px 25px rgba(17, 24, 39, 0.10);
+            }
+
+            .ml-page {
+                width: 100%;
+                max-width: 980px;
+                margin: 0 auto;
+                padding: 24px 16px 6px;
+            }
+
+            .ml-hero {
+                text-align: center;
+                margin-bottom: 28px;
+            }
+
+            .ml-hero h1 {
+                margin: 0 0 8px;
+                font-size: clamp(1.6rem, 3vw, 2.5rem);
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                color: var(--ml-title);
+            }
+
+            .ml-hero p {
+                margin: 0;
+                color: var(--ml-muted);
+                font-size: 1.05rem;
+            }
+
+            .ml-card {
+                background: var(--ml-card);
+                border: 1px solid var(--ml-border);
+                border-top: 4px solid var(--ml-green);
+                border-radius: 18px;
+                box-shadow: var(--ml-shadow-lg);
+            }
+
+            .ml-card-body {
+                padding: 42px 28px;
+                text-align: center;
+            }
+
+            .ml-icon-bubble {
+                width: 96px;
+                height: 96px;
+                border-radius: 999px;
+                background: var(--ml-green);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 18px;
+                position: relative;
+                animation: mlPulse 2.2s infinite;
+            }
+
+            @keyframes mlPulse {
+                0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(74, 157, 95, 0.55); }
+                50% { transform: scale(1.05); box-shadow: 0 0 0 16px rgba(74, 157, 95, 0); }
+            }
+
+            .ml-icon-bubble svg {
+                width: 44px;
+                height: 44px;
+            }
+
+            .ml-h2 {
+                margin: 0 0 6px;
+                font-size: clamp(1.55rem, 2.4vw, 2.1rem);
+                font-weight: 800;
+                color: var(--ml-title);
+            }
+
+            .ml-sub {
+                margin: 0 0 22px;
+                color: var(--ml-muted);
+            }
+
+            .ml-actions {
+                display: flex;
+                justify-content: center;
+            }
+
+            .ml-btn-help {
+                appearance: none;
+                border: none;
+                background: var(--ml-green);
+                color: white;
+                padding: 18px 48px;
+                border-radius: 999px;
+                font-size: 1.35rem;
+                font-weight: 800;
+                cursor: pointer;
+                transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, opacity .18s ease;
+                box-shadow: var(--ml-shadow-md);
+            }
+
+            .ml-btn-help:hover:not(:disabled) {
+                background: var(--ml-green-dark);
+                transform: scale(1.03);
+            }
+
+            .ml-btn-help:disabled {
+                opacity: .72;
+                cursor: not-allowed;
+            }
+
+            .ml-pill-row {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 12px;
+                margin-top: 28px;
+                color: var(--ml-muted);
+                font-size: .92rem;
+            }
+
+            .ml-pill {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                padding: 10px 12px;
+                border-radius: 12px;
+                background: #f8fafc;
+                border: 1px solid #eef2f7;
+            }
+
+            .ml-pill svg {
+                width: 18px;
+                height: 18px;
+                color: var(--ml-green);
+            }
+
+            .ml-status {
+                margin-top: 18px;
+                text-align: left;
+                background: #eff6ff;
+                border: 1px solid #bfdbfe;
+                color: #1e3a8a;
+                padding: 12px 14px;
+                border-radius: 12px;
+                min-height: 22px;
+            }
+
+            .ml-voluntario {
+                display: none;
+                margin-top: 14px;
+                text-align: left;
+                background: #ecfdf5;
+                border: 1px solid #d1fae5;
+                padding: 14px;
+                border-radius: 14px;
+            }
+
+            .ml-voluntario h3 {
+                margin: 0 0 10px;
+                color: #065f46;
+                font-size: 1rem;
+                font-weight: 800;
+            }
+
+            .ml-searching {
+                display: none;
+                margin-top: 16px;
+                border: 1px solid #bfdbfe;
+                background: #eff6ff;
+                border-radius: 14px;
+                padding: 16px;
+                text-align: center;
+            }
+
+            .ml-spinner {
+                width: 56px;
+                height: 56px;
+                border: 4px solid #93c5fd;
+                border-top-color: transparent;
+                border-radius: 999px;
+                margin: 0 auto 12px;
+                animation: mlSpin 0.9s linear infinite;
+            }
+
+            @keyframes mlSpin {
+                to { transform: rotate(360deg); }
+            }
+
+            .ml-searching h3 {
+                margin: 0 0 6px;
+                font-size: 1.05rem;
+                font-weight: 900;
+                color: var(--ml-title);
+            }
+
+            .ml-searching p {
+                margin: 0;
+                color: var(--ml-muted);
+                font-size: 0.95rem;
+            }
+
+            .ml-btn-cancel {
+                margin-top: 14px;
+                appearance: none;
+                border: 1px solid #fecaca;
+                background: #fef2f2;
+                color: #991b1b;
+                padding: 10px 18px;
+                border-radius: 999px;
+                font-weight: 900;
+                cursor: pointer;
+                transition: transform .18s ease, background-color .18s ease;
+            }
+
+            .ml-btn-cancel:hover:not(:disabled) {
+                background: #fee2e2;
+                transform: scale(1.01);
+            }
+
+            .ml-btn-cancel:disabled {
+                opacity: .7;
+                cursor: not-allowed;
+            }
+
+            .ml-info-grid {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 16px;
+                margin-top: 18px;
+            }
+
+            .ml-info-card {
+                background: white;
+                border: 1px solid var(--ml-border);
+                border-radius: 14px;
+                box-shadow: 0 6px 16px rgba(17, 24, 39, 0.06);
+                padding: 16px;
+            }
+
+            .ml-info-card h3 {
+                margin: 0 0 8px;
+                color: var(--ml-title);
+                font-size: 1rem;
+                font-weight: 800;
+            }
+
+            .ml-info-card p {
+                margin: 0;
+                color: var(--ml-muted);
+            }
+
+            @media (max-width: 768px) {
+                .ml-card-body { padding: 34px 18px; }
+                .ml-btn-help { padding: 16px 34px; font-size: 1.15rem; }
+                .ml-pill-row { grid-template-columns: 1fr; }
+                .ml-info-grid { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <div class="ml-page">
+            <div class="ml-hero">
+                <h1>
+                    Bienvenido,
+                    <span th:text="${session.usuario != null ? session.usuario.nombres : 'Usuario'}">Usuario</span>
+                </h1>
+                <p>¿Necesitas ayuda? Presiona el botón de abajo</p>
+            </div>
+
+            <div class="ml-card">
+                <div class="ml-card-body">
+                    <div class="ml-icon-bubble" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.86 19.86 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.86 19.86 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72c.12.86.3 1.7.54 2.5a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.58-1.06a2 2 0 0 1 2.11-.45c.8.24 1.64.42 2.5.54A2 2 0 0 1 22 16.92Z"/>
+                        </svg>
+                    </div>
+
+                    <h2 class="ml-h2">Botón de Ayuda</h2>
+                    <p class="ml-sub">Presiona para conectar con un voluntario cercano</p>
+
+                    <div class="ml-actions">
+                        <button class="ml-btn-help" id="btnAyuda" type="button">Solicitar Ayuda Ahora</button>
+                    </div>
+
+                    <p id="estadoAyuda" class="ml-status"></p>
+
+                    <div id="buscandoAyuda" class="ml-searching" aria-live="polite">
+                        <div class="ml-spinner" aria-hidden="true"></div>
+                        <h3>Buscando voluntario cercano...</h3>
+                        <p>Por favor espera, estamos conectándote con ayuda</p>
+                        <button id="btnCancelarAyuda" class="ml-btn-cancel" type="button">Cancelar</button>
+                    </div>
+
+                    <div id="infoVoluntario" class="ml-voluntario">
+                        <h3>Voluntario asignado</h3>
+                        <div id="infoVoluntarioDetalle"></div>
+                    </div>
+
+                    <!-- Botón explícito para terminar la ayuda (visible solo cuando hay sesión activa) -->
+                    <div id="seccionTerminarAyuda" style="display:none; margin-top:18px;">
+                        <button id="btnTerminarAyudaExplicito" type="button"
+                            style="width:100%; padding:16px 24px; border:none; background:#ef4444; color:white;
+                                   border-radius:14px; font-size:1.15rem; font-weight:800; cursor:pointer;
+                                   box-shadow:0 6px 20px rgba(239,68,68,0.35);
+                                   transition:transform .18s ease, background-color .18s ease;">
+                            ✅ Terminar Ayuda Recibida
+                        </button>
+                        <p style="text-align:center; color:#6b7280; font-size:0.88rem; margin-top:8px;">
+                            Presiona cuando el voluntario haya completado su asistencia
+                        </p>
+                    </div>
+
+                    <!-- Mapa del voluntario -->
+                    <div id="mapaVoluntarioWrapper" class="ml-map-wrapper">
+                        <div class="ml-map-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>🗺️ Mapa en tiempo real</span>
+                            <div class="ml-map-ping"></div>
+                        </div>
+                        <div id="mapaVoluntario"></div>
+                        <div class="ml-map-legend">
+                            <span><span class="ml-legend-dot" style="background:#3b82f6"></span> Voluntario</span>
+                            <span><span class="ml-legend-dot" style="background:#ef4444"></span> Tu posición</span>
+                            <span id="mapDistancia" class="ml-map-distance"></span>
+                        </div>
+                    </div>
+
+                    <div class="ml-pill-row" aria-hidden="true">
+                        <div class="ml-pill">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>Voluntario cercano</span>
+                        </div>
+                        <div class="ml-pill">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            <span>Respuesta rápida</span>
+                        </div>
+                        <div class="ml-pill">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                            <span>Seguro y verificado</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ml-info-grid">
+                <div class="ml-info-card">
+                    <h3>Tu Tipo de Discapacidad</h3>
+                    <p class="text-capitalize"
+                       th:text="${session.usuario != null ? session.usuario.tipoDiscapacidad : '—'}">—</p>
+                </div>
+                <div class="ml-info-card">
+                    <h3>DNI / Documento</h3>
+                    <p th:text="${session.usuario != null ? session.usuario.conadis : '—'}">—</p>
+                </div>
+            </div>
         </div>
+
+        <!-- Toast global -->
+        <div id="mlToast" class="ml-toast"></div>
+        <script th:inline="javascript">
+        (() => {
+            const currentUsuarioId = /*[[${session.usuario != null ? session.usuario.id : null}]]*/ null;
+            const currentUsuarioRol = /*[[${session.usuario != null ? session.usuario.rol : null}]]*/ null;
+
+            const isValidCoord = (lat, lng) => {
+                const la = Number(lat);
+                const ln = Number(lng);
+                return Number.isFinite(la) && Number.isFinite(ln)
+                    && Math.abs(la) <= 90 && Math.abs(ln) <= 180;
+            };
+
+            const LEAFLET_JS = /*[[@{/vendor/leaflet/leaflet.js}]]*/ '/vendor/leaflet/leaflet.js';
+
+            const waitForLeaflet = (timeoutMs = 15000) => {
+                if (typeof L !== 'undefined') {
+                    return Promise.resolve(L);
+                }
+                return new Promise((resolve, reject) => {
+                    let done = false;
+                    const finish = (ok, value) => {
+                        if (done) return;
+                        done = true;
+                        clearInterval(poll);
+                        clearTimeout(timer);
+                        ok ? resolve(value) : reject(value);
+                    };
+
+                    const poll = setInterval(() => {
+                        if (typeof L !== 'undefined') finish(true, L);
+                    }, 40);
+
+                    const timer = setTimeout(() => {
+                        finish(false, new Error('leaflet-timeout'));
+                    }, timeoutMs);
+
+                    const attach = (script) => {
+                        script.addEventListener('load', () => {
+                            if (typeof L !== 'undefined') finish(true, L);
+                        }, { once: true });
+                        script.addEventListener('error', () => loadScript(), { once: true });
+                    };
+
+                    const loadScript = () => {
+                        const s = document.createElement('script');
+                        s.src = LEAFLET_JS;
+                        s.id = 'leaflet-lib-fallback';
+                        s.onload = () => {
+                            if (typeof L !== 'undefined') finish(true, L);
+                        };
+                        s.onerror = () => finish(false, new Error('leaflet-load-error'));
+                        document.head.appendChild(s);
+                    };
+
+                    const existing = document.getElementById('leaflet-lib')
+                        || document.getElementById('leaflet-lib-fallback');
+                    if (existing) {
+                        attach(existing);
+                    } else {
+                        loadScript();
+                    }
+                });
+            };
+
+            const scheduleMapInvalidate = (map) => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (map) map.invalidateSize({ animate: false });
+                        setTimeout(() => { if (map) map.invalidateSize({ animate: false }); }, 300);
+                        setTimeout(() => { if (map) map.invalidateSize({ animate: false }); }, 800);
+                    });
+                });
+            };
+
+            const btn = document.getElementById('btnAyuda');
+            const estado = document.getElementById('estadoAyuda');
+            const info = document.getElementById('infoVoluntario');
+            const detalle = document.getElementById('infoVoluntarioDetalle');
+            const buscando = document.getElementById('buscandoAyuda');
+            const btnCancelar = document.getElementById('btnCancelarAyuda');
+
+            let socket = null;
+            let wsOpen = false;
+            let geoWatchId = null;
+            let locationEnabled = false;
+            let lastSentAt = 0;
+            let lastPosition = null;
+            let lastSentPosition = null; // Filtrado de 2 metros para evitar ruido del GPS
+            let solicitudActivaId = null;
+            let sesionAceptada = false;
+
+            // Map state
+            let leafletMap = null;
+            let volMarker = null;
+            let miMarker = null;
+            let rutaLine = null; // Polilínea entre ambos puntos
+
+            // ── Toast ───────────────────────────────────────────────────────
+            let toastTimer = null;
+            const showToast = (msg, kind = '', durationMs = 3500) => {
+                const el = document.getElementById('mlToast');
+                if (!el) return;
+                el.textContent = msg;
+                el.className = 'ml-toast' + (kind ? ' ' + kind : '');
+                void el.offsetWidth; // reflow
+                el.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+            };
+
+            // ── Helpers de distancia ─────────────────────────────────────
+            const calcDistKm = (lat1, lng1, lat2, lng2) => {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat/2)**2 +
+                          Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                          Math.sin(dLng/2)**2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            };
+            const fmtDist = (km) => km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(2) + ' km';
+
+            const updateDistanceLabel = () => {
+                if (!volMarker || !miMarker) return;
+                const vll = volMarker.getLatLng();
+                const mll = miMarker.getLatLng();
+                const km = calcDistKm(vll.lat, vll.lng, mll.lat, mll.lng);
+                const el = document.getElementById('mapDistancia');
+                if (el) el.textContent = '📏 ' + fmtDist(km);
+            };
+
+            const updateRuta = () => {
+                if (!leafletMap || !volMarker || !miMarker) return;
+                const pts = [volMarker.getLatLng(), miMarker.getLatLng()];
+                if (rutaLine) {
+                    rutaLine.setLatLngs(pts);
+                } else {
+                    rutaLine = L.polyline(pts, {
+                        color: '#3b82f6',
+                        weight: 3,
+                        dashArray: '8 6',
+                        opacity: 0.7
+                    }).addTo(leafletMap);
+                }
+                updateDistanceLabel();
+            };
+
+            const fitBothMarkers = (animate = false) => {
+                if (!volMarker || !miMarker) return;
+                const bounds = L.latLngBounds([
+                    volMarker.getLatLng(), miMarker.getLatLng()
+                ]);
+                leafletMap.fitBounds(bounds, { padding: [50, 50], animate });
+            };
+
+            const showMapWrapper = () => {
+                const wrapper = document.getElementById('mapaVoluntarioWrapper');
+                if (wrapper) {
+                    wrapper.classList.add('is-visible');
+                    wrapper.style.display = 'block';
+                    wrapper.style.visibility = 'visible';
+                }
+            };
+
+            const initMap = async (latVol, lngVol, latMi, lngMi) => {
+                if (!isValidCoord(latVol, lngVol)) {
+                    showToast('Ubicación del voluntario no disponible.', 'warning', 4000);
+                    return;
+                }
+
+                try {
+                    await waitForLeaflet();
+                } catch (e) {
+                    console.error('[mapa] Leaflet no disponible', e);
+                    showToast('No se pudo cargar el mapa. Comprueba tu conexión y recarga.', 'error', 5000);
+                    return;
+                }
+
+                const latV = Number(latVol);
+                const lngV = Number(lngVol);
+                const latM = latMi != null && lngMi != null && isValidCoord(latMi, lngMi) ? Number(latMi) : null;
+                const lngM = latM != null ? Number(lngMi) : null;
+
+                showMapWrapper();
+
+                const buildMarkers = () => {
+                    const mapContainer = document.getElementById('mapaVoluntario');
+                    if (mapContainer) mapContainer.style.height = '340px';
+
+                    if (!leafletMap) {
+                        leafletMap = L.map('mapaVoluntario', {
+                            zoomControl: true,
+                            attributionControl: true
+                        });
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap',
+                            maxZoom: 19
+                        }).addTo(leafletMap);
+                    }
+
+                    const iconVol = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(59,130,246,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#3b82f6" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    const iconMi = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(239,68,68,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#ef4444" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+
+                    if (volMarker) {
+                        volMarker.setLatLng([latV, lngV]);
+                    } else {
+                        volMarker = L.marker([latV, lngV], { icon: iconVol })
+                            .addTo(leafletMap)
+                            .bindPopup('<b>🙋 Voluntario</b><br>En camino hacia ti');
+                    }
+
+                    if (latM != null && lngM != null) {
+                        if (miMarker) {
+                            miMarker.setLatLng([latM, lngM]);
+                        } else {
+                            miMarker = L.marker([latM, lngM], { icon: iconMi })
+                                .addTo(leafletMap)
+                                .bindPopup('<b>📍 Tu ubicación</b>');
+                        }
+                        fitBothMarkers(false);
+                        updateRuta();
+                    } else {
+                        leafletMap.setView([latV, lngV], 15);
+                    }
+
+                    scheduleMapInvalidate(leafletMap);
+                };
+
+                requestAnimationFrame(() => requestAnimationFrame(buildMarkers));
+            };
+
+            const animateMarkerTo = (marker, destLat, destLng, duration = 1200, callback = null) => {
+                if (!marker) return;
+                const startLatLng = marker.getLatLng();
+                const startLat = startLatLng.lat;
+                const startLng = startLatLng.lng;
+                const startTime = performance.now();
+
+                const step = (now) => {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const ease = progress < 0.5 
+                        ? 2 * progress * progress 
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                    const curLat = startLat + (destLat - startLat) * ease;
+                    const curLng = startLng + (destLng - startLng) * ease;
+
+                    marker.setLatLng([curLat, curLng]);
+                    if (callback) callback();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        marker.setLatLng([destLat, destLng]);
+                        if (callback) callback();
+                    }
+                };
+                requestAnimationFrame(step);
+            };
+
+            const updateVolMarker = (lat, lng) => {
+                if (!isValidCoord(lat, lng)) return;
+                if (!leafletMap || !volMarker) {
+                    if (sesionAceptada) {
+                        const myLat = lastPosition?.lat ?? null;
+                        const myLng = lastPosition?.lng ?? null;
+                        initMap(Number(lat), Number(lng), myLat, myLng);
+                    }
+                    return;
+                }
+                animateMarkerTo(volMarker, Number(lat), Number(lng), 1000, () => {
+                    updateRuta();
+                });
+                if (miMarker) {
+                    fitBothMarkers(true);
+                } else {
+                    leafletMap.panTo([lat, lng], { animate: true });
+                }
+            };
+
+            const updateMiMarker = (lat, lng) => {
+                if (!isValidCoord(lat, lng) || !leafletMap) return;
+                if (!miMarker) {
+                    const iconMi = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(239,68,68,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#ef4444" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    miMarker = L.marker([lat, lng], { icon: iconMi })
+                        .addTo(leafletMap)
+                        .bindPopup('<b>📍 Tu ubicación</b>');
+                    if (volMarker) {
+                        fitBothMarkers(false);
+                        updateRuta();
+                    }
+                    return;
+                }
+                animateMarkerTo(miMarker, Number(lat), Number(lng), 1000, () => {
+                    updateRuta();
+                });
+            };
+
+            const setEstado = (msg) => {
+                if (estado) estado.textContent = msg || '';
+            };
+
+            const resetMapaYsesion = () => {
+                sesionAceptada = false;
+                const wrapper = document.getElementById('mapaVoluntarioWrapper');
+                if (wrapper) {
+                    wrapper.style.display = 'none';
+                    wrapper.classList.remove('is-visible');
+                }
+                // Destruir el mapa para que la próxima sesión empiece limpio
+                if (leafletMap) {
+                    leafletMap.remove();
+                    leafletMap = null;
+                    volMarker = null;
+                    miMarker = null;
+                    rutaLine = null;
+                }
+                const distEl = document.getElementById('mapDistancia');
+                if (distEl) distEl.textContent = '';
+            };
+
+            const setUIIdle = () => {
+                solicitudActivaId = null;
+                if (buscando) buscando.style.display = 'none';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Solicitar Ayuda Ahora';
+                    btn.style.background = 'var(--ml-green)';
+                    btn.style.removeProperty('transform');
+                }
+                if (btnCancelar) btnCancelar.disabled = false;
+                if (info) info.style.display = 'none';
+                // Ocultar sección de terminar ayuda
+                const secTerminar = document.getElementById('seccionTerminarAyuda');
+                if (secTerminar) secTerminar.style.display = 'none';
+                resetMapaYsesion();
+            };
+
+            const setUIAceptada = () => {
+                if (buscando) buscando.style.display = 'none';
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Solicitar Ayuda Ahora';
+                    btn.style.background = 'var(--ml-green)';
+                    btn.style.display = 'none'; // Ocultar el botón principal durante sesión activa
+                }
+                // Mostrar botón explícito de terminar ayuda
+                const secTerminar = document.getElementById('seccionTerminarAyuda');
+                if (secTerminar) secTerminar.style.display = 'block';
+            };
+
+            const setUIBuscando = (solicitudId) => {
+                solicitudActivaId = solicitudId ?? solicitudActivaId;
+                if (info) info.style.display = 'none';
+                if (buscando) buscando.style.display = 'block';
+                if (btn) {
+                    btn.disabled = true;
+                    btn.textContent = 'Buscando voluntario...';
+                }
+            };
+
+            const escapeHtml = (s) => {
+                return String(s ?? '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            };
+
+            const renderVoluntario = (voluntario, ubicacionVol) => {
+                const v = voluntario || {};
+                const ub = ubicacionVol || {};
+                const nombre = `${v.nombres ?? ''} ${v.apellidos ?? ''}`.trim();
+
+                detalle.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">🙋</div>
+                        <div>
+                            <div style="font-weight:800;color:#1e3a5f;">${escapeHtml(nombre)}</div>
+                            <div style="font-size:0.88rem;color:#4a5568;">${escapeHtml(v.email)}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.85rem;color:#6b7280;margin-top:4px;">
+                        📍 Lat: ${escapeHtml(ub.lat)}, Lng: ${escapeHtml(ub.lng)}
+                    </div>
+                `;
+                info.style.display = 'block';
+
+                const myLat = lastPosition?.lat ?? null;
+                const myLng = lastPosition?.lng ?? null;
+                if (ub.lat != null && ub.lng != null) {
+                    initMap(Number(ub.lat), Number(ub.lng), myLat, myLng);
+                } else {
+                    showToast('Esperando ubicación del voluntario en el mapa...', 'warning', 4000);
+                }
+            };
+
+            const startGeolocation = () => {
+                if (!navigator.geolocation) {
+                    setEstado('Tu navegador no soporta geolocalización.');
+                    return;
+                }
+
+                geoWatchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        locationEnabled = true;
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const precision = pos.coords.accuracy;
+                        const now = Date.now();
+
+                        lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
+
+                        // Reducir intervalo a 3s cuando hay sesión aceptada activa
+                        const intervalo = sesionAceptada ? 3000 : 5000;
+
+                        let debereEnviar = false;
+                        if (!lastSentPosition) {
+                            debereEnviar = true;
+                        } else {
+                            const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
+                            if (distMeters >= 2.0) {
+                                debereEnviar = true;
+                            }
+                        }
+
+                        if (debereEnviar && socket && wsOpen && now - lastSentAt >= intervalo) {
+                            lastSentAt = now;
+                            lastSentPosition = { lat, lng };
+                            socket.send(JSON.stringify({
+                                type: 'LOCATION_UPDATE',
+                                lat,
+                                lng,
+                                precisionMetros: precision,
+                                timestamp: now
+                            }));
+                        }
+
+                        if (sesionAceptada && leafletMap) {
+                            updateMiMarker(lat, lng);
+                        } else if (sesionAceptada && !leafletMap && lastPosition) {
+                            flushLastPosition();
+                        }
+                    },
+                    () => {
+                        locationEnabled = false;
+                        setEstado('No se pudo habilitar la ubicación. Revisa permisos del navegador.');
+                    },
+                    { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
+                );
+
+                // Refresco continuo de ubicación cada 3 segundos cuando la sesión de ayuda está aceptada y activa
+                setInterval(() => {
+                    if (sesionAceptada && navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                locationEnabled = true;
+                                const lat = pos.coords.latitude;
+                                const lng = pos.coords.longitude;
+                                const precision = pos.coords.accuracy;
+                                const now = Date.now();
+
+                                lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
+
+                                let debereEnviar = false;
+                                if (!lastSentPosition) {
+                                    debereEnviar = true;
+                                } else {
+                                    const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
+                                    if (distMeters >= 2.0) {
+                                        debereEnviar = true;
+                                    }
+                                }
+
+                                if (debereEnviar && socket && wsOpen) {
+                                    lastSentAt = now;
+                                    lastSentPosition = { lat, lng };
+                                    socket.send(JSON.stringify({
+                                        type: 'LOCATION_UPDATE',
+                                        lat,
+                                        lng,
+                                        precisionMetros: precision,
+                                        timestamp: now
+                                    }));
+                                }
+
+                                if (leafletMap) {
+                                    updateMiMarker(lat, lng);
+                                }
+                            },
+                            (err) => {
+                                console.warn('[geolocalizacion] Error en refresco continuo 3s:', err);
+                            },
+                            { enableHighAccuracy: true, maximumAge: 0, timeout: 2500 }
+                        );
+                    }
+                }, 3000);
+            };
+
+            const flushLastPosition = () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+                if (!lastPosition) return false;
+                const now = Date.now();
+                // Evita spamear si ya se envió hace muy poco.
+                if (now - lastSentAt < 800) return true;
+                lastSentAt = now;
+                lastSentPosition = { lat: lastPosition.lat, lng: lastPosition.lng };
+                socket.send(JSON.stringify({ type: 'LOCATION_UPDATE', ...lastPosition, timestamp: now }));
+                return true;
+            };
+
+            const connectWs = () => {
+                if (currentUsuarioId == null || !currentUsuarioRol) {
+                    setEstado('Debes iniciar sesión para solicitar ayuda.');
+                    return;
+                }
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const params = new URLSearchParams({
+                    usuarioId: String(currentUsuarioId),
+                    usuarioRol: String(currentUsuarioRol)
+                });
+                const wsUrl = wsProtocol + window.location.host + '/ws/ayuda?' + params.toString();
+
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = () => {
+                    wsOpen = true;
+                    setEstado('Conectado. Habilitando ubicación...');
+                    // Enviar una ubicación de inmediato si ya la tenemos, para que el backend
+                    // pueda procesar la solicitud sin esperar al siguiente tick del watchPosition.
+                    flushLastPosition();
+                };
+
+                socket.onmessage = (event) => {
+                    let data = null;
+                    try { data = JSON.parse(event.data); } catch (e) { return; }
+                    if (!data || !data.type) return;
+
+                    switch (data.type) {
+                        case 'AYUDA_ENVIADA':
+                            setEstado('Buscando voluntario cercano...');
+                            setUIBuscando(data.solicitudId);
+                            break;
+                        case 'SOLICITUD_RECHAZADA':
+                            setEstado(data.mensaje || 'Buscando otro voluntario cercano...');
+                            break;
+                        case 'SOLICITUD_ACEPTADA':
+                            sesionAceptada = true;
+                            if (data.solicitudId) solicitudActivaId = data.solicitudId;
+                            setEstado('✅ Solicitud aceptada. Voluntario en camino.');
+                            showToast('✅ ¡Voluntario en camino! El mapa se actualiza en tiempo real.', 'success', 5000);
+                            if (data.ubicacionVoluntario?.lat != null && data.ubicacionVoluntario?.lng != null) {
+                                renderVoluntario(data.voluntario, data.ubicacionVoluntario);
+                            } else {
+                                renderVoluntario(data.voluntario, {});
+                                showToast('Ubicación del voluntario en camino...', 'warning', 4000);
+                            }
+                            setUIAceptada();
+                            break;
+                        case 'ERROR':
+                            setEstado(data.mensaje || 'Ocurrió un error.');
+                            showToast(data.mensaje || 'Ocurrió un error.', 'error', 5000);
+                            break;
+                        case 'UBICACION_ACTUALIZADA':
+                            // Actualizar marcador del voluntario en tiempo real
+                            if (data.lat != null && data.lng != null) {
+                                updateVolMarker(Number(data.lat), Number(data.lng));
+                            }
+                            break;
+                        case 'SOLICITUD_CANCELADA':
+                        case 'SOLICITUD_CANCELADA_POR_USUARIO':
+                            sesionAceptada = false;
+                            setEstado(data.mensaje || 'La solicitud fue cancelada.');
+                            showToast(data.mensaje || 'La solicitud fue cancelada.', 'warning', 4000);
+                            // Restaurar visibilidad del botón principal
+                            if (btn) btn.style.display = '';
+                            setUIIdle();
+                            break;
+                        case 'AYUDA_FINALIZADA':
+                            sesionAceptada = false;
+                            setEstado('La ayuda ha sido completada con éxito.');
+                            showToast('✅ ¡Ayuda finalizada con éxito!', 'success', 5000);
+                            if (btn) btn.style.display = '';
+                            setUIIdle();
+                            break;
+                    }
+                };
+
+                socket.onerror = () => {
+                    setEstado('Error conectando con el servidor.');
+                };
+                socket.onclose = () => {
+                    wsOpen = false;
+                    setEstado('Conexión cerrada. Si no iniciaste sesión, vuelve a entrar desde el login.');
+                };
+            };
+
+            // Función compartida para terminar la ayuda
+            const terminarAyudaActiva = () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    setEstado('Sin conexión con el servidor.');
+                    return;
+                }
+                if (solicitudActivaId) {
+                    socket.send(JSON.stringify({ type: 'TERMINAR_AYUDA', solicitudId: solicitudActivaId }));
+                }
+            };
+
+            // Botón principal: solo para solicitar ayuda
+            btn?.addEventListener('click', () => {
+                if (sesionAceptada) return; // El botón principal no actúa durante sesión activa
+
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    setEstado('Conectando... intenta en unos segundos.');
+                    return;
+                }
+
+                if (!locationEnabled) {
+                    setEstado('Habilita la ubicación para solicitar ayuda.');
+                    return;
+                }
+
+                setEstado('Enviando solicitud de ayuda...');
+                if (btn) btn.disabled = true;
+                if (btn) btn.textContent = 'Enviando...';
+                info.style.display = 'none';
+                if (buscando) buscando.style.display = 'none';
+
+                // Asegura que el backend tenga ubicación antes de solicitar.
+                flushLastPosition();
+                socket.send(JSON.stringify({ type: 'AYUDA_SOLICITADA' }));
+            });
+
+            // Botón explícito de terminar ayuda
+            document.getElementById('btnTerminarAyudaExplicito')?.addEventListener('click', () => {
+                terminarAyudaActiva();
+            });
+
+            // Efecto hover botón terminar
+            const btnTerminarExpl = document.getElementById('btnTerminarAyudaExplicito');
+            if (btnTerminarExpl) {
+                btnTerminarExpl.addEventListener('mouseenter', () => {
+                    btnTerminarExpl.style.background = '#dc2626';
+                    btnTerminarExpl.style.transform = 'scale(1.02)';
+                });
+                btnTerminarExpl.addEventListener('mouseleave', () => {
+                    btnTerminarExpl.style.background = '#ef4444';
+                    btnTerminarExpl.style.transform = 'scale(1)';
+                });
+            }
+
+            btnCancelar?.addEventListener('click', () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) {
+                    setEstado('No hay conexión con el servidor.');
+                    return;
+                }
+                if (!solicitudActivaId) {
+                    setEstado('No hay una solicitud activa para cancelar.');
+                    return;
+                }
+                if (btnCancelar) btnCancelar.disabled = true;
+                setEstado('Cancelando solicitud...');
+                socket.send(JSON.stringify({ type: 'CANCELAR_SOLICITUD', solicitudId: solicitudActivaId }));
+            });
+
+            document.addEventListener('DOMContentLoaded', () => {
+                waitForLeaflet().catch((e) => console.warn('[mapa] precarga Leaflet', e));
+                if (!geoWatchId) startGeolocation();
+                connectWs();
+                setUIIdle();
+            });
+        })();
+        </script>
     </div>
-    <script>
-        document.getElementById('btnAyuda')?.addEventListener('click', function() {
-            alert('🆘 ¡Alerta enviada! Un voluntario se pondrá en contacto contigo.');
-        });
-    </script>
 </body>
 </html>

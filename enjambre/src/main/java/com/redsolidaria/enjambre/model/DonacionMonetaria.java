@@ -1,5 +1,6 @@
 package com.redsolidaria.enjambre.model;
 
+import com.redsolidaria.enjambre.model.Usuario;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,13 +21,13 @@ public class DonacionMonetaria {
     @Column(nullable = false)
     private Double monto;
 
-    @Column(name = "nombre_completo", nullable = false)
+    @Transient
     private String nombreCompleto;
 
     @Column(nullable = false)
     private String celular;
 
-    @Column(nullable = false)
+    @Transient
     private String email;
 
     @Column(name = "codigo_yape")
@@ -38,6 +39,15 @@ public class DonacionMonetaria {
     @Column(name = "fecha_donacion", nullable = false)
     private LocalDateTime fechaDonacion = LocalDateTime.now();
 
-    @Column(name = "usuario_id", nullable = false)
-    private Long usuarioId;
-}
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    public String getNombreCompleto() {
+        return usuario != null ? usuario.getNombreCompleto() : nombreCompleto;
+    }
+
+    public String getEmail() {
+        return usuario != null ? usuario.getEmail() : email;
+    }
+} 

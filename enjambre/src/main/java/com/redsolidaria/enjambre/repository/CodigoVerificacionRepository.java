@@ -8,4 +8,5 @@ import java.util.Optional;
 @Repository
 public interface CodigoVerificacionRepository extends JpaRepository<CodigoVerificacion, Long> {
     Optional<CodigoVerificacion> findByEmailAndCodigoAndUsadoFalse(String email, String codigo);
+    void deleteByUsuario_Id(Long usuarioId);
 }

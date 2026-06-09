@@ -13,6 +13,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import jakarta.servlet.http.HttpSession;
+
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
@@ -31,7 +33,8 @@ public class AdminController {
         model.addAttribute("totalVoluntarios", usuarioService.listarVoluntarios().size());
         model.addAttribute("totalDiscapacitados", usuarioService.listarDiscapacitados().size());
         model.addAttribute("totalAdministradores", usuarioService.listarAdministradores().size());
-        return "/admin/dashboardAdm";
+        model.addAttribute("totalPendientes", usuarioService.listarUsuariosPendientes().size());
+        return "admin/dashboardAdm";
     }
     
     // ========== GESTIÓN DE USUARIOS ==========
@@ -39,19 +42,19 @@ public class AdminController {
     @GetMapping("/usuarios")
     public String usuarios(Model model) {
         model.addAttribute("usuarios", usuarioService.listarTodosUsuarios());
-        return "/admin/usuarios";
+        return "admin/usuarios";
     }
     
     @GetMapping("/voluntarios")
     public String voluntarios(Model model) {
         model.addAttribute("voluntarios", usuarioService.listarVoluntarios());
-        return "/admin/voluntarios";
+        return "admin/voluntarios";
     }
     
     @GetMapping("/discapacitados")
     public String discapacitados(Model model) {
         model.addAttribute("discapacitados", usuarioService.listarDiscapacitados());
-        return "/admin/discapacitados";
+        return "admin/discapacitados";
     }
     
     // ========== GESTIÓN DE ADMINISTRADORES ==========
@@ -59,13 +62,13 @@ public class AdminController {
     @GetMapping("/administradores")
     public String administradores(Model model) {
         model.addAttribute("administradores", usuarioService.listarAdministradores());
-        return "/admin/administradores";
+        return "admin/administradores";
     }
     
     @GetMapping("/admin/nuevo")
     public String nuevoAdmin(Model model) {
         model.addAttribute("adminDTO", new AdminDTO());
-        return "/admin/admin-form";
+        return "admin/admin-form";
     }
     
     @PostMapping("/admin/crear")
@@ -75,11 +78,11 @@ public class AdminController {
         
         if (!adminDTO.isPasswordMatching()) {
             result.rejectValue("confirmPassword", "error", "Las contraseñas no coinciden");
-            return "/admin/admin-form";
+            return "admin/admin-form";
         }
         
         if (result.hasErrors()) {
-            return "/admin/admin-form";
+            return "admin/admin-form";
         }
         
         try {
@@ -110,7 +113,7 @@ public class AdminController {
     
     @GetMapping("/foro")
     public String foro() {
-        return "/admin/foro";
+        return "admin/foro";
     }
     
     @GetMapping("/usuario/eliminar/{id}")
@@ -129,18 +132,26 @@ public class AdminController {
     @GetMapping("/activacion")
     public String activacion(Model model) {
         model.addAttribute("usuariosPendientes", usuarioService.listarUsuariosPendientes());
-        return "/admin/activacion-usuarios";
+        model.addAttribute("historialActivaciones", usuarioService.listarHistorialActivaciones());
+        return "admin/activacion-usuarios";
     }
 
     @PostMapping("/usuarios/{id}/activar")
-    public String activarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String activarUsuario(@PathVariable Long id,
+                                 HttpSession session,
+                                 RedirectAttributes redirectAttributes) {
         try {
             Usuario usuario = usuarioService.buscarPorId(id);
             if (usuario == null) {
                 redirectAttributes.addFlashAttribute("error", "❌ Usuario no encontrado");
                 return "redirect:/admin/activacion";
             }
-            usuarioService.activarUsuario(id);
+            Long adminId = null;
+            Usuario adminSesion = (Usuario) session.getAttribute("usuario");
+            if (adminSesion != null) {
+                adminId = adminSesion.getId();
+            }
+            usuarioService.activarUsuario(id, adminId);
             emailService.enviarCorreoActivacion(usuario.getEmail());
             redirectAttributes.addFlashAttribute("success", "✅ Cuenta activada exitosamente y notificación enviada por correo");
         } catch (Exception e) {
