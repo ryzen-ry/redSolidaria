@@ -71,8 +71,9 @@ public class AuthController {
                                               HttpSession session,
                                               Model model) {
         
-        if (!email.endsWith("@utp.edu.pe")) {
-            model.addAttribute("error", "Debes usar tu correo institucional @utp.edu.pe");
+        String lowerEmail = email.toLowerCase();
+        if (!lowerEmail.matches("^u\\d{8}@utp\\.edu\\.pe$")) {
+            model.addAttribute("error", "Debes usar tu correo institucional con el formato u12345678@utp.edu.pe");
             return "registroVol";
         }
         
@@ -171,6 +172,12 @@ public class AuthController {
             result.rejectValue("password", "error", "La contraseña debe tener al menos 6 caracteres");
         }
         
+        // Validar dominio permitido para correos de personas con discapacidad
+        String lowerEmailDto = dto.getEmail() != null ? dto.getEmail().toLowerCase() : "";
+        if (!(lowerEmailDto.endsWith("@gmail.com") || lowerEmailDto.endsWith("@hotmail.com"))) {
+            result.rejectValue("email", "error", "Debes usar un correo @gmail.com o @hotmail.com");
+        }
+
         // Validar que el email no esté ya registrado en BD
         if (usuarioService.existeEmail(dto.getEmail())) {
             result.rejectValue("email", "error", "❌ El correo ya está registrado");
@@ -235,7 +242,7 @@ public class AuthController {
         }
         
         // Crear directorio si no existe
-        String uploadDir = "src/main/resources/static/uploads/documentos/";
+        String uploadDir = "uploads/documentos/";
         File directorio = new File(uploadDir);
         if (!directorio.exists()) {
             directorio.mkdirs();
@@ -355,6 +362,10 @@ public class AuthController {
         
         // Guardar usuario en sesión
         session.setAttribute("usuario", usuario);
+        // Guardar también atributos primitivos para el handshake WS.
+        // Evita problemas cuando el objeto completo no puede resolverse en ese contexto.
+        session.setAttribute("usuarioId", usuario.getId());
+        session.setAttribute("usuarioRol", usuario.getRol());
         
         // Redirigir según el rol
         String rol = usuario.getRol();

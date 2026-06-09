@@ -143,7 +143,7 @@ public class DonacionController {
         model.addAttribute("donacionesMonetarias", monetarias);
         model.addAttribute("donacionesProductos", productos);
 
-        return "/admin/donaciones";
+        return "admin/donaciones";
     }
 
     @PostMapping("/admin/donaciones/monetaria/confirmar/{id}")

@@ -1,12 +1,410 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/Users/volun/layoutVol :: html}"
+      th:replace="~{Users/volun/layoutVol :: html(content=~{::content})}"
       th:with="titulo='Mi Historial - Voluntario'">
 <head></head>
 <body>
-    <div th:fragment="content">
-        <h1 class="rs-section-title">📋 Mi Historial de Ayuda</h1>
-        <p>Aquí verás todas las ayudas que has brindado.</p>
+    <div th:fragment="content" class="historial-container">
+        <style>
+            .historial-container {
+                max-width: 1000px;
+                margin: 40px auto;
+                padding: 0 20px;
+                font-family: 'Outfit', 'Inter', sans-serif;
+            }
+            .historial-header {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                margin-bottom: 30px;
+                border-bottom: 2px solid rgba(249, 115, 22, 0.1);
+                padding-bottom: 20px;
+                flex-wrap: wrap;
+            }
+            .historial-header-icon {
+                width: 56px;
+                height: 56px;
+                min-width: 56px;
+                background: linear-gradient(135deg, #F97316 0%, #ea580c 100%);
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                box-shadow: 0 8px 20px rgba(249, 115, 22, 0.25);
+            }
+            .historial-header-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+            .historial-header-text {
+                flex: 1;
+                min-width: 0;
+            }
+            .historial-title {
+                margin: 0;
+                font-size: 2.2rem;
+                font-weight: 800;
+                color: #1e3a8a;
+                background: linear-gradient(135deg, #1e3a8a 0%, #f97316 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                word-break: break-word;
+            }
+            .historial-subtitle {
+                margin: 4px 0 0 0;
+                color: #6b7280;
+                font-size: 1rem;
+                line-height: 1.5;
+            }
+            
+            /* Glassmorphism Card style */
+            .historial-card {
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                border-radius: 24px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+                padding: 30px;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+            .historial-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.07);
+            }
+            
+            /* Table Styling */
+            .table-responsive {
+                width: 100%;
+                overflow-x: auto;
+                border-radius: 16px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .historial-table {
+                width: 100%;
+                border-collapse: collapse;
+                text-align: left;
+                min-width: 560px;
+            }
+            .historial-table th {
+                background: rgba(249, 115, 22, 0.06);
+                color: #1e3a8a;
+                font-weight: 700;
+                font-size: 0.95rem;
+                padding: 18px 24px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border-bottom: 2px solid rgba(249, 115, 22, 0.1);
+                white-space: nowrap;
+            }
+            .historial-table td {
+                padding: 18px 24px;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+                color: #4b5563;
+                font-size: 0.98rem;
+                vertical-align: middle;
+                transition: background-color 0.2s ease;
+            }
+            .historial-table tr:hover td {
+                background-color: rgba(249, 115, 22, 0.02);
+            }
+            .historial-table tr:last-child td {
+                border-bottom: none;
+            }
+            
+            /* Badge styles */
+            .badge-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 6px 14px;
+                border-radius: 40px;
+                font-weight: 700;
+                font-size: 0.82rem;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+            .badge-finalizada {
+                background: rgba(16, 185, 129, 0.15);
+                color: #059669;
+                border: 1px solid rgba(16, 185, 129, 0.25);
+            }
+            
+            /* User Info Layout */
+            .user-cell {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            .user-avatar {
+                width: 42px;
+                height: 42px;
+                min-width: 42px;
+                background: linear-gradient(135deg, #ffedd5 0%, #fed7aa 100%);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #c2410c;
+                font-weight: 700;
+                font-size: 1.1rem;
+                box-shadow: 0 4px 10px rgba(194, 65, 12, 0.1);
+            }
+            .user-name-text {
+                font-weight: 700;
+                color: #1f2937;
+            }
+            .user-meta-text {
+                font-size: 0.82rem;
+                color: #6b7280;
+                margin-top: 2px;
+            }
+            
+            /* Empty State */
+            .empty-state {
+                text-align: center;
+                padding: 50px 20px;
+            }
+            .empty-state-icon {
+                font-size: 4rem;
+                margin-bottom: 20px;
+                display: inline-block;
+                animation: float 3s ease-in-out infinite;
+            }
+            .empty-state h3 {
+                font-size: 1.5rem;
+                color: #374151;
+                margin: 0 0 10px 0;
+                font-weight: 800;
+            }
+            .empty-state p {
+                color: #6b7280;
+                max-width: 400px;
+                margin: 0 auto;
+                font-size: 1rem;
+                line-height: 1.5;
+            }
+            
+            @keyframes float {
+                0% { transform: translateY(0px); }
+                50% { transform: translateY(-10px); }
+                100% { transform: translateY(0px); }
+            }
+
+            /* ===== TABLET (≤768px) ===== */
+            @media (max-width: 768px) {
+                .historial-container {
+                    margin: 24px auto;
+                    padding: 0 16px;
+                }
+                .historial-title {
+                    font-size: 1.7rem;
+                }
+                .historial-subtitle {
+                    font-size: 0.92rem;
+                }
+                .historial-card {
+                    padding: 20px;
+                    border-radius: 18px;
+                }
+                .historial-table th,
+                .historial-table td {
+                    padding: 14px 16px;
+                    font-size: 0.9rem;
+                }
+            }
+
+            /* ===== MÓVIL (≤600px) — tabla → tarjetas ===== */
+            @media (max-width: 600px) {
+                .historial-container {
+                    margin: 16px auto;
+                    padding: 0 12px;
+                }
+                .historial-header {
+                    gap: 12px;
+                    margin-bottom: 20px;
+                    padding-bottom: 16px;
+                }
+                .historial-header-icon {
+                    width: 46px;
+                    height: 46px;
+                    min-width: 46px;
+                    border-radius: 12px;
+                }
+                .historial-header-icon svg {
+                    width: 22px;
+                    height: 22px;
+                }
+                .historial-title {
+                    font-size: 1.35rem;
+                }
+                .historial-subtitle {
+                    font-size: 0.85rem;
+                }
+                .historial-card {
+                    padding: 16px;
+                    border-radius: 16px;
+                }
+                .empty-state {
+                    padding: 30px 12px;
+                }
+                .empty-state-icon {
+                    font-size: 3rem;
+                }
+                .empty-state h3 {
+                    font-size: 1.2rem;
+                }
+                .empty-state p {
+                    font-size: 0.9rem;
+                }
+
+                /* Ocultar tabla clásica y mostrar tarjetas */
+                .table-responsive {
+                    overflow-x: visible;
+                }
+                .historial-table {
+                    min-width: unset;
+                }
+                .historial-table thead {
+                    display: none;
+                }
+                .historial-table tbody tr {
+                    display: block;
+                    background: #fff;
+                    border-radius: 14px;
+                    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+                    margin-bottom: 14px;
+                    padding: 16px;
+                    border: 1px solid rgba(249,115,22,0.12);
+                    transition: box-shadow 0.2s;
+                }
+                .historial-table tbody tr:hover {
+                    box-shadow: 0 4px 20px rgba(249,115,22,0.13);
+                }
+                .historial-table tbody tr:last-child {
+                    margin-bottom: 0;
+                }
+                .historial-table td {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 10px 4px;
+                    border-bottom: 1px dashed rgba(0,0,0,0.07);
+                    font-size: 0.9rem;
+                    gap: 10px;
+                }
+                .historial-table td:last-child {
+                    border-bottom: none;
+                    padding-bottom: 0;
+                }
+                .historial-table td::before {
+                    content: attr(data-label);
+                    font-weight: 700;
+                    font-size: 0.75rem;
+                    color: #ea580c;
+                    text-transform: uppercase;
+                    letter-spacing: 0.4px;
+                    min-width: 100px;
+                    flex-shrink: 0;
+                }
+                .historial-table td .user-cell {
+                    justify-content: flex-end;
+                }
+                .user-avatar {
+                    width: 36px;
+                    height: 36px;
+                    min-width: 36px;
+                    font-size: 0.95rem;
+                }
+                /* Dirección en móvil: texto alineado a la derecha */
+                .historial-table td[data-label="Dirección"] div {
+                    max-width: 160px;
+                    text-align: right;
+                }
+            }
+
+            /* ===== MÓVIL MUY PEQUEÑO (≤380px) ===== */
+            @media (max-width: 380px) {
+                .historial-title {
+                    font-size: 1.15rem;
+                }
+                .historial-table td::before {
+                    min-width: 80px;
+                    font-size: 0.7rem;
+                }
+                .historial-card {
+                    padding: 12px;
+                }
+            }
+        </style>
+
+        <div class="historial-header">
+            <div class="historial-header-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+            </div>
+            <div class="historial-header-text">
+                <h1 class="historial-title">Ayudas Brindadas</h1>
+                <p class="historial-subtitle">Consulta el registro de las asistencias que has brindado como voluntario.</p>
+            </div>
+        </div>
+
+        <div class="historial-card">
+            <!-- Caso: No hay historial -->
+            <div th:if="${#lists.isEmpty(historial)}" class="empty-state">
+                <span class="empty-state-icon" role="img" aria-label="Calendario vacío">📋</span>
+                <h3>Aún no has brindado ayuda</h3>
+                <p>Tu historial está listo. Cuando aceptes y completes tu primera asistencia desde las alertas, aparecerá aquí.</p>
+            </div>
+
+            <!-- Caso: Hay historial -->
+            <div th:if="${!#lists.isEmpty(historial)}" class="table-responsive">
+                <table class="historial-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Persona Asistida</th>
+                            <th>Dirección</th>
+                            <th>Fecha y Hora</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="h : ${historial}">
+                            <td data-label="Código" style="font-family: monospace; font-weight: bold; color: #ea580c;" th:text="${'#AY-' + h.solicitud.id}">#AY-001</td>
+                            <td data-label="Persona Asistida">
+                                <div class="user-cell" th:if="${h.solicitud.discapacitado != null}">
+                                    <div class="user-avatar" th:text="${#strings.substring(h.solicitud.discapacitado.nombres, 0, 1)}">D</div>
+                                    <div>
+                                        <div class="user-name-text" th:text="${h.solicitud.discapacitado.nombres + ' ' + h.solicitud.discapacitado.apellidos}">María Gómez</div>
+                                        <div class="user-meta-text" th:text="${'Tipo: ' + h.solicitud.discapacitado.tipoDiscapacidad}">Motriz</div>
+                                    </div>
+                                </div>
+                                <span th:if="${h.solicitud.discapacitado == null}" style="color: #9ca3af; font-style: italic;">No disponible</span>
+                            </td>
+                            <td data-label="Dirección">
+                                <div style="max-width: 220px; word-wrap: break-word; font-size: 0.92rem; color: #4b5563;"
+                                     th:text="${h.solicitud.discapacitado != null ? h.solicitud.discapacitado.direccion : '—'}">Av. Arequipa 1234</div>
+                            </td>
+                            <td data-label="Fecha y Hora">
+                                <span th:text="${#temporals.format(h.fechaFinalizacion, 'dd/MM/yyyy hh:mm a')}">08/06/2026 04:30 PM</span>
+                            </td>
+                            <td data-label="Estado">
+                                <span class="badge-status badge-finalizada">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Finalizada
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </body>
 </html>

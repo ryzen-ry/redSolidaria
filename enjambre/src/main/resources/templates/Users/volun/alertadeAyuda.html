@@ -1,25 +1,1311 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/Users/volun/layoutVol :: html}"
+      th:replace="~{Users/volun/layoutVol :: html(content=~{::content})}"
       th:with="titulo='Alertas de Ayuda - Voluntario'">
 <head></head>
 <body>
     <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 class="rs-section-title">🚨 Alertas de Ayuda</h1>
+        <!-- Leaflet CSS ya está en layoutVol.html head, no duplicar -->
+        <style>
+            /* ── Map container ── */
+            .ml-map-wrapper {
+                display: none;
+                margin-top: 18px;
+                border-radius: 16px;
+                overflow: hidden;
+                border: 2px solid #d1fae5;
+                box-shadow: 0 8px 24px rgba(17,24,39,0.12);
+            }
+            .ml-map-header {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                padding: 12px 16px;
+                background: #ecfdf5;
+                border-bottom: 1px solid #d1fae5;
+            }
+            .ml-map-header svg { width:20px; height:20px; color:#4a9d5f; flex-shrink:0; }
+            .ml-map-header span { font-weight: 800; color: #065f46; font-size: 0.95rem; }
+            .ml-map-ping {
+                margin-left: auto;
+                width: 10px; height: 10px;
+                border-radius: 999px;
+                background: #22c55e;
+                animation: mlPingDot 1.6s infinite;
+            }
+            @keyframes mlPingDot {
+                0%,100%{ transform:scale(1); opacity:1; }
+                50%{ transform:scale(1.6); opacity:0.5; }
+            }
+            #mapaDiscapacitado { height: 340px; min-height: 340px; width: 100%; }
+            .ml-map-wrapper.is-visible { display: block !important; visibility: visible !important; }
+
+            /* Toast de estado */
+            .ml-toast {
+                position: fixed;
+                bottom: 24px;
+                left: 50%;
+                transform: translateX(-50%) translateY(80px);
+                background: #1e3a5f;
+                color: white;
+                padding: 14px 24px;
+                border-radius: 999px;
+                font-weight: 700;
+                font-size: 0.95rem;
+                box-shadow: 0 8px 24px rgba(17,24,39,0.22);
+                z-index: 9999;
+                opacity: 0;
+                transition: transform 0.35s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+                white-space: nowrap;
+                pointer-events: none;
+            }
+            .ml-toast.show {
+                transform: translateX(-50%) translateY(0);
+                opacity: 1;
+            }
+            .ml-toast.success { background: #15803d; }
+            .ml-toast.warning { background: #b45309; }
+            .ml-toast.error   { background: #b91c1c; }
+
+            /* Leyenda del mapa */
+            .ml-map-legend {
+                display: flex;
+                gap: 14px;
+                padding: 8px 14px;
+                background: #f8fafc;
+                border-top: 1px solid #e5e7eb;
+                font-size: 0.82rem;
+                color: #4a5568;
+                flex-wrap: wrap;
+            }
+            .ml-map-legend span { display:flex; align-items:center; gap:5px; }
+            .ml-legend-dot { width:12px; height:12px; border-radius:50%; display:inline-block; }
+            .ml-map-distance {
+                margin-left: auto;
+                font-weight: 700;
+                color: #065f46;
+            }
+
+            :root {
+                --ml-title: #1e3a5f;
+                --ml-muted: #4a5568;
+                --ml-green: #4a9d5f;
+                --ml-green-dark: #3d8450;
+                --ml-border: #e5e7eb;
+                --ml-shadow-lg: 0 14px 35px rgba(17, 24, 39, 0.10);
+                --ml-shadow-md: 0 10px 25px rgba(17, 24, 39, 0.10);
+            }
+
+            .ml-voluntario {
+                display: none;
+                margin-top: 14px;
+                text-align: left;
+                background: #ecfdf5;
+                border: 1px solid #d1fae5;
+                padding: 14px;
+                border-radius: 14px;
+            }
+
+            .ml-voluntario h3 {
+                margin: 0 0 10px;
+                color: #065f46;
+                font-size: 1rem;
+                font-weight: 800;
+            }
+
+            @keyframes mlPulse {
+                0%, 100% { opacity: 1; }
+                50% { opacity: 0.6; }
+            }
+
+            .ml-page {
+                width: 100%;
+                max-width: 1100px;
+                margin: 0 auto;
+                padding: 24px 16px 6px;
+            }
+
+            .ml-hero {
+                text-align: center;
+                margin-bottom: 28px;
+            }
+
+            .ml-hero h1 {
+                margin: 0 0 8px;
+                font-size: clamp(1.6rem, 3vw, 2.5rem);
+                font-weight: 800;
+                letter-spacing: -0.02em;
+                color: var(--ml-title);
+            }
+
+            .ml-hero p {
+                margin: 0;
+                color: var(--ml-muted);
+                font-size: 1.05rem;
+            }
+
+            .ml-alert {
+                display: block;
+                background: #fffbeb;
+                border: 2px solid #fde68a;
+                color: #92400e;
+                border-radius: 14px;
+                padding: 16px 18px;
+                margin: 0 0 18px;
+            }
+
+            .ml-alert h3 {
+                margin: 0 0 6px;
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: #92400e;
+            }
+
+            .ml-card {
+                background: white;
+                border: 1px solid var(--ml-border);
+                border-top: 4px solid var(--ml-green);
+                border-radius: 18px;
+                box-shadow: var(--ml-shadow-lg);
+                margin-bottom: 18px;
+            }
+
+            .ml-card-body {
+                padding: 22px 20px;
+            }
+
+            .ml-section-title {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex-wrap: wrap;
+                margin-bottom: 16px;
+            }
+
+            .ml-bell {
+                width: 52px;
+                height: 52px;
+                border-radius: 999px;
+                background: rgba(74, 157, 95, 0.12);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--ml-green);
+                flex-shrink: 0;
+            }
+
+            .ml-bell svg { width: 26px; height: 26px; }
+
+            .ml-section-title h2 {
+                margin: 0;
+                font-size: clamp(1.25rem, 2.3vw, 1.8rem);
+                font-weight: 800;
+                color: var(--ml-title);
+            }
+
+            .ml-count {
+                display: none;
+                background: #ef4444;
+                color: white;
+                padding: 6px 10px;
+                border-radius: 999px;
+                font-weight: 800;
+                font-size: 0.9rem;
+                line-height: 1;
+            }
+
+            .ml-empty {
+                display: none;
+                text-align: center;
+                padding: 44px 16px;
+                color: var(--ml-muted);
+            }
+
+            .ml-empty .ml-empty-icon {
+                width: 80px;
+                height: 80px;
+                border-radius: 999px;
+                background: #f3f4f6;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 14px;
+                color: #9ca3af;
+            }
+
+            .ml-empty .ml-empty-icon svg { width: 42px; height: 42px; }
+
+            .ml-empty .ml-empty-title {
+                margin: 0;
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: var(--ml-title);
+            }
+
+            .ml-empty .ml-empty-sub {
+                margin: 6px 0 0;
+                font-size: 0.92rem;
+                color: var(--ml-muted);
+            }
+
+            .ml-notif {
+                border: 2px solid var(--ml-green);
+                border-radius: 16px;
+                padding: 18px;
+                background: #f0fdf4;
+                box-shadow: 0 10px 25px rgba(17, 24, 39, 0.06);
+                transition: transform .18s ease, box-shadow .18s ease;
+                margin-bottom: 12px;
+            }
+
+            .ml-notif:hover {
+                transform: translateX(5px);
+                box-shadow: 0 14px 35px rgba(17, 24, 39, 0.10);
+            }
+
+            .ml-notif-grid {
+                display: grid;
+                grid-template-columns: 1fr auto;
+                gap: 16px;
+                align-items: center;
+            }
+
+            .ml-badges {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                flex-wrap: wrap;
+                margin-bottom: 10px;
+            }
+
+            .ml-badge-urgent {
+                background: #ef4444;
+                color: white;
+                padding: 6px 10px;
+                border-radius: 999px;
+                font-weight: 800;
+                font-size: 0.8rem;
+                animation: mlPulse 1.5s infinite;
+            }
+
+            .ml-badge-meta {
+                color: var(--ml-muted);
+                font-size: 0.86rem;
+            }
+
+            .ml-notif h3 {
+                margin: 0 0 10px;
+                font-size: 1.1rem;
+                font-weight: 800;
+                color: var(--ml-title);
+            }
+
+            .ml-lines {
+                display: grid;
+                gap: 8px;
+                color: var(--ml-muted);
+                font-size: 0.95rem;
+            }
+
+            .ml-line {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .ml-line svg {
+                width: 18px;
+                height: 18px;
+                color: var(--ml-green);
+                flex-shrink: 0;
+            }
+
+            .ml-actions {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+                min-width: 210px;
+            }
+
+            .ml-btn {
+                border: none;
+                border-radius: 999px;
+                padding: 12px 16px;
+                font-weight: 800;
+                font-size: 1rem;
+                cursor: pointer;
+                transition: transform .18s ease, background-color .18s ease, opacity .18s ease, box-shadow .18s ease;
+                white-space: nowrap;
+            }
+
+            .ml-btn:hover:not(:disabled) { transform: scale(1.01); }
+
+            .ml-btn-accept {
+                background: var(--ml-green);
+                color: white;
+                box-shadow: var(--ml-shadow-md);
+            }
+
+            .ml-btn-accept:hover:not(:disabled) { background: var(--ml-green-dark); }
+
+            .ml-btn-reject {
+                background: #ef4444;
+                color: white;
+            }
+
+            .ml-btn:disabled {
+                background: #cbd5e1 !important;
+                color: #64748b !important;
+                cursor: not-allowed;
+                box-shadow: none !important;
+                transform: none !important;
+            }
+
+            .ml-btn.is-loading {
+                opacity: .75;
+                pointer-events: none;
+            }
+
+            .ml-stats {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 16px;
+            }
+
+            .ml-stat-card {
+                background: white;
+                border: 1px solid var(--ml-border);
+                border-radius: 16px;
+                box-shadow: 0 6px 16px rgba(17, 24, 39, 0.06);
+                padding: 16px;
+                transition: transform .18s ease;
+            }
+
+            .ml-stat-card:hover { transform: translateY(-4px); }
+
+            .ml-stat-main {
+                text-align: center;
+            }
+
+            .ml-stat-icon {
+                width: 56px;
+                height: 56px;
+                border-radius: 999px;
+                background: var(--ml-green);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 12px;
+            }
+
+            .ml-stat-icon svg { width: 24px; height: 24px; }
+
+            .ml-stat-value {
+                margin: 0;
+                font-size: 2.2rem;
+                font-weight: 900;
+                color: var(--ml-title);
+                line-height: 1;
+            }
+
+            .ml-stat-label {
+                margin: 6px 0 0;
+                color: var(--ml-muted);
+                font-size: 0.95rem;
+            }
+
+            .ml-kv h3 {
+                margin: 0 0 8px;
+                font-size: 0.95rem;
+                font-weight: 900;
+                color: var(--ml-title);
+            }
+
+            .ml-kv p {
+                margin: 0;
+                color: var(--ml-muted);
+                font-weight: 600;
+            }
+
+            @media (max-width: 900px) {
+                .ml-notif-grid { grid-template-columns: 1fr; }
+                .ml-actions { min-width: 100%; }
+                .ml-stats { grid-template-columns: 1fr; }
+            }
+        </style>
+
+        <div class="ml-page">
+            <div class="ml-hero">
+                <h1>
+                    Bienvenido,
+                    <span th:text="${session.usuario != null ? session.usuario.nombres : 'Voluntario'}">Voluntario</span>
+                </h1>
+                <p>
+                    <span th:if="${session.usuario != null and session.usuario.verificado}">✅ Estás listo para ayudar</span>
+                    <span th:unless="${session.usuario != null and session.usuario.verificado}">⏳ Tu cuenta está en proceso de verificación</span>
+                </p>
+            </div>
+
+            <div id="alertaVerificacion" class="ml-alert" th:if="${session.usuario == null or not session.usuario.verificado}">
+                <h3>Cuenta en Verificación</h3>
+                <p style="margin:0;">
+                    Tu cuenta de voluntario está siendo verificada. Recibirás un correo cuando esté activa.
+                    Mientras tanto, puedes explorar la plataforma.
+                </p>
+            </div>
+
+            <div class="ml-card">
+                <div class="ml-card-body">
+                    <div class="ml-section-title">
+                        <div class="ml-bell" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                            </svg>
+                        </div>
+                        <h2>Solicitudes de Ayuda Activas</h2>
+                        <span id="contadorNotificaciones" class="ml-count">0</span>
+                        <span id="wsEstadoVol" style="margin-left:auto; color: var(--ml-muted); font-weight: 700;"></span>
+                    </div>
+
+                    <div id="listaAlertas"></div>
+
+                    <div id="sinAlertas" class="ml-empty">
+                        <div class="ml-empty-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 6 9 17l-5-5"/>
+                            </svg>
+                        </div>
+                        <p class="ml-empty-title">No hay solicitudes de ayuda en este momento</p>
+                        <p class="ml-empty-sub">Te notificaremos cuando alguien necesite asistencia</p>
+                    </div>
+
+                    <div id="infoDiscapacitado" class="ml-voluntario">
+                        <h3>Beneficiario asignado</h3>
+                        <div id="infoDiscapacitadoDetalle"></div>
+                    </div>
+
+                    <!-- Mapa del discapacitado -->
+                    <div id="mapaDiscapacitadoWrapper" class="ml-map-wrapper">
+                        <div class="ml-map-header">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                 stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/>
+                                <circle cx="12" cy="10" r="3"/>
+                            </svg>
+                            <span>🗺️ Mapa en tiempo real</span>
+                            <div class="ml-map-ping"></div>
+                        </div>
+                        <div id="mapaDiscapacitado"></div>
+                        <div class="ml-map-legend">
+                            <span><span class="ml-legend-dot" style="background:#ef4444"></span> Beneficiario</span>
+                            <span><span class="ml-legend-dot" style="background:#3b82f6"></span> Tu posición</span>
+                            <span id="mapDistanciaVol" class="ml-map-distance"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ml-stats">
+                <div class="ml-stat-card ml-stat-main">
+                    <div class="ml-stat-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                    </div>
+                    <p class="ml-stat-value" id="totalAyudados">0</p>
+                    <p class="ml-stat-label">Personas Ayudadas</p>
+                </div>
+
+                <div class="ml-stat-card ml-kv">
+                    <h3>Tu Código</h3>
+                    <p th:text="${session.usuario != null ? session.usuario.codigo : '—'}">—</p>
+                </div>
+
+                <div class="ml-stat-card ml-kv">
+                    <h3>Carrera</h3>
+                    <p class="text-capitalize" th:text="${session.usuario != null ? session.usuario.carrera : '—'}">—</p>
+                </div>
+            </div>
         </div>
-        
-        <!-- Aquí se mostrarán las alertas dinámicamente -->
-        <div id="listaAlertas">
-            <!-- Las alertas se cargarán desde el backend -->
-        </div>
-        
-        <!-- Mensaje cuando no hay alertas -->
-        <div id="sinAlertas" class="rs-empty-state" style="display: none; text-align: center; padding: 60px;">
-            <div class="rs-empty-icon">✅</div>
-            <h3>No hay alertas pendientes</h3>
-            <p>Las solicitudes de ayuda aparecerán aquí automáticamente.</p>
-        </div>
+
+        <!-- Toast global -->
+        <div id="mlToast" class="ml-toast"></div>
+
+        <script th:inline="javascript">
+        (() => {
+            const currentUsuarioId = /*[[${session.usuario != null ? session.usuario.id : null}]]*/ null;
+            const currentUsuarioRol = /*[[${session.usuario != null ? session.usuario.rol : null}]]*/ null;
+
+            const isValidCoord = (lat, lng) => {
+                const la = Number(lat);
+                const ln = Number(lng);
+                return Number.isFinite(la) && Number.isFinite(ln)
+                    && Math.abs(la) <= 90 && Math.abs(ln) <= 180;
+            };
+
+            const LEAFLET_JS = /*[[@{/vendor/leaflet/leaflet.js}]]*/ '/vendor/leaflet/leaflet.js';
+
+            const waitForLeaflet = (timeoutMs = 15000) => {
+                if (typeof L !== 'undefined') {
+                    return Promise.resolve(L);
+                }
+                return new Promise((resolve, reject) => {
+                    let done = false;
+                    const finish = (ok, value) => {
+                        if (done) return;
+                        done = true;
+                        clearInterval(poll);
+                        clearTimeout(timer);
+                        ok ? resolve(value) : reject(value);
+                    };
+
+                    const poll = setInterval(() => {
+                        if (typeof L !== 'undefined') finish(true, L);
+                    }, 40);
+
+                    const timer = setTimeout(() => {
+                        finish(false, new Error('leaflet-timeout'));
+                    }, timeoutMs);
+
+                    const attach = (script) => {
+                        script.addEventListener('load', () => {
+                            if (typeof L !== 'undefined') finish(true, L);
+                        }, { once: true });
+                        script.addEventListener('error', () => loadScript(), { once: true });
+                    };
+
+                    const loadScript = () => {
+                        const s = document.createElement('script');
+                        s.src = LEAFLET_JS;
+                        s.id = 'leaflet-lib-fallback';
+                        s.onload = () => {
+                            if (typeof L !== 'undefined') finish(true, L);
+                        };
+                        s.onerror = () => finish(false, new Error('leaflet-load-error'));
+                        document.head.appendChild(s);
+                    };
+
+                    const existing = document.getElementById('leaflet-lib')
+                        || document.getElementById('leaflet-lib-fallback');
+                    if (existing) {
+                        attach(existing);
+                    } else {
+                        loadScript();
+                    }
+                });
+            };
+
+            const scheduleMapInvalidate = (map) => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (map) map.invalidateSize({ animate: false });
+                        setTimeout(() => { if (map) map.invalidateSize({ animate: false }); }, 300);
+                        setTimeout(() => { if (map) map.invalidateSize({ animate: false }); }, 800);
+                    });
+                });
+            };
+
+            const lista = document.getElementById('listaAlertas');
+            const sin = document.getElementById('sinAlertas');
+            const wsEstadoVol = document.getElementById('wsEstadoVol');
+            const contadorNotificaciones = document.getElementById('contadorNotificaciones');
+            const totalAyudados = document.getElementById('totalAyudados');
+
+            const voluntarioVerificado = !!(document.querySelector('#alertaVerificacion') === null);
+
+            let socket = null;
+            let wsOpen = false;
+            let geoWatchId = null;
+            let locationEnabled = false;
+            let lastSentAt = 0;
+            let lastPosition = null;
+            let lastSentPosition = null; // Filtrado de 2 metros para evitar ruido del GPS
+            let sesionAceptada = false;
+
+            // solicitudId -> data
+            const solicitudesActivas = new Map();
+            let cachedUbicacionDiscapacitado = null;
+            let solicitudAceptadaId = null;
+
+            // Map state
+            let leafletMap = null;
+            let disMarker = null;
+            let miMarkerVol = null;
+            let rutaLineVol = null;
+
+            // ── Toast ───────────────────────────────────────────────────────
+            let toastTimer = null;
+            const showToast = (msg, kind = '', durationMs = 3500) => {
+                const el = document.getElementById('mlToast');
+                if (!el) return;
+                el.textContent = msg;
+                el.className = 'ml-toast' + (kind ? ' ' + kind : '');
+                void el.offsetWidth;
+                el.classList.add('show');
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => el.classList.remove('show'), durationMs);
+            };
+
+            // ── Helpers de distancia ───────────────────────────────────
+            const calcDistKm = (lat1, lng1, lat2, lng2) => {
+                const R = 6371;
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLng = (lng2 - lng1) * Math.PI / 180;
+                const a = Math.sin(dLat/2)**2 +
+                          Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) *
+                          Math.sin(dLng/2)**2;
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            };
+            const fmtDist = (km) => km < 1 ? Math.round(km * 1000) + ' m' : km.toFixed(2) + ' km';
+
+            const updateDistanceLabelVol = () => {
+                if (!disMarker || !miMarkerVol) return;
+                const dll = disMarker.getLatLng();
+                const mll = miMarkerVol.getLatLng();
+                const km = calcDistKm(dll.lat, dll.lng, mll.lat, mll.lng);
+                const el = document.getElementById('mapDistanciaVol');
+                if (el) el.textContent = '📏 ' + fmtDist(km);
+            };
+
+            const updateRutaVol = () => {
+                if (!leafletMap || !disMarker || !miMarkerVol) return;
+                const pts = [disMarker.getLatLng(), miMarkerVol.getLatLng()];
+                if (rutaLineVol) {
+                    rutaLineVol.setLatLngs(pts);
+                } else {
+                    rutaLineVol = L.polyline(pts, {
+                        color: '#f97316',
+                        weight: 3,
+                        dashArray: '8 6',
+                        opacity: 0.7
+                    }).addTo(leafletMap);
+                }
+                updateDistanceLabelVol();
+            };
+
+            const fitBothMarkersVol = (animate = false) => {
+                if (!disMarker || !miMarkerVol) return;
+                const bounds = L.latLngBounds([
+                    disMarker.getLatLng(), miMarkerVol.getLatLng()
+                ]);
+                leafletMap.fitBounds(bounds, { padding: [50, 50], animate });
+            };
+
+            const showMapWrapperVol = () => {
+                const wrapper = document.getElementById('mapaDiscapacitadoWrapper');
+                if (wrapper) {
+                    wrapper.classList.add('is-visible');
+                    wrapper.style.display = 'block';
+                    wrapper.style.visibility = 'visible';
+                }
+            };
+
+            const initMapVol = async (latDis, lngDis, latMi, lngMi) => {
+                if (!isValidCoord(latDis, lngDis)) {
+                    showToast('Ubicación del beneficiario no disponible.', 'warning', 4000);
+                    return;
+                }
+
+                try {
+                    await waitForLeaflet();
+                } catch (e) {
+                    console.error('[mapa] Leaflet no disponible', e);
+                    showToast('No se pudo cargar el mapa. Comprueba tu conexión y recarga.', 'error', 5000);
+                    return;
+                }
+
+                const latD = Number(latDis);
+                const lngD = Number(lngDis);
+                const latM = latMi != null && lngMi != null && isValidCoord(latMi, lngMi) ? Number(latMi) : null;
+                const lngM = latM != null ? Number(lngMi) : null;
+
+                showMapWrapperVol();
+
+                const buildMarkers = () => {
+                    const mapContainer = document.getElementById('mapaDiscapacitado');
+                    if (mapContainer) mapContainer.style.height = '340px';
+
+                    if (!leafletMap) {
+                        leafletMap = L.map('mapaDiscapacitado', {
+                            zoomControl: true,
+                            attributionControl: true
+                        });
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; OpenStreetMap',
+                            maxZoom: 19
+                        }).addTo(leafletMap);
+                    }
+
+                    const iconDis = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(239,68,68,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#ef4444" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    const iconMiVol = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(59,130,246,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#3b82f6" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+
+                    if (disMarker) {
+                        disMarker.setLatLng([latD, lngD]);
+                    } else {
+                        disMarker = L.marker([latD, lngD], { icon: iconDis })
+                            .addTo(leafletMap)
+                            .bindPopup('<b>📍 Beneficiario</b><br>Necesita tu ayuda')
+                            .openPopup();
+                    }
+
+                    if (latM != null && lngM != null) {
+                        if (miMarkerVol) {
+                            miMarkerVol.setLatLng([latM, lngM]);
+                        } else {
+                            miMarkerVol = L.marker([latM, lngM], { icon: iconMiVol })
+                                .addTo(leafletMap)
+                                .bindPopup('<b>🙋 Tu ubicación</b>');
+                        }
+                        fitBothMarkersVol(false);
+                        updateRutaVol();
+                    } else {
+                        leafletMap.setView([latD, lngD], 15);
+                    }
+
+                    scheduleMapInvalidate(leafletMap);
+                };
+
+                requestAnimationFrame(() => requestAnimationFrame(buildMarkers));
+            };
+
+            const animateMarkerTo = (marker, destLat, destLng, duration = 1200, callback = null) => {
+                if (!marker) return;
+                const startLatLng = marker.getLatLng();
+                const startLat = startLatLng.lat;
+                const startLng = startLatLng.lng;
+                const startTime = performance.now();
+
+                const step = (now) => {
+                    const elapsed = now - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    
+                    const ease = progress < 0.5 
+                        ? 2 * progress * progress 
+                        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+                    const curLat = startLat + (destLat - startLat) * ease;
+                    const curLng = startLng + (destLng - startLng) * ease;
+
+                    marker.setLatLng([curLat, curLng]);
+                    if (callback) callback();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        marker.setLatLng([destLat, destLng]);
+                        if (callback) callback();
+                    }
+                };
+                requestAnimationFrame(step);
+            };
+
+            const updateDisMarker = (lat, lng) => {
+                if (!isValidCoord(lat, lng)) return;
+                if (!leafletMap || !disMarker) {
+                    if (sesionAceptada) {
+                        const myLat = lastPosition?.lat ?? null;
+                        const myLng = lastPosition?.lng ?? null;
+                        initMapVol(Number(lat), Number(lng), myLat, myLng);
+                    }
+                    return;
+                }
+                animateMarkerTo(disMarker, Number(lat), Number(lng), 1000, () => {
+                    updateRutaVol();
+                });
+                if (miMarkerVol) {
+                    fitBothMarkersVol(true);
+                } else {
+                    leafletMap.panTo([lat, lng], { animate: true });
+                }
+            };
+
+            const updateMiMarkerVol = (lat, lng) => {
+                if (!isValidCoord(lat, lng) || !leafletMap) return;
+                if (!miMarkerVol) {
+                    const iconMiVol = L.divIcon({
+                        html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0px 3px 5px rgba(59,130,246,0.6));"><path d="M12 2L3.5 20.5L12 16L20.5 20.5L12 2Z" fill="#3b82f6" stroke="white" stroke-width="2" stroke-linejoin="round"/></svg></div>',
+                        className: '',
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
+                    });
+                    miMarkerVol = L.marker([lat, lng], { icon: iconMiVol })
+                        .addTo(leafletMap)
+                        .bindPopup('<b>🙋 Tu ubicación</b>');
+                    if (disMarker) {
+                        fitBothMarkersVol(false);
+                        updateRutaVol();
+                    }
+                    return;
+                }
+                animateMarkerTo(miMarkerVol, Number(lat), Number(lng), 1000, () => {
+                    updateRutaVol();
+                });
+            };
+
+            const setSinAlertas = () => {
+                const showEmpty = solicitudesActivas.size === 0;
+                if (sin) sin.style.display = showEmpty ? 'block' : 'none';
+                if (contadorNotificaciones) {
+                    if (solicitudesActivas.size > 0) {
+                        contadorNotificaciones.style.display = 'inline-flex';
+                        contadorNotificaciones.textContent = String(solicitudesActivas.size);
+                    } else {
+                        contadorNotificaciones.style.display = 'none';
+                    }
+                }
+            };
+            const setWsBadge = (text, kind = '') => {
+                if (!wsEstadoVol) return;
+                // No usamos "badge" visual grande aquí; solo texto discreto.
+                wsEstadoVol.textContent = text;
+            };
+
+            const escapeHtml = (s) => {
+                return String(s ?? '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            };
+
+            const renderSolicitud = (data) => {
+                const solicitudId = data.solicitudId;
+                if (!solicitudId) return;
+
+                const existing = document.getElementById('solicitud-' + solicitudId);
+                const container = existing || document.createElement('div');
+                container.id = 'solicitud-' + solicitudId;
+                container.className = 'ml-notif';
+
+                const d = data.discapacitado || {};
+                const ub = data.ubicacionDiscapacitado || {};
+                const nombre = `${d.nombres ?? ''} ${d.apellidos ?? ''}`.trim();
+
+                container.innerHTML = `
+                    <div class="ml-notif-grid">
+                        <div>
+                            <div class="ml-badges">
+                                <span class="ml-badge-urgent">URGENTE</span>
+                                <span class="ml-badge-meta">Solicitud #${escapeHtml(solicitudId)}</span>
+                            </div>
+                            <h3>${escapeHtml(nombre || 'Usuario')} necesita ayuda</h3>
+                            <div class="ml-lines">
+                                <div class="ml-line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="12" cy="7" r="4"/>
+                                    </svg>
+                                    <span>Teléfono: <strong>${escapeHtml(d.telefono || '—')}</strong></span>
+                                </div>
+                                <div class="ml-line">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                    <span>${escapeHtml(d.direccion || 'Av. Principal 123')}</span>
+                                </div>
+                                <div class="ml-line" style="opacity:.9;">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                         stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"/>
+                                        <path d="M12 6v6l4 2"/>
+                                    </svg>
+                                    <span>Ubicación: lat=${escapeHtml(ub.lat)} lng=${escapeHtml(ub.lng)}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ml-actions">
+                            <button class="ml-btn ml-btn-accept" data-action="ACEPTAR" ${voluntarioVerificado ? '' : 'disabled'}>
+                                ${voluntarioVerificado ? 'Aceptar Ayuda' : 'No Verificado'}
+                            </button>
+                            <button class="ml-btn ml-btn-reject" data-action="RECHAZAR">Rechazar</button>
+                        </div>
+                    </div>
+                `;
+
+                // Limpiar listeners (lo hacemos re-clonando con reemplazo si ya existe)
+                if (existing) existing.remove();
+
+                const wrapper = container.cloneNode(true);
+                const rejectBtn = wrapper.querySelector('[data-action="RECHAZAR"]');
+                const acceptBtn = wrapper.querySelector('[data-action="ACEPTAR"]');
+
+                rejectBtn?.addEventListener('click', () => {
+                    sendDecision(solicitudId, 'RECHAZAR', rejectBtn, acceptBtn);
+                });
+                acceptBtn?.addEventListener('click', () => {
+                    sendDecision(solicitudId, 'ACEPTAR', rejectBtn, acceptBtn);
+                });
+
+                lista.appendChild(wrapper);
+            };
+
+            const removeSolicitud = (solicitudId) => {
+                const el = document.getElementById('solicitud-' + solicitudId);
+                if (el) el.remove();
+            };
+
+            const renderDiscapacitado = (discapacitado, ubicacionDis) => {
+                const d = discapacitado || {};
+                const ub = ubicacionDis || {};
+                const nombre = `${d.nombres ?? ''} ${d.apellidos ?? ''}`.trim();
+
+                const infoDiv = document.getElementById('infoDiscapacitado');
+                const detalleDiv = document.getElementById('infoDiscapacitadoDetalle');
+                if (!infoDiv || !detalleDiv) return;
+
+                detalleDiv.innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                        <div style="width:40px;height:40px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">📍</div>
+                        <div>
+                            <div style="font-weight:800;color:#1e3a5f;">${escapeHtml(nombre)}</div>
+                            <div style="font-size:0.85rem;color:#4a5568;">📞 ${escapeHtml(d.telefono || '—')}</div>
+                        </div>
+                    </div>
+                    <div style="font-size:0.88rem;color:#4a5568;margin-bottom:4px;">
+                        🏠 ${escapeHtml(d.direccion || '—')}
+                    </div>
+                    <div style="font-size:0.85rem;color:#6b7280;margin-bottom:10px;">
+                        📍 Lat: ${escapeHtml(ub.lat)}, Lng: ${escapeHtml(ub.lng)}
+                    </div>
+                    <button id="btnTerminarAyuda" style="width:100%;padding:12px;border:none;background:#ef4444;color:white;border-radius:999px;font-weight:800;font-size:1rem;cursor:pointer;transition:background .18s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                        ✅ Terminar Ayuda
+                    </button>
+                `;
+                infoDiv.style.display = 'block';
+
+                // Listener del botón de terminar
+                document.getElementById('btnTerminarAyuda')?.addEventListener('click', () => {
+                    if (socket && socket.readyState === WebSocket.OPEN && solicitudAceptadaId) {
+                        socket.send(JSON.stringify({ type: 'TERMINAR_AYUDA', solicitudId: solicitudAceptadaId }));
+                    } else {
+                        terminarAyuda();
+                    }
+                });
+
+                const myLat = lastPosition?.lat ?? null;
+                const myLng = lastPosition?.lng ?? null;
+                const ubResolved = (ub.lat != null && ub.lng != null) ? ub : cachedUbicacionDiscapacitado;
+                if (ubResolved?.lat != null && ubResolved?.lng != null) {
+                    initMapVol(Number(ubResolved.lat), Number(ubResolved.lng), myLat, myLng);
+                } else {
+                    showToast('Esperando ubicación del beneficiario en el mapa...', 'warning', 4000);
+                }
+            };
+
+            const terminarAyuda = () => {
+                sesionAceptada = false;
+                solicitudAceptadaId = null;
+                cachedUbicacionDiscapacitado = null;
+                const wrapper = document.getElementById('mapaDiscapacitadoWrapper');
+                if (wrapper) {
+                    wrapper.style.display = 'none';
+                    wrapper.classList.remove('is-visible');
+                }
+                const infoDiv = document.getElementById('infoDiscapacitado');
+                if (infoDiv) infoDiv.style.display = 'none';
+                // Destruir mapa
+                if (leafletMap) {
+                    leafletMap.remove();
+                    leafletMap = null;
+                    disMarker = null;
+                    miMarkerVol = null;
+                    rutaLineVol = null;
+                }
+                const distEl = document.getElementById('mapDistanciaVol');
+                if (distEl) distEl.textContent = '';
+                // Mostrar estado limpio
+                setSinAlertas();
+                showToast('✅ Ayuda finalizada. En espera de nuevas solicitudes.', 'success', 5000);
+            };
+
+            const sendDecision = (solicitudId, decision, rejectBtn, acceptBtn) => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) return;
+                if (decision === 'ACEPTAR' && !locationEnabled) {
+                    alert('Habilita tu ubicación antes de aceptar la solicitud.');
+                    return;
+                }
+                if (decision === 'ACEPTAR' && !voluntarioVerificado) {
+                    alert('Tu cuenta aún no está verificada. No puedes aceptar ayudas hasta que sea verificada.');
+                    return;
+                }
+
+                // Si vamos a aceptar, aseguramos que el backend tenga ubicación reciente.
+                if (decision === 'ACEPTAR') {
+                    flushLastPosition();
+                }
+
+                const pending = solicitudesActivas.get(solicitudId);
+                if (decision === 'ACEPTAR' && pending?.ubicacionDiscapacitado) {
+                    cachedUbicacionDiscapacitado = pending.ubicacionDiscapacitado;
+                }
+
+                socket.send(JSON.stringify({
+                    type: 'RESPUESTA_AYUDA',
+                    solicitudId,
+                    decision
+                }));
+                if (rejectBtn) rejectBtn.classList.add('is-loading');
+                if (acceptBtn) acceptBtn.classList.add('is-loading');
+                if (rejectBtn) rejectBtn.textContent = 'Procesando...';
+                if (acceptBtn) acceptBtn.textContent = 'Procesando...';
+
+                if (decision === 'RECHAZAR') {
+                    solicitudesActivas.delete(solicitudId);
+                    removeSolicitud(solicitudId);
+                    setSinAlertas();
+                }
+            };
+
+            const resetSolicitudButtons = (solicitudId) => {
+                const el = document.getElementById('solicitud-' + solicitudId);
+                if (!el) return;
+                const acceptBtn = el.querySelector('[data-action="ACEPTAR"]');
+                const rejectBtn = el.querySelector('[data-action="RECHAZAR"]');
+                acceptBtn?.classList.remove('is-loading');
+                rejectBtn?.classList.remove('is-loading');
+                if (acceptBtn) acceptBtn.textContent = voluntarioVerificado ? 'Aceptar Ayuda' : 'No Verificado';
+                if (rejectBtn) rejectBtn.textContent = 'Rechazar';
+            };
+
+            const startGeolocation = () => {
+                if (!navigator.geolocation) {
+                    return;
+                }
+
+                geoWatchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        locationEnabled = true;
+                        const lat = pos.coords.latitude;
+                        const lng = pos.coords.longitude;
+                        const precision = pos.coords.accuracy;
+                        const now = Date.now();
+
+                        lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
+
+                        // Reducir intervalo a 3s cuando hay sesión aceptada activa
+                        const intervalo = sesionAceptada ? 3000 : 5000;
+
+                        let debereEnviar = false;
+                        if (!lastSentPosition) {
+                            debereEnviar = true;
+                        } else {
+                            const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
+                            if (distMeters >= 2.0) {
+                                debereEnviar = true;
+                            }
+                        }
+
+                        if (debereEnviar && socket && wsOpen && now - lastSentAt >= intervalo) {
+                            lastSentAt = now;
+                            lastSentPosition = { lat, lng };
+                            socket.send(JSON.stringify({
+                                type: 'LOCATION_UPDATE',
+                                lat,
+                                lng,
+                                precisionMetros: precision,
+                                timestamp: now
+                            }));
+                        }
+
+                        if (sesionAceptada && leafletMap) {
+                            updateMiMarkerVol(lat, lng);
+                        }
+                    },
+                    () => {
+                        locationEnabled = false;
+                    },
+                    { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
+                );
+
+                // Refresco continuo de ubicación cada 3 segundos cuando la sesión de ayuda está aceptada y activa
+                setInterval(() => {
+                    if (sesionAceptada && navigator.geolocation) {
+                        navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                                locationEnabled = true;
+                                const lat = pos.coords.latitude;
+                                const lng = pos.coords.longitude;
+                                const precision = pos.coords.accuracy;
+                                const now = Date.now();
+
+                                lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
+
+                                let debereEnviar = false;
+                                if (!lastSentPosition) {
+                                    debereEnviar = true;
+                                } else {
+                                    const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
+                                    if (distMeters >= 2.0) {
+                                        debereEnviar = true;
+                                    }
+                                }
+
+                                if (debereEnviar && socket && wsOpen) {
+                                    lastSentAt = now;
+                                    lastSentPosition = { lat, lng };
+                                    socket.send(JSON.stringify({
+                                        type: 'LOCATION_UPDATE',
+                                        lat,
+                                        lng,
+                                        precisionMetros: precision,
+                                        timestamp: now
+                                    }));
+                                }
+
+                                if (leafletMap) {
+                                    updateMiMarkerVol(lat, lng);
+                                }
+                            },
+                            (err) => {
+                                console.warn('[geolocalizacion] Error en refresco continuo 3s:', err);
+                            },
+                            { enableHighAccuracy: true, maximumAge: 0, timeout: 2500 }
+                        );
+                    }
+                }, 3000);
+            };
+
+            const flushLastPosition = () => {
+                if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+                if (!lastPosition) return false;
+                const now = Date.now();
+                if (now - lastSentAt < 800) return true;
+                lastSentAt = now;
+                lastSentPosition = { lat: lastPosition.lat, lng: lastPosition.lng };
+                socket.send(JSON.stringify({ type: 'LOCATION_UPDATE', ...lastPosition, timestamp: now }));
+                return true;
+            };
+
+            const connectWs = () => {
+                if (currentUsuarioId == null || !currentUsuarioRol) {
+                    setWsBadge('Sin sesión');
+                    showToast('Inicia sesión para recibir alertas.', 'error', 5000);
+                    return;
+                }
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const params = new URLSearchParams({
+                    usuarioId: String(currentUsuarioId),
+                    usuarioRol: String(currentUsuarioRol)
+                });
+                const wsUrl = wsProtocol + window.location.host + '/ws/ayuda?' + params.toString();
+
+                socket = new WebSocket(wsUrl);
+
+                socket.onopen = () => {
+                    wsOpen = true;
+                    setSinAlertas();
+                    setWsBadge('Conectado');
+                    flushLastPosition();
+                };
+
+                socket.onmessage = (event) => {
+                    let data = null;
+                    try { data = JSON.parse(event.data); } catch (e) { return; }
+                    if (!data || !data.type) return;
+
+                    switch (data.type) {
+                        case 'NUEVA_SOLICITUD': {
+                            const solicitudId = data.solicitudId;
+                            if (!solicitudId) return;
+                            if (data.ubicacionDiscapacitado) {
+                                cachedUbicacionDiscapacitado = data.ubicacionDiscapacitado;
+                            }
+                            solicitudesActivas.set(solicitudId, data);
+                            if (lista) lista.innerHTML = '';
+                            renderSolicitud(data);
+                            setSinAlertas();
+                            break;
+                        }
+                        case 'SOLICITUD_RECHAZADA': {
+                            const solicitudId = data.solicitudId;
+                            if (solicitudesActivas.has(solicitudId)) {
+                                solicitudesActivas.delete(solicitudId);
+                                removeSolicitud(solicitudId);
+                                setSinAlertas();
+                            }
+                            break;
+                        }
+                        case 'CONFIRMACION_ACEPTACION': {
+                            sesionAceptada = true;
+                            solicitudAceptadaId = data.solicitudId ?? solicitudAceptadaId;
+                            if (data.ubicacionDiscapacitado) {
+                                cachedUbicacionDiscapacitado = data.ubicacionDiscapacitado;
+                            }
+                            solicitudesActivas.clear();
+                            if (lista) lista.innerHTML = '';
+                            setSinAlertas();
+                            if (totalAyudados) {
+                                const current = Number(totalAyudados.textContent || '0') || 0;
+                                totalAyudados.textContent = String(current + 1);
+                            }
+                            const ubConfirm = data.ubicacionDiscapacitado || cachedUbicacionDiscapacitado;
+                            renderDiscapacitado(data.discapacitado, ubConfirm);
+                            showToast('✅ ¡Solicitud aceptada! El mapa se actualiza en tiempo real.', 'success', 5000);
+                            break;
+                        }
+                        case 'ERROR': {
+                            if (data.solicitudId) {
+                                resetSolicitudButtons(data.solicitudId);
+                            }
+                            showToast(data.mensaje || 'No se pudo completar la acción.', 'error', 5000);
+                            break;
+                        }
+                        case 'UBICACION_ACTUALIZADA': {
+                            // Actualizar marcador del discapacitado en tiempo real
+                            if (data.lat != null && data.lng != null) {
+                                updateDisMarker(Number(data.lat), Number(data.lng));
+                            }
+                            break;
+                        }
+                        case 'SOLICITUD_CANCELADA':
+                        case 'SOLICITUD_CANCELADA_POR_USUARIO':
+                        case 'AYUDA_FINALIZADA': {
+                            terminarAyuda();
+                            break;
+                        }
+                    }
+                };
+
+                socket.onerror = () => {};
+                socket.onclose = () => {
+                    wsOpen = false;
+                    setWsBadge('Desconectado');
+                };
+            };
+
+            document.addEventListener('DOMContentLoaded', () => {
+                waitForLeaflet().catch((e) => console.warn('[mapa] precarga Leaflet', e));
+                if (lista) lista.innerHTML = '';
+                if (!geoWatchId) startGeolocation();
+                setSinAlertas();
+                setWsBadge('Conectando...');
+                connectWs();
+            });
+        })();
+        </script>
     </div>
 </body>
 </html>

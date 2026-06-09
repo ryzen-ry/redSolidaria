@@ -1,57 +1,100 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/admin/layoutAdm :: html}"
+      th:replace="~{admin/layoutAdm :: html}"
       th:with="titulo='Gestión de Personas con Discapacidad'">
 <head></head>
 <body>
     <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 class="rs-section-title">🫂 Personas con Discapacidad</h1>
+        <div class="adm-dashboard adm-page">
+
+            <header class="adm-page-header adm-page-header--indigo">
+                <div>
+                    <a th:href="@{/admin/dashboard}" class="adm-back">← Volver al dashboard</a>
+                    <span class="adm-hero__badge">Beneficiarios</span>
+                    <h1 class="adm-page-header__title">Personas con discapacidad</h1>
+                    <p class="adm-page-header__subtitle">Usuarios beneficiarios de la plataforma con datos de CONADIS, tipo de discapacidad y contacto.</p>
+                </div>
+                <div class="adm-page-header__meta">
+                    <div class="adm-page-header__count-box">
+                        <span class="adm-page-header__count" th:text="${#lists.isEmpty(discapacitados) ? 0 : #lists.size(discapacitados)}">0</span>
+                        <span class="adm-page-header__count-label">Registrados</span>
+                    </div>
+                    <div class="adm-page-header__actions">
+                        <a th:href="@{/admin/usuarios}" class="adm-btn adm-btn--outline">Todos los usuarios</a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="adm-alerts" th:if="${success} or ${error}">
+                <div th:if="${success}" class="adm-alert adm-alert--success" th:text="${success}"></div>
+                <div th:if="${error}" class="adm-alert adm-alert--error" th:text="${error}"></div>
+            </div>
+
+            <div class="adm-table-card">
+                <div class="adm-table-toolbar">
+                    <span class="adm-table-toolbar__title">Listado de beneficiarios</span>
+                    <span class="adm-table-toolbar__hint">Desplaza horizontalmente para ver todas las columnas</span>
+                </div>
+
+                <div class="adm-table-wrap" th:if="${discapacitados != null and not #lists.isEmpty(discapacitados)}">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Persona</th>
+                                <th>CONADIS</th>
+                                <th>Tipo</th>
+                                <th>Teléfono</th>
+                                <th>Dirección</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="dis : ${discapacitados}">
+                                <td><span class="adm-id" th:text="'#' + ${dis.id}">#1</span></td>
+                                <td>
+                                    <div class="adm-cell-user">
+                                        <span class="adm-avatar adm-avatar--indigo" th:text="${#strings.substring(dis.nombres, 0, 1)}">D</span>
+                                        <div>
+                                            <span class="adm-cell-user__name" th:text="${dis.nombreCompleto}">Nombre</span>
+                                            <span class="adm-cell-user__email" th:text="${dis.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${dis.conadis}">—</td>
+                                <td>
+                                    <span class="adm-badge adm-badge--dis" th:text="${dis.tipoDiscapacidad}">Tipo</span>
+                                </td>
+                                <td th:text="${dis.telefono}">—</td>
+                                <td class="adm-cell-muted" th:text="${dis.direccion}" th:title="${dis.direccion}">—</td>
+                                <td>
+                                    <span th:if="${dis.verificado}" class="adm-badge adm-badge--ok">Verificado</span>
+                                    <span th:unless="${dis.verificado}" class="adm-badge adm-badge--pending">Pendiente</span>
+                                </td>
+                                <td class="adm-actions">
+                                    <a th:href="@{/admin/usuario/eliminar/{id}(id=${dis.id})}"
+                                       class="adm-btn-icon"
+                                       title="Eliminar registro"
+                                       onclick="return confirm('¿Eliminar esta persona? Esta acción no se puede deshacer.')">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="adm-empty" th:if="${discapacitados == null or #lists.isEmpty(discapacitados)}">
+                    <div class="adm-empty__icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 2a5 5 0 00-5 5v2H6a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V11a2 2 0 00-2-2h-1V7a5 5 0 00-5-5zm-3 5a3 3 0 016 0v2H9V7zm3 9a2 2 0 110-4 2 2 0 010 4z"/></svg>
+                    </div>
+                    <h3>No hay personas registradas</h3>
+                    <p>Los beneficiarios con cuenta activa se mostrarán en esta tabla.</p>
+                </div>
+            </div>
+
         </div>
-        
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-        
-        <table class="rs-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>CONADIS</th>
-                    <th>Tipo Discapacidad</th>
-                    <th>Teléfono</th>
-                    <th>Dirección</th>
-                    <th>Verificado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="dis : ${discapacitados}">
-                    <td th:text="${dis.id}"></td>
-                    <td th:text="${dis.nombreCompleto}"></td>
-                    <td th:text="${dis.email}"></td>
-                    <td th:text="${dis.conadis}"></td>
-                    <td th:text="${dis.tipoDiscapacidad}"></td>
-                    <td th:text="${dis.telefono}"></td>
-                    <td th:text="${dis.direccion}"></td>
-                    <td>
-                        <span th:if="${dis.verificado}" class="badge-success">✅ Verificado</span>
-                        <span th:unless="${dis.verificado}" class="badge-warning">⏳ Pendiente</span>
-                    </td>
-                    <td>
-                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${dis.id})}" 
-                           class="btn-delete" 
-                           onclick="return confirm('¿Eliminar esta persona?')">🗑️</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
-    
-    <style>
-        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-    </style>
 </body>
 </html>

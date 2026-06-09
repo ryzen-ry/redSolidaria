@@ -6,6 +6,7 @@ import com.redsolidaria.enjambre.model.DonacionMonetaria;
 import com.redsolidaria.enjambre.model.DonacionProducto;
 import com.redsolidaria.enjambre.repository.DonacionMonetariaRepository;
 import com.redsolidaria.enjambre.repository.DonacionProductoRepository;
+import com.redsolidaria.enjambre.service.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,6 +20,7 @@ public class DonacionService {
 
     private final DonacionMonetariaRepository monetariaRepository;
     private final DonacionProductoRepository productoRepository;
+    private final UsuarioService usuarioService;
 
     @Transactional
     public Long guardarDonacionTemporal(DonacionMonetariaDTO dto, Long usuarioId) {
@@ -29,7 +31,11 @@ public class DonacionService {
         donacion.setEmail(dto.getEmail());
         donacion.setEstado("PENDIENTE");
         donacion.setFechaDonacion(LocalDateTime.now());
-        donacion.setUsuarioId(usuarioId);
+        var usuario = usuarioService.buscarPorId(usuarioId);
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no encontrado con ID: " + usuarioId);
+        }
+        donacion.setUsuario(usuario);
 
         donacion = monetariaRepository.save(donacion);
         return donacion.getId();
@@ -65,7 +71,11 @@ public class DonacionService {
         donacion.setComentarios(dto.getComentarios());
         donacion.setEstado("PENDIENTE");
         donacion.setFechaDonacion(LocalDateTime.now());
-        donacion.setUsuarioId(usuarioId);
+        var usuario = usuarioService.buscarPorId(usuarioId);
+        if (usuario == null) {
+            throw new IllegalArgumentException("Usuario no encontrado con ID: " + usuarioId);
+        }
+        donacion.setUsuario(usuario);
 
         productoRepository.save(donacion);
     }
