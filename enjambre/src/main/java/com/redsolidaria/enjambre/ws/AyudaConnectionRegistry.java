@@ -1,7 +1,6 @@
 package com.redsolidaria.enjambre.ws;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -13,17 +12,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Registro centralizado de conexiones WebSocket activas.
- *
- * <p>Permite mapear un {@code usuarioId} a sus sesiones WebSocket abiertas
- * (puede haber más de una si el usuario tiene varias pestañas abiertas).
- * Usa {@link ConcurrentHashMap} para soporte multi-hilo sin bloqueos explícitos.
- *
- * <p>Usa <b>Logback (SLF4J)</b> via {@code @Slf4j} para registrar conexiones,
- * desconexiones y errores de envío.
- */
-@Slf4j
 @Component
 public class AyudaConnectionRegistry {
 
@@ -41,7 +29,6 @@ public class AyudaConnectionRegistry {
                 .computeIfAbsent(usuarioId, ignored -> new ConcurrentHashMap<>())
                 .put(session.getId(), session);
         usuarioPorSessionId.put(session.getId(), usuarioId);
-        log.debug("[WS] Registrada sesión {} para usuario {}", session.getId(), usuarioId);
     }
 
     public void unregister(WebSocketSession session, CloseStatus status) {
@@ -55,17 +42,12 @@ public class AyudaConnectionRegistry {
                     sesionesPorUsuario.remove(usuarioId);
                 }
             }
-            log.debug("[WS] Sesión {} desregistrada para usuario {} (status={})",
-                    session.getId(), usuarioId, status);
         }
     }
 
     public void sendToUser(Long usuarioId, Map<String, Object> payload) {
         Map<String, WebSocketSession> sesiones = sesionesPorUsuario.get(usuarioId);
-        if (sesiones == null || sesiones.isEmpty()) {
-            log.debug("[WS] sendToUser: usuario {} no está conectado, mensaje descartado.", usuarioId);
-            return;
-        }
+        if (sesiones == null || sesiones.isEmpty()) return;
 
         try {
             String json = objectMapper.writeValueAsString(payload);
@@ -76,8 +58,9 @@ public class AyudaConnectionRegistry {
                 }
             }
         } catch (IOException e) {
-            // Bug #4 fix: log estructurado en lugar de System.err
-            log.error("[WS] Error al enviar mensaje a usuario {}: {}", usuarioId, e.getMessage(), e);
+            // Bug #4 fix: loggear el error para diagnóstico en lugar de ignorarlo silenciosamente.
+            System.err.println("[WS] Error al enviar mensaje a usuario " + usuarioId
+                    + ": " + e.getMessage());
         }
     }
 
@@ -94,3 +77,4 @@ public class AyudaConnectionRegistry {
         return sesiones.values();
     }
 }
+
