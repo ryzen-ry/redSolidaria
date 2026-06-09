@@ -14,9 +14,8 @@ public class VoluntarioDTO {
     @Size(min = 2, max = 50, message = "Los apellidos deben tener entre 2 y 50 caracteres")
     private String apellidos;
 
-    @NotBlank(message = "El correo institucional es obligatorio")
+    @NotBlank(message = "El correo electrónico es obligatorio")
     @Email(message = "Debe ingresar un correo electrónico válido")
-    @Pattern(regexp = "^U\\d{8}@utp\\.edu\\.pe$", message = "El correo debe ser institucional UTP (ej: U12345678@utp.edu.pe)")
     private String email;
 
     @NotBlank(message = "El código de estudiante es obligatorio")

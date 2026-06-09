@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" th:fragment="html (content)">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${titulo} ?: 'Red Solidaria UTP'">Red Solidaria UTP</title>
     <link rel="stylesheet" th:href="@{/css/estilo.css}">
+    <link rel="stylesheet" th:href="@{/vendor/leaflet/leaflet.css}"/>
     <style>
         .btn-ayuda-emergencia {
             position: fixed;
@@ -54,6 +55,7 @@
     </style>
 </head>
 <body>
+    <script th:src="@{/vendor/leaflet/leaflet.js}" id="leaflet-lib"></script>
 
     <!-- NAVBAR DISCAPACITADO -->
     <nav class="rs-nav">
@@ -84,7 +86,7 @@
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="rs-page">
-        <div th:replace="${content} :: content"></div>
+        <div th:replace="${content}"></div>
     </div>
 
     <!-- Botón de ayuda flotante (solo para discapacitados) -->

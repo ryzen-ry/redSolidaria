@@ -1,55 +1,96 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/admin/layoutAdm :: html}"
+      th:replace="~{admin/layoutAdm :: html}"
       th:with="titulo='Gestión de Voluntarios'">
 <head></head>
 <body>
     <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 class="rs-section-title">🤝 Voluntarios Registrados</h1>
+        <div class="adm-dashboard adm-page">
+
+            <header class="adm-page-header adm-page-header--green">
+                <div>
+                    <a th:href="@{/admin/dashboard}" class="adm-back">← Volver al dashboard</a>
+                    <span class="adm-hero__badge">Voluntarios</span>
+                    <h1 class="adm-page-header__title">Voluntarios registrados</h1>
+                    <p class="adm-page-header__subtitle">Estudiantes y colaboradores que ofrecen su tiempo y apoyo en la red solidaria.</p>
+                </div>
+                <div class="adm-page-header__meta">
+                    <div class="adm-page-header__count-box">
+                        <span class="adm-page-header__count" th:text="${#lists.size(voluntarios)}">0</span>
+                        <span class="adm-page-header__count-label">Voluntarios</span>
+                    </div>
+                    <div class="adm-page-header__actions">
+                        <a th:href="@{/admin/usuarios}" class="adm-btn adm-btn--outline">Todos los usuarios</a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="adm-alerts" th:if="${success} or ${error}">
+                <div th:if="${success}" class="adm-alert adm-alert--success" th:text="${success}"></div>
+                <div th:if="${error}" class="adm-alert adm-alert--error" th:text="${error}"></div>
+            </div>
+
+            <div class="adm-table-card">
+                <div class="adm-table-toolbar">
+                    <span class="adm-table-toolbar__title">Listado de voluntarios</span>
+                    <span class="adm-table-toolbar__hint">Código UTP, carrera y puntos de participación</span>
+                </div>
+
+                <div class="adm-table-wrap" th:if="${not #lists.isEmpty(voluntarios)}">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Voluntario</th>
+                                <th>Código</th>
+                                <th>Carrera</th>
+                                <th>Puntos</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="vol : ${voluntarios}">
+                                <td><span class="adm-id" th:text="'#' + ${vol.id}">#1</span></td>
+                                <td>
+                                    <div class="adm-cell-user">
+                                        <span class="adm-avatar adm-avatar--green" th:text="${#strings.substring(vol.nombres, 0, 1)}">V</span>
+                                        <div>
+                                            <span class="adm-cell-user__name" th:text="${vol.nombreCompleto}">Nombre</span>
+                                            <span class="adm-cell-user__email" th:text="${vol.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><strong th:text="${vol.codigo}">—</strong></td>
+                                <td class="adm-cell-muted" th:text="${vol.carrera}">Carrera</td>
+                                <td><span class="adm-points" th:text="${vol.puntos}">0</span></td>
+                                <td>
+                                    <span th:if="${vol.verificado}" class="adm-badge adm-badge--ok">Verificado</span>
+                                    <span th:unless="${vol.verificado}" class="adm-badge adm-badge--pending">Pendiente</span>
+                                </td>
+                                <td class="adm-actions">
+                                    <a th:href="@{/admin/usuario/eliminar/{id}(id=${vol.id})}"
+                                       class="adm-btn-icon"
+                                       title="Eliminar voluntario"
+                                       onclick="return confirm('¿Eliminar este voluntario? Esta acción no se puede deshacer.')">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="adm-empty" th:if="${#lists.isEmpty(voluntarios)}">
+                    <div class="adm-empty__icon">
+                        <svg viewBox="0 0 24 24"><path d="M12 12.75c1.63 0 3.07.39 4.24.9 1.08.48 1.76 1.56 1.76 2.73V18H6v-1.62c0-1.17.68-2.25 1.76-2.73 1.17-.52 2.61-.9 4.24-.9zM12 4a4 4 0 110 8 4 4 0 010-8z"/></svg>
+                    </div>
+                    <h3>No hay voluntarios registrados</h3>
+                    <p>Los voluntarios aprobados aparecerán en esta lista.</p>
+                </div>
+            </div>
+
         </div>
-        
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-        
-        <table class="rs-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Código</th>
-                    <th>Carrera</th>
-                    <th>Puntos</th>
-                    <th>Verificado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="vol : ${voluntarios}">
-                    <td th:text="${vol.id}"></td>
-                    <td th:text="${vol.nombreCompleto}"></td>
-                    <td th:text="${vol.email}"></td>
-                    <td th:text="${vol.codigo}"></td>
-                    <td th:text="${vol.carrera}"></td>
-                    <td th:text="${vol.puntos}"></td>
-                    <td>
-                        <span th:if="${vol.verificado}" class="badge-success">✅ Verificado</span>
-                        <span th:unless="${vol.verificado}" class="badge-warning">⏳ Pendiente</span>
-                    </td>
-                    <td>
-                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${vol.id})}" 
-                           class="btn-delete" 
-                           onclick="return confirm('¿Eliminar este voluntario?')">🗑️</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
-    
-    <style>
-        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-    </style>
 </body>
 </html>

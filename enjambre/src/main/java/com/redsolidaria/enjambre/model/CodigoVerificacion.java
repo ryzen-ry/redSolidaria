@@ -1,5 +1,6 @@
 package com.redsolidaria.enjambre.model;
 
+import com.redsolidaria.enjambre.model.Usuario;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,8 +21,10 @@ public class CodigoVerificacion {
     private String codigo;
     private LocalDateTime fechaExpiracion;
     private boolean usado;
-    
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    private Usuario usuario;
 
     public CodigoVerificacion(String email, String codigo, LocalDateTime fechaExpiracion) {
         this.email = email;
@@ -29,4 +32,4 @@ public class CodigoVerificacion {
         this.fechaExpiracion = fechaExpiracion;
         this.usado = false;
     }
-}
+} 

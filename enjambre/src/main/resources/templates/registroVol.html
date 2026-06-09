@@ -28,9 +28,10 @@
                     <input type="text" name="apellidos" required />
                 </div>
                 <div class="rs-field rs-form-full">
-                    <label>Correo Institucional UTP <span class="req">*</span></label>
-                    <input type="email" name="email" placeholder="Uxxxxxxxx@utp.edu.pe" required />
-                    <span class="rs-field-hint">Ejemplo: U12345678@utp.edu.pe</span>
+                    <label>Correo Electrónico <span class="req">*</span></label>
+                    <input id="emailVol" type="text" name="email" placeholder="u12345678@utp.edu.pe" required pattern="u\d{8}@utp\.edu\.pe" />
+                    <span class="rs-field-hint">Ejemplo: u12345678@utp.edu.pe</span>
+                    <div id="emailVolMessage" class="validation-message" style="display:none"></div>
                 </div>
                 <div class="rs-field">
                     <label>Código de Estudiante <span class="req">*</span></label>
@@ -140,6 +141,56 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const form = document.querySelector('form');
+                const emailVol = document.getElementById('emailVol');
+                const emailVolMessage = document.getElementById('emailVolMessage');
+                const submitBtn = form.querySelector('button[type="submit"]');
+
+                let emailVolTimeout;
+                function checkEmailVolExistence(email) {
+                    if (!email) return;
+                    fetch('/api/auth/check-email?email=' + encodeURIComponent(email))
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.exists) {
+                                emailVol.classList.add('invalid');
+                                emailVol.classList.remove('valid');
+                                emailVolMessage.innerHTML = '<span class="validation-icon">❌</span> El correo ya está registrado';
+                                emailVolMessage.className = 'validation-message error';
+                                emailVolMessage.style.display = 'block';
+                                submitBtn.disabled = true;
+                            } else {
+                                emailVol.classList.remove('invalid');
+                                emailVol.classList.add('valid');
+                                emailVolMessage.innerHTML = '<span class="validation-icon">✓</span> Correo disponible';
+                                emailVolMessage.className = 'validation-message success';
+                                emailVolMessage.style.display = 'block';
+                                submitBtn.disabled = false;
+                            }
+                        })
+                        .catch(() => {
+                            // ignore
+                        });
+                }
+
+                if (emailVol) {
+                    emailVol.addEventListener('input', function() {
+                        clearTimeout(emailVolTimeout);
+                        emailVolMessage.style.display = 'none';
+                        submitBtn.disabled = false;
+                        emailVolTimeout = setTimeout(() => {
+                            if (!emailVol.checkValidity()) {
+                                emailVol.classList.add('invalid');
+                                emailVol.classList.remove('valid');
+                                emailVolMessage.innerHTML = '<span class="validation-icon">⚠️</span> Formato inválido. Debe ser u12345678@utp.edu.pe';
+                                emailVolMessage.className = 'validation-message error';
+                                emailVolMessage.style.display = 'block';
+                                submitBtn.disabled = true;
+                                return;
+                            }
+                            checkEmailVolExistence(emailVol.value.trim());
+                        }, 400);
+                    });
+                }
                 
                 // Validación de contraseñas coincidentes en tiempo real
                 const password = document.querySelector('[name="password"]');

@@ -1,60 +1,98 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{/admin/layoutAdm :: html}"
+      th:replace="~{admin/layoutAdm :: html}"
       th:with="titulo='Gestión de Usuarios'">
 <head></head>
 <body>
     <div th:fragment="content">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h1 class="rs-section-title">👥 Todos los Usuarios</h1>
+        <div class="adm-dashboard adm-page">
+
+            <header class="adm-page-header adm-page-header--blue">
+                <div>
+                    <a th:href="@{/admin/dashboard}" class="adm-back">← Volver al dashboard</a>
+                    <span class="adm-hero__badge">Gestión</span>
+                    <h1 class="adm-page-header__title">Todos los usuarios</h1>
+                    <p class="adm-page-header__subtitle">Consulta el listado completo de cuentas registradas, sus roles y estado de verificación.</p>
+                </div>
+                <div class="adm-page-header__meta">
+                    <div class="adm-page-header__count-box">
+                        <span class="adm-page-header__count" th:text="${#lists.size(usuarios)}">0</span>
+                        <span class="adm-page-header__count-label">Usuarios</span>
+                    </div>
+                    <div class="adm-page-header__actions">
+                        <a th:href="@{/admin/activacion}" class="adm-btn adm-btn--outline">Activaciones</a>
+                    </div>
+                </div>
+            </header>
+
+            <div class="adm-alerts" th:if="${success} or ${error}">
+                <div th:if="${success}" class="adm-alert adm-alert--success" th:text="${success}"></div>
+                <div th:if="${error}" class="adm-alert adm-alert--error" th:text="${error}"></div>
+            </div>
+
+            <div class="adm-table-card">
+                <div class="adm-table-toolbar">
+                    <span class="adm-table-toolbar__title">Listado de usuarios</span>
+                    <span class="adm-table-toolbar__hint">Desplaza horizontalmente si la tabla no cabe en pantalla</span>
+                </div>
+
+                <div class="adm-table-wrap" th:if="${not #lists.isEmpty(usuarios)}">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Usuario</th>
+                                <th>Rol</th>
+                                <th>Estado</th>
+                                <th>Registro</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="usuario : ${usuarios}">
+                                <td><span class="adm-id" th:text="'#' + ${usuario.id}">#1</span></td>
+                                <td>
+                                    <div class="adm-cell-user">
+                                        <span class="adm-avatar" th:text="${#strings.substring(usuario.nombres, 0, 1)}">U</span>
+                                        <div>
+                                            <span class="adm-cell-user__name" th:text="${usuario.nombreCompleto}">Nombre</span>
+                                            <span class="adm-cell-user__email" th:text="${usuario.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span th:if="${usuario.rol == 'ADMIN'}" class="adm-badge adm-badge--admin">Admin</span>
+                                    <span th:if="${usuario.rol == 'VOLUNTARIO'}" class="adm-badge adm-badge--vol">Voluntario</span>
+                                    <span th:if="${usuario.rol == 'DISCAPACITADO'}" class="adm-badge adm-badge--dis">Discapacitado</span>
+                                </td>
+                                <td>
+                                    <span th:if="${usuario.verificado}" class="adm-badge adm-badge--ok">Verificado</span>
+                                    <span th:unless="${usuario.verificado}" class="adm-badge adm-badge--pending">Pendiente</span>
+                                </td>
+                                <td th:text="${#temporals.format(usuario.fechaRegistro, 'dd/MM/yyyy')}">01/01/2026</td>
+                                <td class="adm-actions">
+                                    <a th:href="@{/admin/usuario/eliminar/{id}(id=${usuario.id})}"
+                                       class="adm-btn-icon"
+                                       title="Eliminar usuario"
+                                       onclick="return confirm('¿Eliminar este usuario? Esta acción no se puede deshacer.')">
+                                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="adm-empty" th:if="${#lists.isEmpty(usuarios)}">
+                    <div class="adm-empty__icon">
+                        <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    </div>
+                    <h3>No hay usuarios registrados</h3>
+                    <p>Cuando se registren cuentas en la plataforma, aparecerán aquí.</p>
+                </div>
+            </div>
+
         </div>
-        
-        <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
-        <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-        
-        <table class="rs-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Rol</th>
-                    <th>Verificado</th>
-                    <th>Fecha Registro</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="usuario : ${usuarios}">
-                    <td th:text="${usuario.id}"></td>
-                    <td th:text="${usuario.nombreCompleto}"></td>
-                    <td th:text="${usuario.email}"></td>
-                    <td>
-                        <span th:if="${usuario.rol == 'ADMIN'}" class="badge-admin">👑 ADMIN</span>
-                        <span th:if="${usuario.rol == 'VOLUNTARIO'}" class="badge-vol">🤝 VOLUNTARIO</span>
-                        <span th:if="${usuario.rol == 'DISCAPACITADO'}" class="badge-dis">🫂 DISCAPACITADO</span>
-                    </td>
-                    <td>
-                        <span th:if="${usuario.verificado}" class="badge-success">✅ Verificado</span>
-                        <span th:unless="${usuario.verificado}" class="badge-warning">⏳ Pendiente</span>
-                    </td>
-                    <td th:text="${#temporals.format(usuario.fechaRegistro, 'dd/MM/yyyy')}"></td>
-                    <td>
-                        <a th:href="@{/admin/usuario/eliminar/{id}(id=${usuario.id})}" 
-                           class="btn-delete" 
-                           onclick="return confirm('¿Eliminar este usuario?')">🗑️</a>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
     </div>
-    
-    <style>
-        .badge-admin { background: #8B5CF6; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-vol { background: #3AAA6B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-dis { background: #2563EB; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-success { background: #10B981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-        .badge-warning { background: #F59E0B; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; }
-    </style>
 </body>
 </html>
