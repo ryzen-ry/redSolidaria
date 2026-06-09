@@ -3,7 +3,6 @@ package com.redsolidaria.enjambre.ws;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.redsolidaria.enjambre.service.AyudaService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -14,14 +13,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Handler WebSocket para el flujo de ayuda de emergencia.
- *
- * <p>Procesa mensajes entrantes desde el cliente (discapacitado y voluntario)
- * y los delega al {@link AyudaService}. Usa <b>Logback (SLF4J)</b> via {@code @Slf4j}
- * para registrar cada tipo de evento recibido y errores de procesamiento.
- */
-@Slf4j
 @Component
 public class AyudaWebSocketHandler extends TextWebSocketHandler {
 
@@ -29,7 +20,7 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
     private final AyudaConnectionRegistry connectionRegistry;
     private final ObjectMapper objectMapper;
 
-    public static final String ATTR_USUARIO_ID  = "usuarioId";
+    public static final String ATTR_USUARIO_ID = "usuarioId";
     public static final String ATTR_USUARIO_ROL = "usuarioRol";
 
     public AyudaWebSocketHandler(
@@ -48,7 +39,6 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
         Object usuarioIdObj = attrs.get(ATTR_USUARIO_ID);
         Long usuarioId = usuarioIdObj instanceof Number num ? num.longValue() : null;
         if (usuarioId == null) {
-            log.warn("[WS] Conexión rechazada: falta atributo usuarioId en sesión {}", session.getId());
             try {
                 session.close(CloseStatus.NOT_ACCEPTABLE);
             } catch (IOException ignored) {
@@ -57,13 +47,11 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
         }
 
         connectionRegistry.register(usuarioId, session);
-        log.info("[WS] Conexión establecida — usuario={} sesión={}", usuarioId, session.getId());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         connectionRegistry.unregister(session, status);
-        log.info("[WS] Conexión cerrada — sesión={} status={}", session.getId(), status);
     }
 
     @Override
@@ -80,8 +68,6 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
         String type = root.has("type") ? root.get("type").asText() : null;
         if (type == null) return;
 
-        log.debug("[WS] Mensaje recibido — type={} usuario={} rol={}", type, usuarioId, rol);
-
         switch (type) {
             case "LOCATION_UPDATE" -> {
                 double lat = root.get("lat").asDouble();
@@ -92,10 +78,7 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
                 ayudaService.actualizarUbicacion(usuarioId, lat, lng, precision);
             }
             case "AYUDA_SOLICITADA" -> {
-                if (!"DISCAPACITADO".equals(rol)) {
-                    log.warn("[WS] AYUDA_SOLICITADA ignorada: rol={} no es DISCAPACITADO", rol);
-                    return;
-                }
+                if (!"DISCAPACITADO".equals(rol)) return;
                 try {
                     var solicitud = ayudaService.solicitarAyuda(usuarioId);
                     Map<String, Object> payload = new HashMap<>();
@@ -103,7 +86,6 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
                     payload.put("solicitudId", solicitud.getId());
                     connectionRegistry.sendToUser(usuarioId, payload);
                 } catch (IllegalArgumentException ex) {
-                    log.warn("[WS] Error al solicitar ayuda para usuario {}: {}", usuarioId, ex.getMessage());
                     Map<String, Object> payload = new HashMap<>();
                     payload.put("type", "SOLICITUD_CANCELADA");
                     payload.put("mensaje", ex.getMessage());
@@ -115,17 +97,12 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
                 Long solicitudId = root.has("solicitudId") && !root.get("solicitudId").isNull()
                         ? root.get("solicitudId").asLong()
                         : null;
-                log.debug("[WS] CANCELAR_SOLICITUD — solicitudId={} usuario={}", solicitudId, usuarioId);
                 ayudaService.cancelarSolicitud(solicitudId, usuarioId);
             }
             case "RESPUESTA_AYUDA" -> {
-                if (!"VOLUNTARIO".equals(rol)) {
-                    log.warn("[WS] RESPUESTA_AYUDA ignorada: rol={} no es VOLUNTARIO", rol);
-                    return;
-                }
+                if (!"VOLUNTARIO".equals(rol)) return;
                 long solicitudId = root.get("solicitudId").asLong();
-                String decision  = root.get("decision").asText();
-                log.debug("[WS] RESPUESTA_AYUDA — solicitudId={} voluntario={} decision={}", solicitudId, usuarioId, decision);
+                String decision = root.get("decision").asText();
                 ayudaService.responderAyuda(solicitudId, usuarioId, decision);
             }
             case "TERMINAR_AYUDA" -> {
@@ -133,11 +110,12 @@ public class AyudaWebSocketHandler extends TextWebSocketHandler {
                         ? root.get("solicitudId").asLong()
                         : null;
                 if (solicitudId != null) {
-                    log.debug("[WS] TERMINAR_AYUDA — solicitudId={} usuario={}", solicitudId, usuarioId);
                     ayudaService.terminarAyuda(solicitudId, usuarioId);
                 }
             }
-            default -> log.debug("[WS] Tipo de mensaje desconocido '{}' de usuario={}", type, usuarioId);
+            default -> {
+            }
         }
     }
 }
+

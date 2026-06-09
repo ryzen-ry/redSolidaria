@@ -81,20 +81,7 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
-		<!-- Apache Commons Lang: utilidades de String, validación y números -->
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-lang3</artifactId>
-		</dependency>
-
-		<!-- Google Guava: colecciones inmutables, Preconditions, Stopwatch -->
-		<dependency>
-			<groupId>com.google.guava</groupId>
-			<artifactId>guava</artifactId>
-			<version>33.2.1-jre</version>
-		</dependency>
-
+		
 	</dependencies>
 
 	<build>
