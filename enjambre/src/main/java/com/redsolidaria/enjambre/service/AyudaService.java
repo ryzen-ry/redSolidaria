@@ -6,6 +6,7 @@ import com.redsolidaria.enjambre.repository.*;
 import com.redsolidaria.enjambre.ws.AyudaConnectionRegistry;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,6 +26,8 @@ public class AyudaService {
     private final UsuarioService usuarioService;
     private final AyudaConnectionRegistry connectionRegistry;
     private final HistorialAyudaRepository historialAyudaRepository;
+    private final EmailService emailService;
+    private final IncidenciaRepository incidenciaRepository;
 
     private final ObjectMapper objectMapper;
 
@@ -37,6 +40,8 @@ public class AyudaService {
             UsuarioService usuarioService,
             AyudaConnectionRegistry connectionRegistry,
             HistorialAyudaRepository historialAyudaRepository,
+            EmailService emailService,
+            IncidenciaRepository incidenciaRepository,
             ObjectMapper objectMapper
     ) {
         this.ubicacionUsuarioRepository = ubicacionUsuarioRepository;
@@ -47,6 +52,8 @@ public class AyudaService {
         this.usuarioService = usuarioService;
         this.connectionRegistry = connectionRegistry;
         this.historialAyudaRepository = historialAyudaRepository;
+        this.emailService = emailService;
+        this.incidenciaRepository = incidenciaRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -398,6 +405,8 @@ public class AyudaService {
         m.put("nombres", v.getNombres());
         m.put("apellidos", v.getApellidos());
         m.put("email", v.getEmail());
+        m.put("carrera", v.getCarrera());
+        m.put("codigo", v.getCodigo());
         if (v.getFotoPerfil() != null) m.put("fotoPerfil", v.getFotoPerfil());
         return m;
     }
@@ -408,8 +417,80 @@ public class AyudaService {
         m.put("nombres", d.getNombres());
         m.put("apellidos", d.getApellidos());
         m.put("telefono", d.getTelefono());
-        m.put("direccion", d.getDireccion());
+        m.put("tipoDiscapacidad", d.getTipoDiscapacidad());
+        m.put("conadis", d.getConadis());
         return m;
+    }
+
+    /**
+     * Registra la calificacion y comentario del discapacitado hacia el voluntario.
+     * Solo se puede comentar una vez por historial.
+     */
+    public void registrarComentarioDiscapacitado(Long historialId, String calificacion,
+                                                  String comentario, Long discapacitadoId) {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial no encontrado"));
+
+        // Verificar que el discapacitado es el dueño del historial
+        if (historial.getSolicitud().getDiscapacitado() == null ||
+                !discapacitadoId.equals(historial.getSolicitud().getDiscapacitado().getId())) {
+            throw new IllegalArgumentException("No autorizado para comentar este historial");
+        }
+
+        if (historial.isComentadoDiscapacitado()) {
+            throw new IllegalStateException("Ya has comentado esta asistencia");
+        }
+
+        // Validar calificacion
+        if (calificacion != null && !calificacion.isBlank()) {
+            if (!"Oro".equals(calificacion) && !"Plata".equals(calificacion) && !"Cobre".equals(calificacion)) {
+                throw new IllegalArgumentException("Calificacion invalida. Use: Oro, Plata o Cobre");
+            }
+            historial.setCalificacion(calificacion);
+        }
+
+        historial.setComentarioDiscapacitado(comentario);
+        historial.setComentadoDiscapacitado(true);
+        historialAyudaRepository.save(historial);
+
+        // Notificar por correo al voluntario
+        Voluntario voluntario = historial.getSolicitud().getVoluntarioAceptado();
+        if (voluntario != null && voluntario.getEmail() != null) {
+            String nombreDis = historial.getSolicitud().getDiscapacitado().getNombres()
+                    + " " + historial.getSolicitud().getDiscapacitado().getApellidos();
+            emailService.enviarComentarioAVoluntario(voluntario.getEmail(), nombreDis, calificacion, comentario);
+        }
+    }
+
+    /**
+     * Registra el comentario del voluntario hacia el discapacitado.
+     * Solo se puede comentar una vez por historial.
+     */
+    public void registrarComentarioVoluntario(Long historialId, String comentario, Long voluntarioId) {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial no encontrado"));
+
+        // Verificar que el voluntario es el asignado del historial
+        if (historial.getSolicitud().getVoluntarioAceptado() == null ||
+                !voluntarioId.equals(historial.getSolicitud().getVoluntarioAceptado().getId())) {
+            throw new IllegalArgumentException("No autorizado para comentar este historial");
+        }
+
+        if (historial.isComentadoVoluntario()) {
+            throw new IllegalStateException("Ya has comentado esta asistencia");
+        }
+
+        historial.setComentarioVoluntario(comentario);
+        historial.setComentadoVoluntario(true);
+        historialAyudaRepository.save(historial);
+
+        // Notificar por correo al discapacitado
+        PersonaDiscapacitada discapacitado = historial.getSolicitud().getDiscapacitado();
+        if (discapacitado != null && discapacitado.getEmail() != null) {
+            String nombreVol = historial.getSolicitud().getVoluntarioAceptado().getNombres()
+                    + " " + historial.getSolicitud().getVoluntarioAceptado().getApellidos();
+            emailService.enviarComentarioADiscapacitado(discapacitado.getEmail(), nombreVol, comentario);
+        }
     }
 
     private double calcularDistanciaKm(double lat1, double lon1, double lat2, double lon2) {
@@ -462,5 +543,119 @@ public class AyudaService {
         if (solicitud.getVoluntarioAceptado() != null) {
             connectionRegistry.sendToUser(solicitud.getVoluntarioAceptado().getId(), payload);
         }
+    }
+
+    public void calificarAyuda(Long historialId, String calificacion, Long usuarioId) {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial de ayuda no encontrado"));
+
+        if (historial.getSolicitud().getDiscapacitado() == null ||
+                !usuarioId.equals(historial.getSolicitud().getDiscapacitado().getId())) {
+            throw new IllegalArgumentException("No estás autorizado para calificar esta ayuda");
+        }
+
+        List<String> validas = List.of("SIN_CALIFICAR", "MEDALLA_ORO", "MEDALLA_PLATA", "MEDALLA_COBRE");
+        if (!validas.contains(calificacion)) {
+            throw new IllegalArgumentException("Calificación no válida");
+        }
+
+        historial.setCalificacion(calificacion);
+        historialAyudaRepository.save(historial);
+    }
+
+    public void guardarComentarioDiscapacitado(Long historialId, String comentario, Long usuarioId) {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial de ayuda no encontrado"));
+
+        if (historial.getSolicitud().getDiscapacitado() == null ||
+                !usuarioId.equals(historial.getSolicitud().getDiscapacitado().getId())) {
+            throw new IllegalArgumentException("No estás autorizado para comentar esta ayuda");
+        }
+
+        historial.setComentarioDiscapacitado(comentario);
+        historialAyudaRepository.save(historial);
+    }
+
+    public void guardarComentarioVoluntario(Long historialId, String comentario, Long usuarioId) {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial de ayuda no encontrado"));
+
+        if (historial.getSolicitud().getVoluntarioAceptado() == null ||
+                !usuarioId.equals(historial.getSolicitud().getVoluntarioAceptado().getId())) {
+            throw new IllegalArgumentException("No estás autorizado para comentar esta ayuda");
+        }
+
+        historial.setComentarioVoluntario(comentario);
+        historialAyudaRepository.save(historial);
+    }
+
+    public void guardarIncidenciaDiscapacitado(Long historialId, String descripcion, MultipartFile archivo, Long usuarioId) throws java.io.IOException {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial de ayuda no encontrado"));
+
+        if (historial.getSolicitud().getDiscapacitado() == null ||
+                !usuarioId.equals(historial.getSolicitud().getDiscapacitado().getId())) {
+            throw new IllegalArgumentException("No estás autorizado para reportar incidencias en esta ayuda");
+        }
+
+        Incidencia incidencia = new Incidencia();
+        incidencia.setHistorialAyuda(historial);
+        incidencia.setDenunciante(historial.getSolicitud().getDiscapacitado());
+        incidencia.setDenunciado(historial.getSolicitud().getVoluntarioAceptado());
+        incidencia.setDescripcion(descripcion);
+        incidencia.setEstado("PENDIENTE");
+
+        if (archivo != null && !archivo.isEmpty()) {
+            String path = guardarArchivoIncidencia(archivo, "incidencia_disca");
+            incidencia.setEvidenciaUrl(path);
+        }
+
+        incidenciaRepository.save(incidencia);
+    }
+
+    public void guardarIncidenciaVoluntario(Long historialId, String descripcion, MultipartFile archivo, Long usuarioId) throws java.io.IOException {
+        HistorialAyuda historial = historialAyudaRepository.findById(historialId)
+                .orElseThrow(() -> new IllegalArgumentException("Historial de ayuda no encontrado"));
+
+        if (historial.getSolicitud().getVoluntarioAceptado() == null ||
+                !usuarioId.equals(historial.getSolicitud().getVoluntarioAceptado().getId())) {
+            throw new IllegalArgumentException("No estás autorizado para reportar incidencias en esta ayuda");
+        }
+
+        Incidencia incidencia = new Incidencia();
+        incidencia.setHistorialAyuda(historial);
+        incidencia.setDenunciante(historial.getSolicitud().getVoluntarioAceptado());
+        incidencia.setDenunciado(historial.getSolicitud().getDiscapacitado());
+        incidencia.setDescripcion(descripcion);
+        incidencia.setEstado("PENDIENTE");
+
+        if (archivo != null && !archivo.isEmpty()) {
+            String path = guardarArchivoIncidencia(archivo, "incidencia_vol");
+            incidencia.setEvidenciaUrl(path);
+        }
+
+        incidenciaRepository.save(incidencia);
+    }
+
+    private String guardarArchivoIncidencia(MultipartFile file, String prefijo) throws java.io.IOException {
+        String uploadDir = "uploads/incidencias/";
+        java.io.File directorio = new java.io.File(uploadDir);
+        if (!directorio.exists()) {
+            directorio.mkdirs();
+        }
+
+        String extension = "";
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename != null && originalFilename.contains(".")) {
+            extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        }
+
+        String nombreArchivo = prefijo + "_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+        String rutaCompleta = uploadDir + nombreArchivo;
+
+        java.nio.file.Path path = java.nio.file.Paths.get(rutaCompleta);
+        java.nio.file.Files.write(path, file.getBytes());
+
+        return "/uploads/incidencias/" + nombreArchivo;
     }
 }

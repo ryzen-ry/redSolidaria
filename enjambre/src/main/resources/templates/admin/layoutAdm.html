@@ -6,61 +6,62 @@
     <title th:text="${titulo} ?: 'Admin - Red Solidaria UTP'">Admin - Red Solidaria UTP</title>
     <link rel="stylesheet" th:href="@{/css/estilo.css}">
     <style>
+        /* Admin nav: font un poco más pequeño para que entren todos los ítems */
+        .admin-nav .rs-nav-links a {
+            font-size: 0.82rem;
+            padding: 0.45rem 0.65rem;
+        }
+        .admin-nav .rs-nav-links .btn-sesion {
+            padding: 0.42rem 0.85rem;
+        }
         .user-info {
             display: flex;
             align-items: center;
-            margin-left: 20px;
+            margin-left: 10px;
         }
         .user-name {
             background: #3AAA6B;
             color: white;
-            padding: 6px 15px;
+            padding: 5px 12px;
             border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .rs-nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        @media (max-width: 768px) {
-            .user-info {
-                margin-left: 0;
-                margin-top: 10px;
-            }
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
         }
     </style>
 </head>
 <body>
 
     <!-- NAVBAR ADMIN -->
-    <!-- NAVBAR ADMIN -->
-<nav class="rs-nav">
-    <a th:href="@{/admin/dashboard}" class="rs-nav-brand">
-        <div class="rs-nav-brand-icon">
-            <img th:src="@{/imagen/discapacidad.png}" alt="Logo" style="width: 33px; height: 33px; object-fit: contain;">
+    <nav class="rs-nav admin-nav">
+        <a th:href="@{/admin/dashboard}" class="rs-nav-brand">
+            <div class="rs-nav-brand-icon">
+                <img th:src="@{/imagen/discapacidad.png}" alt="Logo" style="width: 33px; height: 33px; object-fit: contain;">
+            </div>
+            <span class="rs-nav-brand-name">Admin - Red Solidaria</span>
+        </a>
+
+        <button class="rs-nav-toggle" aria-label="Toggle navigation">☰</button>
+
+        <div class="rs-nav-collapse">
+            <ul class="rs-nav-links">
+                <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                <li><a th:href="@{/admin/usuarios}">Usuarios</a></li>
+                <li><a th:href="@{/admin/voluntarios}">Voluntarios</a></li>
+                <li><a th:href="@{/admin/discapacitados}">Discapacitados</a></li>
+                <li><a th:href="@{/admin/activacion}">Activaciones</a></li>
+                <li><a th:href="@{/admin/donaciones}">Donaciones</a></li>
+                <li><a th:href="@{/admin/foro}">Foro</a></li>
+                <li><a th:href="@{/admin/incidencias}">Incidencias</a></li>
+                <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
+            </ul>
+
+            <!-- Nombre del admin -->
+            <div class="user-info" th:if="${session.usuario != null}">
+                <span class="user-name" th:text="${session.usuario.nombreCompleto}"></span>
+            </div>
         </div>
-        <span class="rs-nav-brand-name">Admin - Red Solidaria</span>
-    </a>
-    
-    <ul class="rs-nav-links">
-        <li><a th:href="@{/admin/dashboard}">Dashboard</a></li>
-        <li><a th:href="@{/admin/usuarios}">Usuarios</a></li>
-        <li><a th:href="@{/admin/voluntarios}">Voluntarios</a></li>
-        <li><a th:href="@{/admin/discapacitados}">Discapacitados</a></li>
-        <li><a th:href="@{/admin/activacion}">Activaciones</a></li>
-        <li><a th:href="@{/admin/donaciones}">Donaciones</a></li>
-        <li><a th:href="@{/admin/foro}">Foro</a></li>
-        <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
-    </ul>
-    
-    <!-- Identificador del usuario (Nombre completo) -->
-    <div class="user-info" th:if="${session.usuario != null}">
-        <span class="user-name" th:text="${session.usuario.nombreCompleto}"></span>
-    </div>
-</nav>
+    </nav>
 
     <!-- CONTENIDO PRINCIPAL -->
     <div class="rs-page">
@@ -121,6 +122,19 @@
             <p>© 2026 Red Solidaria - Universidad Tecnológica del Perú. Panel Administrativo</p>
         </div>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtn = document.querySelector('.rs-nav-toggle');
+            const collapseMenu = document.querySelector('.rs-nav-collapse');
+            if (toggleBtn && collapseMenu) {
+                toggleBtn.addEventListener('click', () => {
+                    collapseMenu.classList.toggle('active');
+                    toggleBtn.textContent = collapseMenu.classList.contains('active') ? '✕' : '☰';
+                });
+            }
+        });
+    </script>
 
 </body>
 </html>

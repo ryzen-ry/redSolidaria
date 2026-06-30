@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{Users/Disca/layoutDis :: html(content=~{::content})}"
+      th:with="titulo='Incidencias - Beneficiario'">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        /* Modern aesthetic styling */
+        .inc-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        
+        .inc-header {
+            background: linear-gradient(135deg, #1E2D4A 0%, #0F172A 100%);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 10px 25px -5px rgba(30, 45, 74, 0.15);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+
+        .inc-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+            color: white !important;
+        }
+
+        .inc-header p {
+            color: #94A3B8;
+            font-size: 0.95rem;
+        }
+
+        .btn-report {
+            background-color: #EF4444;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.95rem;
+        }
+
+        .btn-report:hover {
+            background-color: #DC2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(239, 68, 68, 0.4);
+            color: white;
+        }
+
+        /* Modal styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            overflow: hidden;
+            animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #E2E8F0;
+        }
+
+        @keyframes modalSlideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            background: #F8FAFC;
+            padding: 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #64748B;
+            transition: color 0.2s;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: #0F172A;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            background-color: #F8FAFC;
+            color: #0F172A;
+            font-family: inherit;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #EF4444;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+
+        .vol-info-box {
+            background-color: #EFF6FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            color: #1E40AF;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-submit {
+            background-color: #2563EB;
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn-submit:hover {
+            background-color: #1D4ED8;
+            color: white;
+        }
+
+        /* History Table Styling */
+        .history-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+
+        .history-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0F172A;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .inc-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .inc-table th {
+            background-color: #F8FAFC;
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            color: #64748B;
+            border-bottom: 1px solid #E2E8F0;
+        }
+
+        .inc-table td {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #E2E8F0;
+            color: #334155;
+            vertical-align: middle;
+        }
+
+        .badge-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-pending {
+            background-color: #FEF3C7;
+            color: #D97706;
+            border: 1px solid #FDE68A;
+        }
+
+        .badge-processing {
+            background-color: #DBEAFE;
+            color: #1E40AF;
+            border: 1px solid #BFDBFE;
+        }
+
+        .badge-resolved {
+            background-color: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+
+        .evidence-btn {
+            color: #2563EB;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .evidence-btn:hover {
+            color: #1D4ED8;
+            text-decoration: underline;
+        }
+        
+        .file-help {
+            font-size: 0.8rem;
+            color: #64748B;
+            margin-top: 0.25rem;
+        }
+        
+        .empty-state {
+            padding: 3rem;
+            text-align: center;
+            color: #64748B;
+        }
+    </style>
+
+    <div class="inc-container">
+        <!-- HEADER -->
+        <div class="inc-header">
+            <div>
+                <h1 style="color: white !important;">Reportar una Incidencia</h1>
+                <p>Reporta cualquier inconveniente o conducta inapropiada durante las asistencias. Tu seguridad es nuestra prioridad.</p>
+            </div>
+            <button class="btn-report" onclick="openModal()">
+                <span>⚠️</span> Reportar Incidencia
+            </button>
+        </div>
+
+        <!-- ALERTS -->
+        <div th:if="${success}" class="adm-alert" style="background-color: #D1FAE5; border-left: 4px solid #10B981; color: #065F46; padding: 1rem; border-radius: 8px; font-weight: 500; margin-bottom: 1.5rem;" th:text="${success}"></div>
+        <div th:if="${error}" class="adm-alert" style="background-color: #FEE2E2; border-left: 4px solid #EF4444; color: #991B1B; padding: 1rem; border-radius: 8px; font-weight: 500; margin-bottom: 1.5rem;" th:text="${error}"></div>
+
+        <!-- HISTORIAL DE INCIDENCIAS -->
+        <div class="history-card">
+            <div class="history-header">
+                Historial de Incidentes Reportados
+            </div>
+            <div class="table-responsive">
+                <table class="inc-table" th:if="${not #lists.isEmpty(incidencias)}">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Título</th>
+                            <th>Persona Reportada</th>
+                            <th>Fecha</th>
+                            <th>Evidencia</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="inc : ${incidencias}">
+                            <td th:text="'#' + ${inc.id}" style="font-weight: 600;">#1</td>
+                            <td th:text="${inc.titulo}">Título</td>
+                            <td th:text="${inc.denunciado.nombreCompleto}">Nombre del denunciado</td>
+                            <td th:text="${#temporals.format(inc.fechaCreacion, 'dd/MM/yyyy HH:mm')}">25/06/2026 09:00</td>
+                            <td>
+                                <a th:if="${inc.evidenciaUrl}" th:href="${inc.evidenciaUrl}" class="evidence-btn" target="_blank">
+                                    📂 Ver archivo
+                                </a>
+                                <span th:unless="${inc.evidenciaUrl}" style="color: #94A3B8;">Sin evidencia</span>
+                            </td>
+                            <td>
+                                <span th:if="${inc.estado == 'PENDIENTE'}" class="badge-status badge-pending">Pendiente</span>
+                                <span th:if="${inc.estado == 'PROCESANDO'}" class="badge-status badge-processing">Procesando</span>
+                                <span th:if="${inc.estado == 'RESUELTO'}" class="badge-status badge-resolved">Resuelto</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="empty-state" th:if="${#lists.isEmpty(incidencias)}">
+                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem;">No has reportado incidencias</p>
+                    <p>Si experimentas algún problema, puedes reportarlo haciendo clic en el botón de arriba.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div id="reportModal" class="modal-overlay" onclick="closeModalOutside(event)">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Reportar Incidente</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form th:action="@{/discapacitado/incidencias/reportar}" method="post" enctype="multipart/form-data" onsubmit="return validateForm()">
+                <div class="modal-body">
+                    <!-- CODIGO HISTORIAL SELECT -->
+                    <div class="form-group">
+                        <label for="historialSelect">Código del Historial de Ayuda</label>
+                        <select id="historialSelect" name="historialId" class="form-control" required onchange="handleHistorialChange()">
+                            <option value="">-- Selecciona un código del historial --</option>
+                            <option th:each="h : ${historiales}" th:value="${h.id}" 
+                                    th:data-name="${h.solicitud.voluntarioAceptado.nombreCompleto}"
+                                    th:data-userid="${h.solicitud.voluntarioAceptado.id}">
+                                Historial #[[${h.id}]] - [[${#temporals.format(h.fechaFinalizacion, 'dd/MM/yyyy')}]]
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- VOLUNTEER NAME DISPLAY -->
+                    <div class="form-group">
+                        <div id="reportedPersonBox" class="vol-info-box">
+                            👤 <strong>Voluntario a reportar: </strong> <span id="reportedPersonName">Nombre</span>
+                        </div>
+                    </div>
+
+                    <!-- TITULO -->
+                    <div class="form-group">
+                        <label for="tituloInput">Título del Incidente</label>
+                        <input type="text" id="tituloInput" name="titulo" class="form-control" placeholder="Ej. Retraso excesivo, falta de respeto, etc." required maxlength="100">
+                    </div>
+
+                    <!-- DESCRIPCION -->
+                    <div class="form-group">
+                        <label for="descTextArea">Descripción Detallada</label>
+                        <textarea id="descTextArea" name="descripcion" class="form-control" style="min-height: 120px;" placeholder="Describe detalladamente qué sucedió durante la asistencia..." required></textarea>
+                    </div>
+
+                    <!-- EVIDENCIA -->
+                    <div class="form-group">
+                        <label for="evidenciaFile">Evidencia (Foto o Video)</label>
+                        <input type="file" id="evidenciaFile" name="evidencia" class="form-control" accept="image/*,video/*" onchange="validateFile(this)">
+                        <div class="file-help">Opcional. Formatos permitidos: imágenes o videos. Tamaño máximo para videos: 10 MB.</div>
+                        <div id="fileError" style="color: #EF4444; font-size: 0.85rem; display: none; margin-top: 0.25rem; font-weight: 600;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer" style="padding: 1rem 1.5rem; background: #F8FAFC; border-top: 1px solid #E2E8F0;">
+                    <button type="submit" class="btn-submit">Enviar Reporte</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JS FOR INTERACTIVITY AND CLIENT-SIDE VALIDATION -->
+    <script>
+        function openModal() {
+            document.getElementById('reportModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('reportModal').style.display = 'none';
+            // Reset form
+            document.querySelector('#reportModal form').reset();
+            document.getElementById('reportedPersonBox').style.display = 'none';
+            document.getElementById('fileError').style.display = 'none';
+        }
+
+        function closeModalOutside(event) {
+            if (event.target === document.getElementById('reportModal')) {
+                closeModal();
+            }
+        }
+
+        function handleHistorialChange() {
+            const select = document.getElementById('historialSelect');
+            const selectedOption = select.options[select.selectedIndex];
+            const nameBox = document.getElementById('reportedPersonBox');
+            const nameSpan = document.getElementById('reportedPersonName');
+
+            if (selectedOption && selectedOption.value !== "") {
+                const voluntarioName = selectedOption.getAttribute('data-name');
+                nameSpan.textContent = voluntarioName;
+                nameBox.style.display = 'flex';
+            } else {
+                nameBox.style.display = 'none';
+            }
+        }
+
+        function validateFile(input) {
+            const file = input.files[0];
+            const errorDiv = document.getElementById('fileError');
+            errorDiv.style.display = 'none';
+
+            if (!file) return true;
+
+            const isVideo = file.type.startsWith('video/');
+            const maxSize = 10 * 1024 * 1024; // 10MB
+
+            if (isVideo && file.size > maxSize) {
+                errorDiv.textContent = '⚠️ El video supera los 10 MB permitidos.';
+                errorDiv.style.display = 'block';
+                input.value = ''; // Clear file
+                return false;
+            }
+            
+            // Check images size (limit to 10MB as well)
+            if (file.size > maxSize) {
+                errorDiv.textContent = '⚠️ El archivo supera los 10 MB permitidos.';
+                errorDiv.style.display = 'block';
+                input.value = '';
+                return false;
+            }
+
+            return true;
+        }
+
+        function validateForm() {
+            const select = document.getElementById('historialSelect');
+            const errorDiv = document.getElementById('fileError');
+            
+            if (select.value === "") {
+                alert("Por favor, selecciona un código del historial.");
+                return false;
+            }
+            
+            if (errorDiv.style.display === 'block') {
+                alert("Por favor, corrige el error de archivo antes de enviar.");
+                return false;
+            }
+            
+            return true;
+        }
+    </script>
+</div>
+</body>
+</html>

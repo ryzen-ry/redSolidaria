@@ -130,6 +130,21 @@
                 color: #059669;
                 border: 1px solid rgba(16, 185, 129, 0.25);
             }
+            .badge-pendiente {
+                background: rgba(245, 158, 11, 0.15);
+                color: #d97706;
+                border: 1px solid rgba(245, 158, 11, 0.25);
+            }
+            .badge-revision {
+                background: rgba(59, 130, 246, 0.15);
+                color: #2563eb;
+                border: 1px solid rgba(59, 130, 246, 0.25);
+            }
+            .badge-resuelto {
+                background: rgba(16, 185, 129, 0.15);
+                color: #059669;
+                border: 1px solid rgba(16, 185, 129, 0.25);
+            }
             
             /* User Info Layout */
             .user-cell {
@@ -337,6 +352,142 @@
                     padding: 12px;
                 }
             }
+
+            /* ===== ESTILOS ADICIONALES PARA CALIFICACION Y MODALES ===== */
+            .btn-action {
+                padding: 6px 14px;
+                border-radius: 20px;
+                font-size: 0.85rem;
+                font-weight: 700;
+                cursor: pointer;
+                border: none;
+                transition: all 0.2s;
+                color: white;
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+            }
+            .btn-green {
+                background: #10B981;
+            }
+            .btn-green:hover {
+                background: #059669;
+                transform: translateY(-1px);
+            }
+            .btn-red {
+                background: #EF4444;
+            }
+            .btn-red:hover {
+                background: #DC2626;
+                transform: translateY(-1px);
+            }
+
+            /* Estilos de Modales Premium */
+            .modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(8px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .modal-overlay.active {
+                display: flex;
+                opacity: 1;
+            }
+            .modal-box {
+                background: #ffffff;
+                border-radius: 24px;
+                padding: 32px;
+                width: 90%;
+                max-width: 500px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+                transform: scale(0.9);
+                transition: transform 0.3s ease;
+                border: 1px solid rgba(255, 255, 255, 0.8);
+            }
+            .modal-overlay.active .modal-box {
+                transform: scale(1);
+            }
+            .modal-title {
+                font-size: 1.35rem;
+                font-weight: 800;
+                color: #1e3a8a;
+                margin-top: 0;
+                margin-bottom: 16px;
+                line-height: 1.4;
+            }
+            .modal-textarea {
+                width: 100%;
+                height: 120px;
+                padding: 12px;
+                border-radius: 12px;
+                border: 1.5px solid #e2e8f0;
+                font-family: inherit;
+                font-size: 0.95rem;
+                resize: none;
+                margin-bottom: 16px;
+                box-sizing: border-box;
+                transition: border-color 0.2s;
+            }
+            .modal-textarea:focus {
+                outline: none;
+                border-color: #f97316;
+            }
+            .modal-file-label {
+                display: block;
+                font-weight: 700;
+                font-size: 0.88rem;
+                color: #475569;
+                margin-bottom: 8px;
+            }
+            .modal-file-input {
+                width: 100%;
+                margin-bottom: 20px;
+                font-family: inherit;
+            }
+            .modal-actions {
+                display: flex;
+                justify-content: flex-end;
+                gap: 12px;
+            }
+            .btn-modal {
+                padding: 10px 20px;
+                border-radius: 12px;
+                font-weight: 700;
+                cursor: pointer;
+                transition: all 0.2s;
+                border: none;
+                font-size: 0.9rem;
+            }
+            .btn-modal-cancel {
+                background: #f1f5f9;
+                color: #475569;
+            }
+            .btn-modal-cancel:hover {
+                background: #e2e8f0;
+            }
+            .btn-modal-submit {
+                background: #10B981;
+                color: white;
+            }
+            .btn-modal-submit:hover {
+                background: #059669;
+            }
+            .btn-modal-danger {
+                background: #EF4444;
+                color: white;
+            }
+            .btn-modal-danger:hover {
+                background: #DC2626;
+            }
         </style>
 
         <div class="historial-header">
@@ -367,9 +518,10 @@
                         <tr>
                             <th>Código</th>
                             <th>Persona Asistida</th>
-                            <th>Dirección</th>
                             <th>Fecha y Hora</th>
+                            <th>Calificación</th>
                             <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -385,12 +537,14 @@
                                 </div>
                                 <span th:if="${h.solicitud.discapacitado == null}" style="color: #9ca3af; font-style: italic;">No disponible</span>
                             </td>
-                            <td data-label="Dirección">
-                                <div style="max-width: 220px; word-wrap: break-word; font-size: 0.92rem; color: #4b5563;"
-                                     th:text="${h.solicitud.discapacitado != null ? h.solicitud.discapacitado.direccion : '—'}">Av. Arequipa 1234</div>
-                            </td>
                             <td data-label="Fecha y Hora">
                                 <span th:text="${#temporals.format(h.fechaFinalizacion, 'dd/MM/yyyy hh:mm a')}">08/06/2026 04:30 PM</span>
+                            </td>
+                            <td data-label="Calificación">
+                                <span th:if="${h.calificacion == 'SIN_CALIFICAR' || h.calificacion == null}" style="color: #9ca3af; font-style: italic;">Sin calificar</span>
+                                <span th:if="${h.calificacion == 'MEDALLA_ORO' || h.calificacion == 'Oro'}" class="badge-status" style="background: rgba(254, 240, 138, 0.3); color: #854d0e; border: 1px solid rgba(254, 240, 138, 0.5); font-weight: bold; font-size: 0.82rem; padding: 4px 10px; border-radius: 20px;">Medalla de oro 🥇</span>
+                                <span th:if="${h.calificacion == 'MEDALLA_PLATA' || h.calificacion == 'Plata'}" class="badge-status" style="background: rgba(243, 244, 246, 0.3); color: #4b5563; border: 1px solid rgba(243, 244, 246, 0.5); font-weight: bold; font-size: 0.82rem; padding: 4px 10px; border-radius: 20px;">Medalla de plata 🥈</span>
+                                <span th:if="${h.calificacion == 'MEDALLA_COBRE' || h.calificacion == 'Cobre'}" class="badge-status" style="background: rgba(254, 215, 170, 0.3); color: #c2410c; border: 1px solid rgba(254, 215, 170, 0.5); font-weight: bold; font-size: 0.82rem; padding: 4px 10px; border-radius: 20px;">Medalla de cobre 🥉</span>
                             </td>
                             <td data-label="Estado">
                                 <span class="badge-status badge-finalizada">
@@ -400,11 +554,111 @@
                                     Finalizada
                                 </span>
                             </td>
+                            <td data-label="Acciones">
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+                                    <!-- Botón comentar si aún no comentó -->
+                                    <button th:if="${!h.comentadoVoluntario}" class="btn-action btn-green" th:onclick="'abrirModalComentar(' + ${h.id} + ')'">Comentar</button>
+                                    <!-- Ya comentó -->
+                                    <span th:if="${h.comentadoVoluntario}" style="color: #16a34a; font-weight: 700; font-size: 0.88rem;">✅ Mensaje enviado</span>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
+
+    <!-- Modal Comentar -->
+    <div id="modalComentar" class="modal-overlay">
+        <div class="modal-box">
+            <h3 class="modal-title">¿Desea dejarle un mensaje a la persona que ayudó?</h3>
+            <input type="hidden" id="comentarioHistorialId">
+            <textarea id="comentarioTexto" class="modal-textarea" placeholder="Escribe tu mensaje aquí..."></textarea>
+            <div class="modal-actions">
+                <button class="btn-modal btn-modal-cancel" onclick="cerrarModalComentar()">Cancelar</button>
+                <button class="btn-modal btn-modal-submit" onclick="enviarComentario()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    
+
+    
+
+    <script>
+        // Abrir/Cerrar Modal Comentar
+        function abrirModalComentar(id) {
+            document.getElementById('comentarioHistorialId').value = id;
+            document.getElementById('comentarioTexto').value = '';
+            document.getElementById('modalComentar').classList.add('active');
+        }
+        function cerrarModalComentar() {
+            document.getElementById('modalComentar').classList.remove('active');
+        }
+
+        // Enviar Comentario
+        function enviarComentario() {
+            const id = document.getElementById('comentarioHistorialId').value;
+            const comentario = document.getElementById('comentarioTexto').value;
+            if (!comentario.trim()) {
+                mostrarToast("Por favor, escribe un comentario.");
+                return;
+            }
+
+            fetch('/api/ayuda/comentar-voluntario', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ historialId: id, comentario: comentario })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarToast("¡Comentario enviado!");
+                    cerrarModalComentar();
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    mostrarToast("Error: " + data.error);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                mostrarToast("Error de red.");
+            });
+        }
+
+        // Toast de notificación simple
+        function mostrarToast(mensaje) {
+            let toast = document.getElementById('custom-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'custom-toast';
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%) translateY(100px)';
+                toast.style.backgroundColor = '#1e293b';
+                toast.style.color = '#ffffff';
+                toast.style.padding = '12px 24px';
+                toast.style.borderRadius = '30px';
+                toast.style.fontFamily = 'Outfit, sans-serif';
+                toast.style.fontSize = '0.95rem';
+                toast.style.fontWeight = '700';
+                toast.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+                toast.style.transition = 'transform 0.3s ease';
+                toast.style.zIndex = '9999';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = mensaje;
+            toast.style.transform = 'translateX(-50%) translateY(0)';
+            setTimeout(() => {
+                toast.style.transform = 'translateX(-50%) translateY(100px)';
+            }, 3000);
+        }
+    </script>
     </div>
 </body>
 </html>

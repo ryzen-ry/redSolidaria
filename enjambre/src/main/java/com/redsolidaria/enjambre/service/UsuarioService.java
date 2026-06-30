@@ -55,6 +55,15 @@ public class UsuarioService {
     @Autowired
     private SolicitudAyudaIntentoRepository solicitudAyudaIntentoRepository;
 
+    @Autowired
+    private ProgresoCursoRepository progresoCursoRepository;
+
+    @Autowired
+    private SancionRepository sancionRepository;
+
+    @Autowired
+    private HistorialAyudaRepository historialAyudaRepository;
+
     // ========== MÉTODOS PARA ADMIN CONTROLLER ==========
     
     public List<Usuario> listarTodosUsuarios() {
@@ -108,40 +117,64 @@ public class UsuarioService {
         
         // 2. Eliminar ubicaciones del usuario
         ubicacionUsuarioRepository.deleteByUsuario_Id(id);
+        ubicacionUsuarioRepository.flush();
         
         // 3. Eliminar donaciones monetarias
         donacionMonetariaRepository.deleteByUsuario_Id(id);
+        donacionMonetariaRepository.flush();
         
         // 4. Eliminar donaciones de productos
         donacionProductoRepository.deleteByUsuario_Id(id);
+        donacionProductoRepository.flush();
         
         // 5. Eliminar códigos de verificación
         codigoVerificacionRepository.deleteByUsuario_Id(id);
+        codigoVerificacionRepository.flush();
         
         // 6. Eliminar comentarios hechos por este usuario
         comentarioRepository.deleteByUsuario_Id(id);
+        comentarioRepository.flush();
         
         // 7. Eliminar comentarios en publicaciones de este usuario
         comentarioRepository.deleteByPublicacion_Usuario_Id(id);
+        comentarioRepository.flush();
         
         // 8. Eliminar publicaciones de este usuario
         publicacionRepository.deleteByUsuario_Id(id);
+        publicacionRepository.flush();
         
         // 9. Eliminar historial de activaciones (tanto si el usuario fue activado o si fue el administrador que activó)
         historialActivacionRepository.deleteByUsuario_Id(id);
         historialActivacionRepository.deleteByAdministrador_Id(id);
+        historialActivacionRepository.flush();
+        
+        // 9.5. Eliminar o desasociar sanciones para evitar FK constraint fail
+        sancionRepository.deleteByUsuario_Id(id);
+        if ("ADMIN".equals(usuario.getRol())) {
+            sancionRepository.desasociarAdministrador(id);
+        }
+        sancionRepository.flush();
         
         // 10. Eliminar solicitudes de ayuda e intentos
         if ("DISCAPACITADO".equals(usuario.getRol())) {
             solicitudAyudaIntentoRepository.deleteBySolicitud_Discapacitado_Id(id);
+            solicitudAyudaIntentoRepository.flush();
+            historialAyudaRepository.deleteBySolicitud_Discapacitado_Id(id);
+            historialAyudaRepository.flush();
             solicitudAyudaRepository.deleteByDiscapacitado_Id(id);
+            solicitudAyudaRepository.flush();
         } else if ("VOLUNTARIO".equals(usuario.getRol())) {
             solicitudAyudaIntentoRepository.deleteByVoluntario_Id(id);
+            solicitudAyudaIntentoRepository.flush();
             solicitudAyudaRepository.desasociarVoluntarioAceptado(id);
+            solicitudAyudaRepository.flush();
+            progresoCursoRepository.deleteByVoluntarioId(id);
+            progresoCursoRepository.flush();
         }
         
         // 11. Finalmente, eliminar el usuario de la tabla principal
         usuarioRepository.deleteById(id);
+        usuarioRepository.flush();
         System.out.println("✅ Usuario eliminado con todas sus referencias: " + usuario.getEmail());
     }
     
@@ -375,5 +408,9 @@ public class UsuarioService {
                 System.err.println("❌ Error al intentar eliminar archivo " + rutaRelativa + ": " + e.getMessage());
             }
         }
+    }
+
+    public void guardarUsuario(Usuario usuario) {
+        usuarioRepository.save(usuario);
     }
 }
