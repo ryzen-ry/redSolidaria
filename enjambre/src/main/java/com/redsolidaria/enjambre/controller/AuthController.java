@@ -359,6 +359,11 @@ public class AuthController {
             model.addAttribute("error", "❌ Cuenta en revisión por administrador");
             return "login";
         }
+
+        if ("BLOQUEADO".equals(usuario.getEstado())) {
+            model.addAttribute("error", "❌ Tu cuenta ha sido bloqueada permanentemente por conductas inadecuadas.");
+            return "login";
+        }
         
         // Guardar usuario en sesión
         session.setAttribute("usuario", usuario);

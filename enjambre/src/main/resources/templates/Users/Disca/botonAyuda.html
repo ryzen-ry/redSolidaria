@@ -388,7 +388,7 @@
                     </div>
 
                     <div id="infoVoluntario" class="ml-voluntario">
-                        <h3>Voluntario asignado</h3>
+                        <h3>🙋 Voluntario asignado</h3>
                         <div id="infoVoluntarioDetalle"></div>
                     </div>
 
@@ -555,7 +555,7 @@
             let locationEnabled = false;
             let lastSentAt = 0;
             let lastPosition = null;
-            let lastSentPosition = null; // Filtrado de 2 metros para evitar ruido del GPS
+            let lastSentPosition = null;
             let solicitudActivaId = null;
             let sesionAceptada = false;
 
@@ -563,7 +563,7 @@
             let leafletMap = null;
             let volMarker = null;
             let miMarker = null;
-            let rutaLine = null; // Polilínea entre ambos puntos
+            let rutaLine = null;
 
             // ── Toast ───────────────────────────────────────────────────────
             let toastTimer = null;
@@ -572,7 +572,7 @@
                 if (!el) return;
                 el.textContent = msg;
                 el.className = 'ml-toast' + (kind ? ' ' + kind : '');
-                void el.offsetWidth; // reflow
+                void el.offsetWidth;
                 el.classList.add('show');
                 clearTimeout(toastTimer);
                 toastTimer = setTimeout(() => el.classList.remove('show'), durationMs);
@@ -794,7 +794,6 @@
                     wrapper.style.display = 'none';
                     wrapper.classList.remove('is-visible');
                 }
-                // Destruir el mapa para que la próxima sesión empiece limpio
                 if (leafletMap) {
                     leafletMap.remove();
                     leafletMap = null;
@@ -817,7 +816,6 @@
                 }
                 if (btnCancelar) btnCancelar.disabled = false;
                 if (info) info.style.display = 'none';
-                // Ocultar sección de terminar ayuda
                 const secTerminar = document.getElementById('seccionTerminarAyuda');
                 if (secTerminar) secTerminar.style.display = 'none';
                 resetMapaYsesion();
@@ -829,9 +827,8 @@
                     btn.disabled = false;
                     btn.textContent = 'Solicitar Ayuda Ahora';
                     btn.style.background = 'var(--ml-green)';
-                    btn.style.display = 'none'; // Ocultar el botón principal durante sesión activa
+                    btn.style.display = 'none';
                 }
-                // Mostrar botón explícito de terminar ayuda
                 const secTerminar = document.getElementById('seccionTerminarAyuda');
                 if (secTerminar) secTerminar.style.display = 'block';
             };
@@ -861,15 +858,22 @@
                 const nombre = `${v.nombres ?? ''} ${v.apellidos ?? ''}`.trim();
 
                 detalle.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
-                        <div style="width:40px;height:40px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">🙋</div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                        <div style="width:42px;height:42px;border-radius:50%;background:#3b82f6;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">🙋</div>
                         <div>
-                            <div style="font-weight:800;color:#1e3a5f;">${escapeHtml(nombre)}</div>
-                            <div style="font-size:0.88rem;color:#4a5568;">${escapeHtml(v.email)}</div>
+                            <div style="font-weight:800;color:#1e3a5f;font-size:1rem;">${escapeHtml(nombre)}</div>
+                            <div style="font-size:0.86rem;color:#4a5568;">✉️ ${escapeHtml(v.email ?? '—')}</div>
                         </div>
                     </div>
-                    <div style="font-size:0.85rem;color:#6b7280;margin-top:4px;">
-                        📍 Lat: ${escapeHtml(ub.lat)}, Lng: ${escapeHtml(ub.lng)}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 12px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px;">📚 Carrera</div>
+                            <div style="font-size:0.92rem;color:#1e3a5f;font-weight:700;margin-top:3px;">${escapeHtml(v.carrera ?? '—')}</div>
+                        </div>
+                        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:#15803d;text-transform:uppercase;letter-spacing:0.5px;">🎓 Código</div>
+                            <div style="font-size:0.92rem;color:#1e3a5f;font-weight:700;margin-top:3px;">${escapeHtml(v.codigo ?? '—')}</div>
+                        </div>
                     </div>
                 `;
                 info.style.display = 'block';
@@ -899,7 +903,6 @@
 
                         lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
 
-                        // Reducir intervalo a 3s cuando hay sesión aceptada activa
                         const intervalo = sesionAceptada ? 3000 : 5000;
 
                         let debereEnviar = false;
@@ -937,7 +940,6 @@
                     { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
                 );
 
-                // Refresco continuo de ubicación cada 3 segundos cuando la sesión de ayuda está aceptada y activa
                 setInterval(() => {
                     if (sesionAceptada && navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
@@ -989,7 +991,6 @@
                 if (!socket || socket.readyState !== WebSocket.OPEN) return false;
                 if (!lastPosition) return false;
                 const now = Date.now();
-                // Evita spamear si ya se envió hace muy poco.
                 if (now - lastSentAt < 800) return true;
                 lastSentAt = now;
                 lastSentPosition = { lat: lastPosition.lat, lng: lastPosition.lng };
@@ -1014,8 +1015,6 @@
                 socket.onopen = () => {
                     wsOpen = true;
                     setEstado('Conectado. Habilitando ubicación...');
-                    // Enviar una ubicación de inmediato si ya la tenemos, para que el backend
-                    // pueda procesar la solicitud sin esperar al siguiente tick del watchPosition.
                     flushLastPosition();
                 };
 
@@ -1050,7 +1049,6 @@
                             showToast(data.mensaje || 'Ocurrió un error.', 'error', 5000);
                             break;
                         case 'UBICACION_ACTUALIZADA':
-                            // Actualizar marcador del voluntario en tiempo real
                             if (data.lat != null && data.lng != null) {
                                 updateVolMarker(Number(data.lat), Number(data.lng));
                             }
@@ -1060,7 +1058,6 @@
                             sesionAceptada = false;
                             setEstado(data.mensaje || 'La solicitud fue cancelada.');
                             showToast(data.mensaje || 'La solicitud fue cancelada.', 'warning', 4000);
-                            // Restaurar visibilidad del botón principal
                             if (btn) btn.style.display = '';
                             setUIIdle();
                             break;
@@ -1083,7 +1080,6 @@
                 };
             };
 
-            // Función compartida para terminar la ayuda
             const terminarAyudaActiva = () => {
                 if (!socket || socket.readyState !== WebSocket.OPEN) {
                     setEstado('Sin conexión con el servidor.');
@@ -1094,9 +1090,8 @@
                 }
             };
 
-            // Botón principal: solo para solicitar ayuda
             btn?.addEventListener('click', () => {
-                if (sesionAceptada) return; // El botón principal no actúa durante sesión activa
+                if (sesionAceptada) return;
 
                 if (!socket || socket.readyState !== WebSocket.OPEN) {
                     setEstado('Conectando... intenta en unos segundos.');
@@ -1114,17 +1109,14 @@
                 info.style.display = 'none';
                 if (buscando) buscando.style.display = 'none';
 
-                // Asegura que el backend tenga ubicación antes de solicitar.
                 flushLastPosition();
                 socket.send(JSON.stringify({ type: 'AYUDA_SOLICITADA' }));
             });
 
-            // Botón explícito de terminar ayuda
             document.getElementById('btnTerminarAyudaExplicito')?.addEventListener('click', () => {
                 terminarAyudaActiva();
             });
 
-            // Efecto hover botón terminar
             const btnTerminarExpl = document.getElementById('btnTerminarAyudaExplicito');
             if (btnTerminarExpl) {
                 btnTerminarExpl.addEventListener('mouseenter', () => {

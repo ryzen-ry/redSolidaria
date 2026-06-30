@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 import java.time.LocalDateTime;
 
 @Data
@@ -28,6 +30,7 @@ public class SolicitudAyudaIntento {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "voluntario_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private Voluntario voluntario;
 
     @Column(name = "estado", nullable = false)

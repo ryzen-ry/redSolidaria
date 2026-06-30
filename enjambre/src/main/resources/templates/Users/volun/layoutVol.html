@@ -29,13 +29,13 @@
               <li><a th:href="@{/voluntario/donaciones}">Donaciones</a></li>
               <li><a th:href="@{/voluntario/historial}">Mi Historial</a></li>
               <li><a th:href="@{/voluntario/foro}">Foro</a></li>
+              <li><a th:href="@{/voluntario/incidencias}">Incidencias</a></li>
               <li><a th:href="@{/logout}" class="btn-sesion">Cerrar Sesión</a></li>
             </ul>
             
-            <!-- Identificador del usuario (Correo institucional) -->
+            <!-- Nombre del voluntario -->
             <div class="user-info" th:if="${session.usuario != null}">
-                <span class="user-email" th:text="${session.usuario.email}"></span>
-                <span class="user-name" style="margin-left: 10px;" th:text="${session.usuario.nombres}"></span>
+                <span class="user-vol-name" th:text="${session.usuario.nombres}"></span>
             </div>
         </div>
     </nav>
@@ -92,6 +92,7 @@
                     <li><a th:href="@{/volun/donaciones}" style="color:#A0AEC0; text-decoration:none;">Donaciones</a></li>
                     <li><a th:href="@{/volun/historial}" style="color:#A0AEC0; text-decoration:none;">Mi Historial</a></li>
                     <li><a th:href="@{/volun/foro}" style="color:#A0AEC0; text-decoration:none;">Foro</a></li>
+                    <li><a th:href="@{/voluntario/incidencias}" style="color:#A0AEC0; text-decoration:none;">Incidencias</a></li>
                 </ul>
             </div>
         </div>
@@ -104,27 +105,15 @@
         .user-info {
             display: flex;
             align-items: center;
-            margin-left: 20px;
         }
-        .user-email {
+        .user-vol-name {
             background: #3AAA6B;
             color: white;
-            padding: 6px 15px;
+            padding: 5px 14px;
             border-radius: 40px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-        .rs-nav {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-        @media (max-width: 768px) {
-            .user-info {
-                margin-left: 0;
-                margin-top: 10px;
-            }
+            font-size: 0.82rem;
+            font-weight: 600;
+            white-space: nowrap;
         }
     </style>
 
@@ -143,6 +132,90 @@
                 });
             }
         });
+    </script>
+
+    <!-- Notificaciones WebSocket Globales para Incidencias -->
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const sessionUserId = /*[[${session.usuario != null ? session.usuario.id : null}]]*/ null;
+        const sessionUserRol = /*[[${session.usuario != null ? session.usuario.rol : null}]]*/ null;
+        /*]]>*/
+        
+        if (sessionUserId && sessionUserRol) {
+            function connectNotificationWs() {
+                const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+                const params = new URLSearchParams({
+                    usuarioId: String(sessionUserId),
+                    usuarioRol: String(sessionUserRol)
+                });
+                const wsUrl = wsProtocol + window.location.host + '/ws/ayuda?' + params.toString();
+                const socket = new WebSocket(wsUrl);
+
+                socket.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data && data.type === 'INCIDENCIA_RESUELTA') {
+                            showGlobalToast('🔔 Incidencia Resuelta:\n' + data.resolucion);
+                            if (window.location.pathname.includes('/incidencias')) {
+                                setTimeout(() => window.location.reload(), 3000);
+                            }
+                        } else if (data && data.type === 'SANCION_RECIBIDA') {
+                            showGlobalToast('⚠️ Sanción Recibida:\n' + data.motivo);
+                            if (data.tipoSancion === 'BLOQUEO') {
+                                alert('🚫 Tu cuenta ha sido bloqueada permanentemente. Serás redirigido.');
+                                window.location.href = '/logout';
+                            } else {
+                                setTimeout(() => window.location.reload(), 3000);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing WS message:', e);
+                    }
+                };
+
+                socket.onclose = function() {
+                    setTimeout(connectNotificationWs, 5000);
+                };
+            }
+            
+            document.addEventListener('DOMContentLoaded', connectNotificationWs);
+        }
+        
+        function showGlobalToast(message) {
+            let toast = document.getElementById('global-ws-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'global-ws-toast';
+                toast.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    background-color: #1E2D4A;
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+                    z-index: 10000;
+                    font-family: inherit;
+                    font-size: 0.95rem;
+                    border-left: 5px solid #EF4444;
+                    max-width: 350px;
+                    white-space: pre-line;
+                    opacity: 0;
+                    transform: translateY(-20px);
+                    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                `;
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-20px)';
+            }, 6000);
+        }
     </script>
 </body>
 </html>
