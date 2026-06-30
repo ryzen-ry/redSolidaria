@@ -6,30 +6,868 @@
 <body>
     <div th:fragment="content">
         <h1 class="rs-section-title">📚 Capacitación para Voluntarios</h1>
-        <div class="rs-cursos-grid">
-            <div class="rs-curso-card">
-                <div class="rs-curso-badge">Básico</div>
-                <h3>Lenguaje de Señas Peruano - Nivel 1</h3>
-                <p>Curso completo de introducción al lenguaje de señas.</p>
-                <div class="rs-curso-duration">⏱️ 1 horas</div>
-                <a th:href="@{/voluntario/capacitacion}" class="rs-btn-green" style="width: 100%; display: inline-block; text-align: center;">Comenzar</a>
-            </div>
-            <div class="rs-curso-card">
-                <div class="rs-curso-badge">Intermedio</div>
-                <h3>Asistencia a Personas con Discapacidad Motriz</h3>
-                <p>Aprende técnicas seguras para asistir a personas con movilidad reducida.</p>
-                <div class="rs-curso-duration">⏱️ 2 horas</div>
-                <a th:href="@{/voluntario/capacitacion}" class="rs-btn-green" style="width: 100%; display: inline-block; text-align: center;">Comenzar</a>
-            </div>
+        <p style="color: #64748B; margin-bottom: 2rem; margin-top: -1rem;">Completa los cursos obligatorios y rinde las evaluaciones para habilitar tus labores.</p>
 
-            <div class="rs-curso-card">
-               <div class="rs-curso-badge">Básico</div>
-                 <h3>Primeros Auxilios</h3>
-                   <p>Curso esencial de primeros auxilios para situaciones de emergencia.</p>
-               <div class="rs-curso-duration">⏱️ 4 horas</div>
-                 <a th:href="@{/voluntario/capacitacion}" class="rs-btn-green" style="width: 100%; display: inline-block; text-align: center;">Comenzar</a>
-             </div>
+        <!-- Cuadrícula de Cursos Cargada Dinámicamente -->
+        <div class="rs-cursos-grid">
+            <div th:each="info : ${cursosInfo}" class="rs-curso-card">
+                <!-- Nivel Badge -->
+                <div class="rs-curso-badge" 
+                     th:classappend="${info.curso.nivel == 'Avanzado' ? 'rs-badge-red' : (info.curso.nivel == 'Intermedio' ? 'rs-badge-yellow' : '')}"
+                     th:text="${info.curso.nivel}">Básico</div>
+                
+                <h3 th:text="${info.curso.titulo}">Título del Curso</h3>
+                <p th:text="${info.curso.descripcion}">Descripción corta...</p>
+                <div class="rs-curso-duration" th:text="'⏱️ ' + ${info.curso.duracionHoras} + ' horas'">⏱️ 1 horas</div>
+                
+                <!-- Acciones según Estado del Progreso -->
+                <!-- 1. Si está aprobado -->
+                <div th:if="${info.aprobado}" class="rs-status-badge approved">
+                    ✅ Aprobado
+                </div>
+                
+                <!-- 2. Si está bloqueado y fue cancelado -->
+                <div th:if="${info.bloqueado && info.estado == 'CANCELADO'}" class="rs-status-badge cancelled">
+                    ❌ Cancelado - disponible en <span th:text="${info.minutosRestantes}"></span> min
+                </div>
+                
+                <!-- 3. Si está bloqueado y fue reprobado -->
+                <div th:if="${info.bloqueado && info.estado == 'REPROBADO'}" class="rs-status-badge blocked">
+                    ⏰ Bloqueado - <span th:text="${info.minutosRestantes}"></span> min restantes
+                </div>
+                
+                <!-- 4. Disponible para iniciar/continuar -->
+                <button th:if="${!info.aprobado && !info.bloqueado}" 
+                        class="rs-btn-green btn-comenzar" 
+                        style="width: 100%; display: inline-block; text-align: center; border: none; cursor: pointer; border-radius: 8px; font-weight: 600; padding: 10px 0;"
+                        th:data-id="${info.curso.id}"
+                        th:data-titulo="${info.curso.titulo}"
+                        th:data-url="${info.curso.urlVideo}">
+                    Comenzar
+                </button>
+            </div>
         </div>
+
+        <!-- MODAL ÚNICO DE CAPACITACIÓN -->
+        <div class="tr-modal" id="capacitacionModal">
+            <div class="tr-modal-content">
+                <!-- CABECERA DEL MODAL -->
+                <div class="tr-modal-header">
+                    <h3 id="modal-header-title">Capacitación</h3>
+                    <button class="tr-modal-close" onclick="closeModal()">&times;</button>
+                </div>
+
+                <!-- CUERPO DEL MODAL (Con Scroll) -->
+                <div class="tr-modal-body">
+                    
+                    <!-- VISTA 1: REPRODUCTOR DE VIDEO -->
+                    <div id="view-video" class="modal-view">
+                        <div class="video-wrapper">
+                            <div id="player-container"></div>
+                        </div>
+                        
+                        <div class="tr-progress-container">
+                            <div class="tr-progress-bar-bg">
+                                <div class="tr-progress-bar-fill" id="video-progress"></div>
+                            </div>
+                            <div class="tr-progress-text">
+                                <span id="video-progress-text">0% visto</span>
+                                <span>Requisito: 90% para habilitar test</span>
+                            </div>
+                        </div>
+
+                        <!-- Botones que se activan al llegar al 90% -->
+                        <div class="modal-actions" id="video-actions" style="display: none; justify-content: center; gap: 15px; margin-top: 25px;">
+                            <button id="btn-ir-test" class="rs-btn-green" style="padding: 12px 24px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px;">
+                                📝 Ir al Test
+                            </button>
+                            <button id="btn-cancelar-curso" class="rs-btn-red" style="padding: 12px 24px; font-size: 1rem; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; background-color: #EF4444; color: white;">
+                                ❌ Cancelar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- VISTA 2: TEST DE 10 PREGUNTAS -->
+                    <div id="view-test" class="modal-view" style="display: none;">
+                        <p style="color: #64748B; margin-bottom: 20px; font-size: 0.95rem;">Responde las 10 preguntas. Cada una vale 10 puntos. Necesitas al menos 80 puntos para aprobar.</p>
+                        <div id="preguntas-container">
+                            <!-- Se carga dinámicamente con JS -->
+                        </div>
+                        <button id="btn-enviar-test" class="rs-btn-green" style="width: 100%; border: none; padding: 14px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px;">
+                            Enviar Respuestas
+                        </button>
+                    </div>
+
+                    <!-- VISTA 3: RESULTADO -->
+                    <div id="view-resultado" class="modal-view" style="display: none; position: relative;">
+                        <!-- Canvas para confeti -->
+                        <canvas id="confetti-canvas"></canvas>
+                        
+                        <div class="result-container">
+                            <div class="result-icon" id="resultado-icon">🎉</div>
+                            <div class="result-title" id="resultado-titulo">¡Aprobado!</div>
+                            <div class="result-score-badge" id="resultado-score-badge">90/100</div>
+                            <div class="result-desc" id="resultado-desc">Has completado con éxito la capacitación.</div>
+                            
+                            <button id="btn-cerrar-modal" class="rs-btn-primary" onclick="closeModal()" style="width: 100%; max-width: 300px; padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 1rem; background-color: #3AAA6B; color: white; margin-top: 10px;">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- HOJA DE ESTILOS PERSONALIZADA PARA EL MODAL -->
+        <style>
+            /* Badges de nivel adicionales */
+            .rs-badge-yellow {
+                background: #FFFBEB !important;
+                color: #D97706 !important;
+                border: 1px solid #FDE68A;
+            }
+            .rs-badge-red {
+                background: #FEF2F2 !important;
+                color: #DC2626 !important;
+                border: 1px solid #FECACA;
+            }
+
+            /* Estados de tarjetas */
+            .rs-status-badge {
+                padding: 10px 14px;
+                border-radius: 8px;
+                text-align: center;
+                font-weight: 600;
+                font-size: 0.95rem;
+                margin-top: 10px;
+                display: block;
+            }
+            .rs-status-badge.approved {
+                background: #ECFDF5;
+                color: #065F46;
+                border: 1px solid #A7F3D0;
+            }
+            .rs-status-badge.blocked {
+                background: #FFFBEB;
+                color: #92400E;
+                border: 1px solid #FDE68A;
+            }
+            .rs-status-badge.cancelled {
+                background: #FEF2F2;
+                color: #991B1B;
+                border: 1px solid #FEE2E2;
+            }
+
+            /* Estilos del modal */
+            .tr-modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(15, 23, 42, 0.75);
+                backdrop-filter: blur(8px);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                padding: 20px;
+                box-sizing: border-box;
+            }
+            .tr-modal-content {
+                background: #ffffff;
+                border-radius: 16px;
+                width: 100%;
+                max-width: 680px;
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                overflow: hidden;
+                animation: modalSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            }
+            @keyframes modalSlideUp {
+                from { transform: translateY(40px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            .tr-modal-header {
+                padding: 18px 24px;
+                border-bottom: 1px solid #E2E8F0;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background: #F8FAFC;
+            }
+            .tr-modal-header h3 {
+                margin: 0;
+                font-size: 1.25rem;
+                color: #0F172A;
+                font-weight: 700;
+            }
+            .tr-modal-close {
+                font-size: 1.8rem;
+                color: #94A3B8;
+                cursor: pointer;
+                transition: color 0.2s;
+                background: none;
+                border: none;
+                line-height: 1;
+            }
+            .tr-modal-close:hover {
+                color: #475569;
+            }
+            .tr-modal-body {
+                padding: 24px;
+                max-height: 75vh;
+                overflow-y: auto;
+            }
+
+            /* Video view */
+            .video-wrapper {
+                position: relative;
+                padding-bottom: 56.25%;
+                height: 0;
+                overflow: hidden;
+                border-radius: 12px;
+                background: #000;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                margin-bottom: 16px;
+            }
+            .video-wrapper iframe {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                border: 0;
+            }
+            .tr-progress-container {
+                margin: 20px 0 10px 0;
+            }
+            .tr-progress-bar-bg {
+                width: 100%;
+                height: 8px;
+                background: #E2E8F0;
+                border-radius: 10px;
+                overflow: hidden;
+            }
+            .tr-progress-bar-fill {
+                height: 100%;
+                width: 0%;
+                background: linear-gradient(90deg, #3AAA6B, #2E8B57);
+                border-radius: 10px;
+                transition: width 0.25s ease;
+            }
+            .tr-progress-text {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.85rem;
+                color: #64748B;
+                margin-top: 6px;
+                font-weight: 500;
+            }
+
+            /* Question Cards */
+            .question-card {
+                background: #F8FAFC;
+                border: 1px solid #E2E8F0;
+                border-radius: 12px;
+                padding: 18px;
+                margin-bottom: 20px;
+            }
+            .question-text {
+                font-weight: 600;
+                font-size: 1rem;
+                color: #0F172A;
+                margin-bottom: 14px;
+                line-height: 1.4;
+            }
+            .options-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+            .option-item {
+                display: flex;
+                align-items: center;
+                padding: 12px 16px;
+                border: 1px solid #E2E8F0;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                background: #ffffff;
+                position: relative;
+            }
+            .option-item:hover {
+                border-color: #3AAA6B;
+                background: #F0FDF4;
+            }
+            .option-item.selected {
+                border-color: #3AAA6B;
+                background: #ECFDF5;
+                box-shadow: 0 0 0 2px rgba(58, 170, 107, 0.15);
+            }
+            .option-item input[type="radio"] {
+                display: none;
+            }
+            .option-letter {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 28px;
+                height: 28px;
+                border-radius: 50%;
+                background: #F1F5F9;
+                color: #64748B;
+                font-weight: 700;
+                font-size: 0.85rem;
+                margin-right: 12px;
+                flex-shrink: 0;
+                transition: all 0.2s ease;
+            }
+            .option-item.selected .option-letter {
+                background: #3AAA6B;
+                color: #ffffff;
+            }
+            .option-text {
+                font-size: 0.95rem;
+                color: #334155;
+                line-height: 1.4;
+            }
+
+            /* Result view */
+            .result-container {
+                text-align: center;
+                padding: 20px 0;
+            }
+            .result-icon {
+                font-size: 4.5rem;
+                margin-bottom: 15px;
+                line-height: 1;
+            }
+            .result-title {
+                font-size: 1.75rem;
+                font-weight: 800;
+                color: #0F172A;
+                margin-bottom: 8px;
+            }
+            .result-score-badge {
+                display: inline-block;
+                padding: 8px 24px;
+                border-radius: 30px;
+                font-size: 1.35rem;
+                font-weight: 800;
+                margin: 15px 0;
+            }
+            .result-score-badge.passed {
+                background: #D1FAE5;
+                color: #065F46;
+                border: 1px solid #A7F3D0;
+            }
+            .result-score-badge.failed {
+                background: #FEE2E2;
+                color: #991B1B;
+                border: 1px solid #FCA5A5;
+            }
+            .result-desc {
+                font-size: 1rem;
+                color: #475569;
+                margin-bottom: 25px;
+                max-width: 450px;
+                margin-left: auto;
+                margin-right: auto;
+                line-height: 1.5;
+            }
+
+            #confetti-canvas {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                pointer-events: none;
+                z-index: 10;
+                border-radius: 0 0 16px 16px;
+            }
+        </style>
+
+        <!-- LÓGICA DE JAVASCRIPT CON YOUTUBE IFRAME API Y AJAX -->
+        <script>
+            // 1. Cargar YouTube IFrame API de forma dinámica
+            var tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            var firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+            var player = null;
+            var currentCursoId = null;
+            var currentCursoTitulo = "";
+            var progressInterval = null;
+            var videoCompletedSent = false;
+            var lastSavedTime = 0;
+
+            document.addEventListener('DOMContentLoaded', () => {
+                // Configurar botones "Comenzar"
+                document.querySelectorAll('.btn-comenzar').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const cursoId = btn.getAttribute('data-id');
+                        const titulo = btn.getAttribute('data-titulo');
+                        const url = btn.getAttribute('data-url');
+                        
+                        await intentarIniciarCurso(cursoId, titulo, url);
+                    });
+                });
+
+                // Configurar botón "Ir al Test"
+                document.getElementById('btn-ir-test').addEventListener('click', () => {
+                    verificarHabilitacionTest();
+                });
+
+                // Configurar botón "Cancelar"
+                document.getElementById('btn-cancelar-curso').addEventListener('click', () => {
+                    if (confirm("¿Estás seguro de que deseas cancelar? Se bloqueará este curso por 1 hora y no podrás realizar la evaluación.")) {
+                        cancelarCurso();
+                    }
+                });
+
+                // Configurar botón "Enviar Test"
+                document.getElementById('btn-enviar-test').addEventListener('click', () => {
+                    enviarRespuestasTest();
+                });
+            });
+
+            // Función para extraer ID de video de YouTube de forma robusta
+            function extractVideoId(url) {
+                if (!url) return '';
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : url;
+            }
+
+            // Llamar al backend para iniciar el curso (valida bloqueos en BD)
+            async function intentarIniciarCurso(cursoId, titulo, url) {
+                try {
+                    const response = await fetch('/api/voluntario/curso/iniciar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cursoId: parseInt(cursoId) })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        alert(data.error || "No se puede iniciar el curso en este momento.");
+                        return;
+                    }
+
+                    // Inicializar variables de seguimiento
+                    currentCursoId = parseInt(cursoId);
+                    currentCursoTitulo = titulo;
+                    videoCompletedSent = data.videoCompletado || false;
+                    lastSavedTime = Date.now();
+
+                    // Abrir modal en la vista de video
+                    document.getElementById('modal-header-title').innerText = titulo;
+                    document.getElementById('view-video').style.display = 'block';
+                    document.getElementById('view-test').style.display = 'none';
+                    document.getElementById('view-resultado').style.display = 'none';
+                    
+                    // Mostrar u ocultar botones al iniciar
+                    const actionsContainer = document.getElementById('video-actions');
+                    actionsContainer.style.display = videoCompletedSent ? 'flex' : 'none';
+
+                    // Restablecer barra de progreso
+                    document.getElementById('video-progress').style.width = videoCompletedSent ? '100%' : '0%';
+                    document.getElementById('video-progress-text').innerText = videoCompletedSent ? '100% visto' : '0% visto';
+
+                    document.getElementById('capacitacionModal').style.display = 'flex';
+
+                    // Inicializar el reproductor de YouTube
+                    const videoId = extractVideoId(url);
+                    initYTPlayer(videoId);
+
+                } catch (error) {
+                    console.error("Error al iniciar curso:", error);
+                    alert("Ocurrió un error de red al intentar comenzar el curso.");
+                }
+            }
+
+            // Inicializar el reproductor
+            function initYTPlayer(videoId) {
+                if (player) {
+                    try { player.destroy(); } catch(e) {}
+                    player = null;
+                }
+
+                if (!window.YT || !window.YT.Player) {
+                    setTimeout(() => initYTPlayer(videoId), 250);
+                    return;
+                }
+
+                player = new YT.Player('player-container', {
+                    height: '100%',
+                    width: '100%',
+                    videoId: videoId,
+                    playerVars: {
+                        'autoplay': 1,
+                        'controls': 1,
+                        'rel': 0,
+                        'modestbranding': 1
+                    },
+                    events: {
+                        'onStateChange': onPlayerStateChange
+                    }
+                });
+            }
+
+            function onPlayerStateChange(event) {
+                if (event.data === YT.PlayerState.PLAYING) {
+                    startTracking();
+                } else {
+                    stopTracking();
+                }
+            }
+
+            function startTracking() {
+                if (progressInterval) clearInterval(progressInterval);
+                progressInterval = setInterval(trackVideoProgress, 1000);
+            }
+
+            function stopTracking() {
+                if (progressInterval) {
+                    clearInterval(progressInterval);
+                    progressInterval = null;
+                }
+            }
+
+            // Monitorea el progreso del video en reproducción
+            function trackVideoProgress() {
+                if (!player || typeof player.getDuration !== 'function' || typeof player.getCurrentTime !== 'function') {
+                    return;
+                }
+
+                const duration = player.getDuration();
+                const currentTime = player.getCurrentTime();
+
+                if (duration <= 0) return;
+
+                const percentage = (currentTime / duration) * 100;
+                
+                // Actualizar UI
+                document.getElementById('video-progress').style.width = Math.min(percentage, 100) + '%';
+                document.getElementById('video-progress-text').innerText = Math.round(percentage) + '% visto';
+
+                // Si supera el 90%, activar botones
+                if (percentage >= 90 && !videoCompletedSent) {
+                    videoCompletedSent = true;
+                    document.getElementById('video-actions').style.display = 'flex';
+                    saveVideoProgress(true); // Persistir completitud
+                }
+
+                // Guardar progreso intermedio cada 10 segundos de visualización
+                const ahora = Date.now();
+                if (ahora - lastSavedTime >= 10000) {
+                    lastSavedTime = ahora;
+                    saveVideoProgress(videoCompletedSent);
+                }
+            }
+
+            // Enviar progreso mediante AJAX
+            async function saveVideoProgress(completado) {
+                try {
+                    await fetch('/api/voluntario/progreso/guardar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            cursoId: currentCursoId,
+                            completado: completado
+                        })
+                    });
+                } catch (e) {
+                    console.error("Error guardando progreso del video:", e);
+                }
+            }
+
+            // Cancelar el curso y bloquearlo por 1 hora
+            async function cancelarCurso() {
+                try {
+                    const response = await fetch('/api/voluntario/curso/cancelar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ cursoId: currentCursoId })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        alert(data.mensaje);
+                        closeModal();
+                    } else {
+                        alert(data.error || "Ocurrió un error al intentar cancelar.");
+                    }
+                } catch (error) {
+                    console.error("Error al cancelar curso:", error);
+                    alert("Error de red al cancelar el curso.");
+                }
+            }
+
+            // Validar que se pueda ingresar al test
+            async function verificarHabilitacionTest() {
+                try {
+                    const response = await fetch(`/api/voluntario/test/verificar?cursoId=${currentCursoId}`);
+                    const data = await response.json();
+                    
+                    if (data.puedeHacerTest) {
+                        cargarYMostrarTest();
+                    } else {
+                        alert(data.mensaje);
+                    }
+                } catch (error) {
+                    console.error("Error al verificar test:", error);
+                    alert("Error al verificar disponibilidad del test.");
+                }
+            }
+
+            // Cargar preguntas del curso y mostrarlas en la Vista 2
+            async function cargarYMostrarTest() {
+                try {
+                    // Detener reproducción
+                    if (player && typeof player.pauseVideo === 'function') {
+                        player.pauseVideo();
+                    }
+
+                    const response = await fetch(`/api/voluntario/curso/${currentCursoId}/preguntas`);
+                    if (!response.ok) {
+                        alert("Error al obtener las preguntas del examen.");
+                        return;
+                    }
+
+                    const preguntas = await response.json();
+                    const container = document.getElementById('preguntas-container');
+                    container.innerHTML = '';
+
+                    preguntas.forEach((p, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'question-card';
+                        item.innerHTML = `
+                            <div class="question-text">${index + 1}. ${escapeHtml(p.enunciado)}</div>
+                            <div class="options-list">
+                                <label class="option-item" onclick="seleccionarOpcion(this, ${p.id}, 'a')">
+                                    <span class="option-letter">A</span>
+                                    <span class="option-text">${escapeHtml(p.opcionA)}</span>
+                                    <input type="radio" name="pregunta_${p.id}" value="a">
+                                </label>
+                                <label class="option-item" onclick="seleccionarOpcion(this, ${p.id}, 'b')">
+                                    <span class="option-letter">B</span>
+                                    <span class="option-text">${escapeHtml(p.opcionB)}</span>
+                                    <input type="radio" name="pregunta_${p.id}" value="b">
+                                </label>
+                                <label class="option-item" onclick="seleccionarOpcion(this, ${p.id}, 'c')">
+                                    <span class="option-letter">C</span>
+                                    <span class="option-text">${escapeHtml(p.opcionC)}</span>
+                                    <input type="radio" name="pregunta_${p.id}" value="c">
+                                </label>
+                                <label class="option-item" onclick="seleccionarOpcion(this, ${p.id}, 'd')">
+                                    <span class="option-letter">D</span>
+                                    <span class="option-text">${escapeHtml(p.opcionD)}</span>
+                                    <input type="radio" name="pregunta_${p.id}" value="d">
+                                </label>
+                            </div>
+                        `;
+                        container.appendChild(item);
+                    });
+
+                    // Cambiar a la vista del Test
+                    document.getElementById('view-video').style.display = 'none';
+                    document.getElementById('view-test').style.display = 'block';
+
+                } catch (error) {
+                    console.error("Error cargando el test:", error);
+                    alert("Error de red al cargar la evaluación.");
+                }
+            }
+
+            function seleccionarOpcion(element, preguntaId, opcion) {
+                // Deseleccionar hermanos
+                const card = element.closest('.question-card');
+                card.querySelectorAll('.option-item').forEach(opt => opt.classList.remove('selected'));
+                
+                // Seleccionar actual
+                element.classList.add('selected');
+                
+                // Marcar radio
+                const input = element.querySelector('input[type="radio"]');
+                if (input) input.checked = true;
+            }
+
+            // Enviar respuestas del test por AJAX
+            async function enviarRespuestasTest() {
+                const questionCards = document.querySelectorAll('.question-card');
+                const respuestas = {};
+                let respondidas = 0;
+
+                questionCards.forEach(card => {
+                    const checkedInput = card.querySelector('input[type="radio"]:checked');
+                    if (checkedInput) {
+                        const preguntaId = checkedInput.name.split('_')[1];
+                        respuestas[preguntaId] = checkedInput.value;
+                        respondidas++;
+                    }
+                });
+
+                if (respondidas < questionCards.length) {
+                    alert("Por favor, responde todas las preguntas del examen antes de enviarlo.");
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/voluntario/test/guardar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            cursoId: currentCursoId,
+                            respuestas: respuestas
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        mostrarResultadoExamen(data);
+                    } else {
+                        alert(data.error || "Ocurrió un error al calificar el examen.");
+                    }
+
+                } catch (error) {
+                    console.error("Error al enviar el test:", error);
+                    alert("Error de red al enviar tus respuestas.");
+                }
+            }
+
+            // Mostrar la Vista 3 con el resultado
+            function mostrarResultadoExamen(data) {
+                document.getElementById('view-test').style.display = 'none';
+                
+                const scoreBadge = document.getElementById('resultado-score-badge');
+                const title = document.getElementById('resultado-titulo');
+                const desc = document.getElementById('resultado-desc');
+                const icon = document.getElementById('resultado-icon');
+
+                scoreBadge.innerText = `${data.puntajeObtenido} / 100`;
+
+                if (data.aprobado) {
+                    title.innerText = "¡Aprobado! 🎉";
+                    title.style.color = "#065F46";
+                    icon.innerText = "🏆";
+                    desc.innerText = "¡Felicitaciones! Has completado el curso y aprobado el examen. Ahora estás facultado en esta temática.";
+                    scoreBadge.className = "result-score-badge passed";
+                    
+                    document.getElementById('view-resultado').style.display = 'block';
+                    // Iniciar animación de confeti
+                    setTimeout(startConfettiAnimation, 100);
+                } else {
+                    title.innerText = "No aprobaste";
+                    title.style.color = "#991B1B";
+                    icon.innerText = "⏰";
+                    desc.innerText = "No has alcanzado el 80% mínimo requerido para aprobar. El curso se ha bloqueado temporalmente por 1 hora. Puedes volver a intentarlo después.";
+                    scoreBadge.className = "result-score-badge failed";
+                    
+                    document.getElementById('view-resultado').style.display = 'block';
+                }
+            }
+
+            // Cerrar el modal y refrescar la página
+            function closeModal() {
+                document.getElementById('capacitacionModal').style.display = 'none';
+                stopTracking();
+                if (player) {
+                    try { player.destroy(); } catch(e) {}
+                    player = null;
+                }
+                // Recargar página para actualizar badges y botones
+                window.location.reload();
+            }
+
+            // Escape HTML helper
+            function escapeHtml(text) {
+                if (!text) return '';
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+
+            // Animación de Confeti nativa en canvas (para funcionamiento offline e impecable)
+            function startConfettiAnimation() {
+                const canvas = document.getElementById('confetti-canvas');
+                if (!canvas) return;
+                
+                const ctx = canvas.getContext('2d');
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = 360;
+
+                let particles = [];
+                const colors = ['#3AAA6B', '#10B981', '#3B82F6', '#EF4444', '#F59E0B', '#8B5CF6', '#EC4899'];
+
+                for (let i = 0; i < 120; i++) {
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: Math.random() * 5 + 3,
+                        d: Math.random() * canvas.height,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        tilt: Math.random() * 8 - 4,
+                        tiltAngleIncremental: Math.random() * 0.05 + 0.02,
+                        tiltAngle: 0
+                    });
+                }
+
+                let animationId;
+
+                function drawFrame() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    let active = false;
+
+                    particles.forEach(p => {
+                        p.tiltAngle += p.tiltAngleIncremental;
+                        p.y += (Math.cos(p.d) + 2.5 + p.r / 2) / 2;
+                        p.x += Math.sin(p.tiltAngle);
+
+                        ctx.beginPath();
+                        ctx.lineWidth = p.r;
+                        ctx.strokeStyle = p.color;
+                        ctx.moveTo(p.x + p.tilt + p.r / 2, p.y);
+                        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 2);
+                        ctx.stroke();
+
+                        if (p.y <= canvas.height) {
+                            active = true;
+                        } else {
+                            // Resetear al tope
+                            p.x = Math.random() * canvas.width;
+                            p.y = -20;
+                            p.tilt = Math.random() * 8 - 4;
+                        }
+                    });
+
+                    if (active) {
+                        animationId = requestAnimationFrame(drawFrame);
+                    }
+                }
+
+                drawFrame();
+
+                setTimeout(() => {
+                    cancelAnimationFrame(animationId);
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }, 5000);
+            }
+        </script>
     </div>
 </body>
 </html>

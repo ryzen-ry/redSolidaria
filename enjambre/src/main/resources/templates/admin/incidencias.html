@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{admin/layoutAdm :: html}"
+      th:with="titulo='Gestión de incidencias'">
+<head></head>
+<body>
+<div th:fragment="content">
+    <style>
+        /* Color header red/crimson for warning/incidents section */
+        .adm-page-header--red {
+            background: linear-gradient(135deg, #DC2626 0%, #7F1D1D 100%) !important;
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        
+        .adm-page-header--red .adm-hero__badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .adm-page-header--red .adm-page-header__title {
+            font-size: 2.25rem;
+            font-weight: 800;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.025em;
+        }
+
+        .adm-page-header--red .adm-page-header__subtitle {
+            color: #FEE2E2;
+            font-size: 0.95rem;
+            max-width: 800px;
+        }
+
+        /* Warnings and sanctions history */
+        .sanction-history-box {
+            margin-top: 1.25rem;
+            padding: 1.25rem;
+            background: #FEF2F2;
+            border-left: 4px solid #EF4444;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
+        }
+        
+        .sanction-history-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #991B1B;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .sanction-item {
+            font-size: 0.85rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+            color: #7F1D1D;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sanction-item:last-child {
+            border-bottom: none;
+        }
+        
+        .sanction-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        .sanction-badge--av1 {
+            background-color: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
+        }
+        
+        .sanction-badge--av2 {
+            background-color: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
+        }
+        
+        .sanction-badge--bloq {
+            background-color: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FCA5A5;
+        }
+
+        /* Action buttons styling */
+        .action-buttons-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 1.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-sancion {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .btn-sancion:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+
+        .btn-sancion:active {
+            transform: translateY(0);
+        }
+        
+        .btn-sancion--green {
+            background-color: #10B981;
+            color: white;
+        }
+        
+        .btn-sancion--green:hover {
+            background-color: #059669;
+        }
+        
+        .btn-sancion--yellow {
+            background-color: #F59E0B;
+            color: white;
+        }
+        
+        .btn-sancion--yellow:hover {
+            background-color: #D97706;
+        }
+        
+        .btn-sancion--red {
+            background-color: #EF4444;
+            color: white;
+        }
+        
+        .btn-sancion--red:hover {
+            background-color: #DC2626;
+        }
+
+        /* Block confirmation Modal */
+        .block-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: all 0.3s ease;
+        }
+        
+        .block-modal-card {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 550px;
+            padding: 2.25rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: modalFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid #F1F5F9;
+        }
+        
+        @keyframes modalFadeIn {
+            from { transform: translateY(-15px) scale(0.98); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        .block-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            border-bottom: 1px solid #F1F5F9;
+            padding-bottom: 1rem;
+        }
+        
+        .block-modal-title {
+            font-size: 1.35rem;
+            color: #991B1B;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        
+        .block-modal-close {
+            background: #F1F5F9;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748B;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .block-modal-close:hover {
+            background: #E2E8F0;
+            color: #1E293B;
+        }
+        
+        .block-modal-body {
+            margin-bottom: 1.75rem;
+        }
+        
+        .block-modal-body label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+        
+        .block-modal-textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 0.875rem;
+            border: 1px solid #CBD5E1;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+        
+        .block-modal-textarea:focus {
+            outline: none;
+            border-color: #EF4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+        }
+        
+        .block-modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid #F1F5F9;
+            padding-top: 1.25rem;
+        }
+        
+        .btn-modal-cancel {
+            background-color: #F1F5F9;
+            color: #475569;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-modal-cancel:hover {
+            background-color: #E2E8F0;
+        }
+        
+        .evidence-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #DC2626;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        
+        .evidence-link:hover {
+            color: #991B1B;
+            text-decoration: underline;
+        }
+    </style>
+
+    <div class="adm-dashboard adm-page">
+        <!-- HEADER DE INCIDENCIAS -->
+        <header class="adm-page-header--red">
+            <div>
+                <a th:href="@{/admin/dashboard}" class="adm-back" style="color: #FEE2E2; text-decoration: none; font-size: 0.9rem; font-weight: 500; display: inline-block; margin-bottom: 0.5rem;">← Volver al dashboard</a>
+                <div>
+                    <span class="adm-hero__badge">Incidencias</span>
+                </div>
+                <h1 class="adm-page-header__title">Gestión de Incidencias</h1>
+                <p class="adm-page-header__subtitle">Revisa los reportes de mala conducta realizados por los usuarios, analiza testimonios y aplica sanciones de advertencia o bloqueos permanentes de cuenta.</p>
+            </div>
+            <div class="adm-page-header__meta" style="margin-top: 1.5rem;">
+                <div class="adm-page-header__count-box" style="background: rgba(255,255,255,0.1); padding: 0.75rem 1.5rem; border-radius: 8px; display: inline-block;">
+                    <span class="adm-page-header__count" style="font-size: 1.75rem; font-weight: 800; display: block;" th:text="${#lists.size(incidencias)}">0</span>
+                    <span class="adm-page-header__count-label" style="font-size: 0.75rem; color: #FEE2E2; font-weight: 600; text-transform: uppercase;">Reportes Activos</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- MENSAJES DE OPERACIÓN -->
+        <div class="adm-alerts" th:if="${success} or ${error}" style="margin-bottom: 1.5rem;">
+            <div th:if="${success}" class="adm-alert adm-alert--success" style="background-color: #D1FAE5; border-left: 4px solid #10B981; color: #065F46; padding: 1rem; border-radius: 6px; font-weight: 500;" th:text="${success}"></div>
+            <div th:if="${error}" class="adm-alert adm-alert--error" style="background-color: #FEE2E2; border-left: 4px solid #EF4444; color: #991B1B; padding: 1rem; border-radius: 6px; font-weight: 500;" th:text="${error}"></div>
+        </div>
+
+        <!-- LISTADO Y DETALLE DE REPORTES -->
+        <div class="adm-activ-card" th:if="${not #lists.isEmpty(incidencias)}">
+            <div class="adm-activ-split">
+                <!-- Panel Izquierdo: Listado de Reportes -->
+                <aside class="adm-activ-list-panel">
+                    <div class="adm-activ-list-header" style="font-weight: 700; color: #1E293B; border-bottom: 1px solid #E2E8F0; padding: 1rem;">
+                        Reportes de Incidencias
+                    </div>
+                    <div class="adm-activ-list">
+                        <div class="adm-activ-item"
+                             th:each="inc : ${incidencias}"
+                             th:data-incidencia-id="${inc.id}">
+                            <span class="adm-avatar adm-avatar--indigo" style="background-color: #FEE2E2; color: #EF4444; font-weight: 800;">!</span>
+                            <div>
+                                <div class="adm-cell-user__name" style="font-weight: 700; color: #1E293B;" th:text="'Incidencia #' + ${inc.id}">Incidencia #1</div>
+                                <div class="adm-cell-user__email" style="font-size: 0.8rem; color: #64748B;" th:text="${#temporals.format(inc.fechaCreacion, 'dd/MM/yyyy HH:mm')}">Fecha</div>
+                                <div style="margin-top: 0.35rem; display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <span th:if="${inc.denunciante.rol == 'DISCAPACITADO'}" class="adm-badge adm-badge--vol" style="background-color: #E0F2FE; color: #0369A1;">Contra Voluntario</span>
+                                    <span th:if="${inc.denunciante.rol == 'VOLUNTARIO'}" class="adm-badge adm-badge--dis" style="background-color: #FAF5FF; color: #6B21A8;">Contra Beneficiario</span>
+                                    
+                                    <!-- Badges de estado de incidencia -->
+                                    <span th:if="${inc.estado == 'PENDIENTE'}" class="adm-badge" style="background-color: #FEF3C7; color: #D97706; border: 1px solid #FDE68A;">PENDIENTE</span>
+                                    <span th:if="${inc.estado == 'PROCESANDO'}" class="adm-badge" style="background-color: #E0F2FE; color: #2563EB; border: 1px solid #BAE6FD;">PROCESANDO</span>
+                                    <span th:if="${inc.estado == 'RESUELTO'}" class="adm-badge" style="background-color: #D1FAE5; color: #059669; border: 1px solid #A7F3D0;">RESUELTO</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+
+                <!-- Panel Derecho: Detalle de Incidencia -->
+                <div class="adm-activ-detail-panel" style="padding: 2rem;">
+                    <!-- No Selection State -->
+                    <div id="no-selection" class="adm-activ-no-sel" style="text-align: center; padding: 4rem 2rem;">
+                        <div class="adm-activ-no-sel__icon" style="margin-bottom: 1.5rem;">
+                            <svg viewBox="0 0 24 24" style="width: 64px; height: 64px; fill: #94A3B8;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        </div>
+                        <h3 style="font-size: 1.25rem; font-weight: 700; color: #334155; margin-bottom: 0.5rem;">Selecciona un reporte de incidente</h3>
+                        <p style="color: #64748B; font-size: 0.95rem; max-width: 400px; margin: 0 auto;">Haz clic en la lista de la izquierda para revisar los testimonios, descargar las evidencias y aplicar sanciones a las cuentas.</p>
+                    </div>
+
+                    <!-- Detail Card for each Help History Incident -->
+                    <div th:each="inc : ${incidencias}"
+                         th:id="'details-' + ${inc.id}"
+                         class="user-detail-panel"
+                         style="display: none;">
+
+                        <div class="adm-activ-detail-header" style="border-bottom: 2px solid #F1F5F9; padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="font-size: 1.5rem; font-weight: 800; color: #0F172A; margin: 0;" th:text="'Detalle de Incidencia #' + ${inc.id}">Incidencia</h2>
+                            <div>
+                                <span class="adm-badge" 
+                                      th:styleappend="${inc.estado == 'PENDIENTE' ? 'background-color: #FEF3C7; color: #D97706;' : (inc.estado == 'PROCESANDO' ? 'background-color: #E0F2FE; color: #2563EB;' : 'background-color: #D1FAE5; color: #059669;')}"
+                                      style="padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 700; margin-right: 8px;"
+                                      th:text="${inc.estado}">PENDIENTE</span>
+                                <span class="adm-badge" style="background-color: #F1F5F9; color: #475569; padding: 4px 10px; border-radius: 6px; font-size: 0.85rem; font-weight: 600;" th:text="${#temporals.format(inc.fechaCreacion, 'dd/MM/yyyy HH:mm')}">Fecha</span>
+                            </div>
+                        </div>
+
+                        <!-- 1. CASO A: REPORTE CONTRA EL VOLUNTARIO (Denunciante es DISCAPACITADO) -->
+                        <div th:if="${inc.denunciante.rol == 'DISCAPACITADO'}" 
+                             style="background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.75rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                                <h3 style="color: #0F172A; font-weight: 800; font-size: 1.1rem; margin: 0;">Reporte contra el Voluntario</h3>
+                                <span class="adm-badge" style="background-color: #FEF2F2; color: #EF4444; border: 1px solid #FEE2E2; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Voluntario Reportado</span>
+                            </div>
+
+                            <div class="adm-activ-info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Denunciado (Voluntario)</label>
+                                    <div class="adm-activ-field__value" style="font-weight: 700; color: #1E293B;" th:text="${inc.denunciado != null ? inc.denunciado.nombreCompleto : 'Sin voluntario'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Correo del Voluntario</label>
+                                    <div class="adm-activ-field__value" style="color: #475569;" th:text="${inc.denunciado != null ? inc.denunciado.email : '—'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Denunciante (Beneficiario)</label>
+                                    <div class="adm-activ-field__value" style="font-weight: 700; color: #1E293B;" th:text="${inc.denunciante != null ? inc.denunciante.nombreCompleto : 'Sin beneficiario'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Correo del Beneficiario</label>
+                                    <div class="adm-activ-field__value" style="color: #475569;" th:text="${inc.denunciante != null ? inc.denunciante.email : '—'}">—</div>
+                                </div>
+                            </div>
+
+                            <!-- Historial de Advertencias del Voluntario -->
+                            <div class="sanction-history-box" th:if="${inc.denunciado != null}">
+                                <div class="sanction-history-title">Historial de Sanciones del Voluntario</div>
+                                
+                                <th:block th:with="volSanciones=${sancionesPorUsuario.get(inc.denunciado.id)}">
+                                    <div th:if="${volSanciones == null or #lists.isEmpty(volSanciones)}" style="font-size: 0.85rem; color: #475569; font-weight: 500;">
+                                        ✅ Sin advertencias previas (Cuenta limpia).
+                                    </div>
+                                    <div th:unless="${volSanciones == null or #lists.isEmpty(volSanciones)}">
+                                        <div class="sanction-item" th:each="s : ${volSanciones}">
+                                            <span class="sanction-badge" 
+                                                  th:classappend="${s.tipoSancion == 'AVISO_1' ? ' sanction-badge--av1' : (s.tipoSancion == 'AVISO_2' ? ' sanction-badge--av2' : ' sanction-badge--bloq')}"
+                                                  th:text="${s.tipoSancion == 'AVISO_1' ? '1er Aviso' : (s.tipoSancion == 'AVISO_2' ? '2do Aviso' : 'Bloqueo')}">Aviso</span>
+                                            <span th:text="${#temporals.format(s.fechaSancion, 'dd/MM/yyyy')}">Fecha</span> — 
+                                            <span th:text="${s.motivo != null and s.motivo != '' ? s.motivo : 'Sin motivo especificado'}" style="font-style: italic;">Motivo</span>
+                                        </div>
+                                    </div>
+                                </th:block>
+                            </div>
+
+                            <div style="margin-top: 1.25rem;">
+                                <label style="font-weight: 700; color: #334155; display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Testimonio / Queja del Beneficiario:</label>
+                                <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.25rem; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-line;" th:text="${inc.descripcion}"></div>
+                            </div>
+
+                            <!-- Evidencia -->
+                            <div th:if="${inc.evidenciaUrl != null and inc.evidenciaUrl != ''}" style="margin-top: 1.25rem;">
+                                <label style="font-weight: 700; color: #334155; display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Evidencia adjuntada por el Beneficiario:</label>
+                                <a th:href="${inc.evidenciaUrl}" class="evidence-link" target="_blank" rel="noopener">
+                                    <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                                    Descargar / Abrir Evidencia
+                                </a>
+                            </div>
+
+                            <!-- Botones de Acción para Sancionar al Voluntario -->
+                            <div class="action-buttons-group" th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}">
+                                <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
+                                      th:data-confirm-msg="|¿Enviar Primer Aviso por conductas indebidas a ${inc.denunciado.nombreCompleto}? Se registrará el incidente en su historial.|">
+                                    <input type="hidden" name="historialId" th:value="${inc.historialAyuda.id}">
+                                    <input type="hidden" name="reportedUserId" th:value="${inc.denunciado.id}">
+                                    <input type="hidden" name="tipoSancion" value="AVISO_1">
+                                    <input type="hidden" name="motivo" value="Primer aviso por conducta indebida reportada en el historial de ayuda.">
+                                    <button type="submit" class="btn-sancion btn-sancion--green">
+                                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        Primer aviso
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
+                                      th:data-confirm-msg="|¿Enviar Segundo Aviso a ${inc.denunciado.nombreCompleto}? Se le advertirá que la próxima infracción resultará en el bloqueo de su cuenta.|">
+                                    <input type="hidden" name="historialId" th:value="${inc.historialAyuda.id}">
+                                    <input type="hidden" name="reportedUserId" th:value="${inc.denunciado.id}">
+                                    <input type="hidden" name="tipoSancion" value="AVISO_2">
+                                    <input type="hidden" name="motivo" value="Segundo aviso por mala conducta. Cuenta advertida bajo riesgo de suspensión.">
+                                    <button type="submit" class="btn-sancion btn-sancion--yellow">
+                                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        Segundo aviso
+                                    </button>
+                                </form>
+                                <button type="button" class="btn-sancion btn-sancion--red open-block-btn"
+                                        th:data-historial-id="${inc.historialAyuda.id}"
+                                        th:data-reported-user-id="${inc.denunciado.id}"
+                                        th:data-user-name="${inc.denunciado.nombreCompleto}">
+                                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                    Bloquear cuenta
+                                </button>
+                            </div>
+
+                            <div th:if="${inc.estado == 'RESUELTO'}" style="margin-top: 1.5rem; padding: 0.75rem 1rem; background-color: #E6F4EA; border-radius: 8px; color: #137333; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                                <span>✔️ Esta incidencia ya ha sido resuelta por la administración.</span>
+                            </div>
+                        </div>
+
+                        <!-- 2. CASO B: REPORTE CONTRA EL BENEFICIARIO (Denunciante es VOLUNTARIO) -->
+                        <div th:if="${inc.denunciante.rol == 'VOLUNTARIO'}" 
+                             style="background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 1.75rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                            
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                                <h3 style="color: #0F172A; font-weight: 800; font-size: 1.1rem; margin: 0;">Reporte contra el Beneficiario</h3>
+                                <span class="adm-badge" style="background-color: #FAF5FF; color: #8B5CF6; border: 1px solid #F3E8FF; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 0.75rem;">Beneficiario Reportado</span>
+                            </div>
+
+                            <div class="adm-activ-info-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem;">
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Denunciado (Beneficiario)</label>
+                                    <div class="adm-activ-field__value" style="font-weight: 700; color: #1E293B;" th:text="${inc.denunciado != null ? inc.denunciado.nombreCompleto : 'Sin beneficiario'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Correo del Beneficiario</label>
+                                    <div class="adm-activ-field__value" style="color: #475569;" th:text="${inc.denunciado != null ? inc.denunciado.email : '—'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Denunciante (Voluntario)</label>
+                                    <div class="adm-activ-field__value" style="font-weight: 700; color: #1E293B;" th:text="${inc.denunciante != null ? inc.denunciante.nombreCompleto : 'Sin voluntario'}">—</div>
+                                </div>
+                                <div class="adm-activ-field">
+                                    <label style="font-size: 0.8rem; color: #64748B; font-weight: 600; text-transform: uppercase;">Correo del Voluntario</label>
+                                    <div class="adm-activ-field__value" style="color: #475569;" th:text="${inc.denunciante != null ? inc.denunciante.email : '—'}">—</div>
+                                </div>
+                            </div>
+
+                            <!-- Historial de Advertencias del Beneficiario -->
+                            <div class="sanction-history-box" th:if="${inc.denunciado != null}">
+                                <div class="sanction-history-title">Historial de Sanciones del Beneficiario</div>
+                                
+                                <th:block th:with="discSanciones=${sancionesPorUsuario.get(inc.denunciado.id)}">
+                                    <div th:if="${discSanciones == null or #lists.isEmpty(discSanciones)}" style="font-size: 0.85rem; color: #475569; font-weight: 500;">
+                                        ✅ Sin advertencias previas (Cuenta limpia).
+                                    </div>
+                                    <div th:unless="${discSanciones == null or #lists.isEmpty(discSanciones)}">
+                                        <div class="sanction-item" th:each="s : ${discSanciones}">
+                                            <span class="sanction-badge" 
+                                                  th:classappend="${s.tipoSancion == 'AVISO_1' ? ' sanction-badge--av1' : (s.tipoSancion == 'AVISO_2' ? ' sanction-badge--av2' : ' sanction-badge--bloq')}"
+                                                  th:text="${s.tipoSancion == 'AVISO_1' ? '1er Aviso' : (s.tipoSancion == 'AVISO_2' ? '2do Aviso' : 'Bloqueo')}">Aviso</span>
+                                            <span th:text="${#temporals.format(s.fechaSancion, 'dd/MM/yyyy')}">Fecha</span> — 
+                                            <span th:text="${s.motivo != null and s.motivo != '' ? s.motivo : 'Sin motivo especificado'}" style="font-style: italic;">Motivo</span>
+                                        </div>
+                                    </div>
+                                </th:block>
+                            </div>
+
+                            <div style="margin-top: 1.25rem;">
+                                <label style="font-weight: 700; color: #334155; display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Testimonio / Queja del Voluntario:</label>
+                                <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 1.25rem; border-radius: 8px; font-size: 0.95rem; line-height: 1.6; color: #334155; white-space: pre-line;" th:text="${inc.descripcion}"></div>
+                            </div>
+
+                            <!-- Evidencia -->
+                            <div th:if="${inc.evidenciaUrl != null and inc.evidenciaUrl != ''}" style="margin-top: 1.25rem;">
+                                <label style="font-weight: 700; color: #334155; display: block; margin-bottom: 0.5rem; font-size: 0.9rem;">Evidencia adjuntada por el Voluntario:</label>
+                                <a th:href="${inc.evidenciaUrl}" class="evidence-link" target="_blank" rel="noopener">
+                                    <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                                    Descargar / Abrir Evidencia
+                                </a>
+                            </div>
+
+                            <!-- Botones de Acción para Sancionar al Beneficiario -->
+                            <div class="action-buttons-group" th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}">
+                                <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
+                                      th:data-confirm-msg="|¿Enviar Primer Aviso por conductas indebidas a ${inc.denunciado.nombreCompleto}? Se registrará el incidente en su historial.|">
+                                    <input type="hidden" name="historialId" th:value="${inc.historialAyuda.id}">
+                                    <input type="hidden" name="reportedUserId" th:value="${inc.denunciado.id}">
+                                    <input type="hidden" name="tipoSancion" value="AVISO_1">
+                                    <input type="hidden" name="motivo" value="Primer aviso por conducta indebida reportada en el historial de ayuda.">
+                                    <button type="submit" class="btn-sancion btn-sancion--green">
+                                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        Primer aviso
+                                    </button>
+                                </form>
+                                <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
+                                      th:data-confirm-msg="|¿Enviar Segundo Aviso a ${inc.denunciado.nombreCompleto}? Se le advertirá que la próxima infracción resultará en el bloqueo de su cuenta.|">
+                                    <input type="hidden" name="historialId" th:value="${inc.historialAyuda.id}">
+                                    <input type="hidden" name="reportedUserId" th:value="${inc.denunciado.id}">
+                                    <input type="hidden" name="tipoSancion" value="AVISO_2">
+                                    <input type="hidden" name="motivo" value="Segundo aviso por mala conducta. Cuenta advertida bajo riesgo de suspensión.">
+                                    <button type="submit" class="btn-sancion btn-sancion--yellow">
+                                        <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                                        Segundo aviso
+                                    </button>
+                                </form>
+                                <button type="button" class="btn-sancion btn-sancion--red open-block-btn" 
+                                        th:data-historial-id="${inc.historialAyuda.id}"
+                                        th:data-reported-user-id="${inc.denunciado.id}"
+                                        th:data-user-name="${inc.denunciado.nombreCompleto}">
+                                    <svg viewBox="0 0 24 24" style="width:16px; height:16px; fill:white;"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                                    Bloquear cuenta
+                                </button>
+                            </div>
+
+                            <div th:if="${inc.estado == 'RESUELTO'}" style="margin-top: 1.5rem; padding: 0.75rem 1rem; background-color: #E6F4EA; border-radius: 8px; color: #137333; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+                                <span>✔️ Esta incidencia ya ha sido resuelta por la administración.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista vacía cuando no hay reportes -->
+        <div class="adm-empty" th:if="${#lists.isEmpty(incidencias)}" style="background: white; padding: 5rem 2rem; border-radius: 12px; text-align: center; border: 1px solid #E2E8F0; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div class="adm-empty__icon" style="margin-bottom: 1.5rem;">
+                <svg viewBox="0 0 24 24" style="width: 72px; height: 72px; fill: #10B981;"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+            </div>
+            <h3 style="font-size: 1.5rem; font-weight: 700; color: #1E293B; margin-bottom: 0.5rem;">No hay incidencias reportadas</h3>
+            <p style="color: #64748B; font-size: 1rem; max-width: 450px; margin: 0 auto;">¡Excelente! Actualmente no se registran incidentes ni quejas activas por conductas inapropiadas en la plataforma de Red Solidaria.</p>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMACIÓN DE BLOQUEO PERMANENTE -->
+    <div id="blockModal" class="block-modal-overlay" onclick="closeBlockModalOutside(event)">
+        <div class="block-modal-card">
+            <div class="block-modal-header">
+                <h3 class="block-modal-title">Confirmar Bloqueo de Cuenta</h3>
+                <button class="block-modal-close" onclick="closeBlockModal()">&times;</button>
+            </div>
+            <form th:action="@{/admin/incidencias/sancionar}" method="post" onsubmit="return validateBlockForm()">
+                <input type="hidden" id="modalHistorialId" name="historialId">
+                <input type="hidden" id="modalReportedUserId" name="reportedUserId">
+                <input type="hidden" name="tipoSancion" value="BLOQUEO">
+                
+                <div class="block-modal-body">
+                    <p style="font-size: 0.95rem; color: #475569; margin-bottom: 1.25rem; line-height: 1.5;">
+                        Estás a punto de inhabilitar permanentemente la cuenta de: <strong id="modalUserName" style="color: #0F172A;"></strong>.
+                        El usuario será deslogueado inmediatamente y no podrá volver a acceder a la plataforma. Se le enviará un correo notificándole los motivos del bloqueo.
+                    </p>
+                    <div>
+                        <label for="modalMotivo">Motivo del Bloqueo (Obligatorio)</label>
+                        <textarea id="modalMotivo" name="motivo" class="block-modal-textarea" 
+                                  placeholder="Describe de forma detallada y justificada los motivos por los cuales se inhabilitará de forma permanente la cuenta de este usuario..."></textarea>
+                        <span id="motivoError" style="color: #EF4444; font-size: 0.85rem; display: none; margin-top: 0.5rem; font-weight: 600;">⚠️ El motivo es obligatorio para proceder con el bloqueo de la cuenta.</span>
+                    </div>
+                </div>
+                <div class="block-modal-footer">
+                    <button type="button" class="btn-modal-cancel" onclick="closeBlockModal()">Cancelar</button>
+                    <button type="submit" class="btn-sancion btn-sancion--red" style="margin: 0; box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.25);">Confirmar Bloqueo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT DE NAVEGACIÓN INTERACTIVA -->
+    <script>
+        function showIncidenceDetails(id, element) {
+            // Ocultar mensaje por defecto
+            const noSel = document.getElementById('no-selection');
+            if (noSel) noSel.style.display = 'none';
+
+            // Ocultar todos los paneles de detalle
+            document.querySelectorAll('.user-detail-panel').forEach(p => p.style.display = 'none');
+            
+            // Quitar clase activa de todos los elementos de la lista
+            document.querySelectorAll('.adm-activ-item').forEach(i => i.classList.remove('active'));
+
+            // Mostrar el detalle seleccionado
+            const panel = document.getElementById('details-' + id);
+            if (panel) panel.style.display = 'block';
+            
+            // Añadir clase activa al elemento clickeado
+            element.classList.add('active');
+        }
+
+        function openBlockModal(historialId, reportedUserId, userName) {
+            document.getElementById('modalHistorialId').value = historialId;
+            document.getElementById('modalReportedUserId').value = reportedUserId;
+            document.getElementById('modalUserName').innerText = userName;
+            document.getElementById('modalMotivo').value = '';
+            document.getElementById('motivoError').style.display = 'none';
+            document.getElementById('blockModal').style.display = 'flex';
+        }
+
+        function closeBlockModal() {
+            document.getElementById('blockModal').style.display = 'none';
+        }
+
+        function closeBlockModalOutside(event) {
+            if (event.target === document.getElementById('blockModal')) {
+                closeBlockModal();
+            }
+        }
+
+        function validateBlockForm() {
+            const motivo = document.getElementById('modalMotivo').value.trim();
+            if (motivo === '') {
+                document.getElementById('motivoError').style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+
+        // Attach event listeners to list items and block buttons to avoid inline onclick quoting issues
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.adm-activ-item').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    const id = this.getAttribute('data-incidencia-id');
+                    if (id) showIncidenceDetails(id, this);
+                });
+            });
+
+            document.querySelectorAll('.open-block-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    const historialId = this.getAttribute('data-historial-id');
+                    const reportedUserId = this.getAttribute('data-reported-user-id');
+                    const userName = this.getAttribute('data-user-name') || '';
+                    openBlockModal(historialId, reportedUserId, userName);
+                });
+            });
+
+            // Confirmation dialogue for aviso submissions
+            document.querySelectorAll('.confirm-sancion-form').forEach(function(form) {
+                form.addEventListener('submit', function(e) {
+                    const msg = this.getAttribute('data-confirm-msg');
+                    if (msg && !confirm(msg)) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+</div>
+</body>
+</html>

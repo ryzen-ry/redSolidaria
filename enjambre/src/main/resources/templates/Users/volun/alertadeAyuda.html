@@ -484,7 +484,7 @@
                     </div>
 
                     <div id="infoDiscapacitado" class="ml-voluntario">
-                        <h3>Beneficiario asignado</h3>
+                        <h3>♿ Beneficiario asignado</h3>
                         <div id="infoDiscapacitadoDetalle"></div>
                     </div>
 
@@ -520,7 +520,7 @@
                             <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                     </div>
-                    <p class="ml-stat-value" id="totalAyudados">0</p>
+                    <p class="ml-stat-value" id="totalAyudados" th:text="${totalAyudados != null ? totalAyudados : 0}">0</p>
                     <p class="ml-stat-label">Personas Ayudadas</p>
                 </div>
 
@@ -627,21 +627,18 @@
             let locationEnabled = false;
             let lastSentAt = 0;
             let lastPosition = null;
-            let lastSentPosition = null; // Filtrado de 2 metros para evitar ruido del GPS
+            let lastSentPosition = null;
             let sesionAceptada = false;
 
-            // solicitudId -> data
             const solicitudesActivas = new Map();
             let cachedUbicacionDiscapacitado = null;
             let solicitudAceptadaId = null;
 
-            // Map state
             let leafletMap = null;
             let disMarker = null;
             let miMarkerVol = null;
             let rutaLineVol = null;
 
-            // ── Toast ───────────────────────────────────────────────────────
             let toastTimer = null;
             const showToast = (msg, kind = '', durationMs = 3500) => {
                 const el = document.getElementById('mlToast');
@@ -654,7 +651,6 @@
                 toastTimer = setTimeout(() => el.classList.remove('show'), durationMs);
             };
 
-            // ── Helpers de distancia ───────────────────────────────────
             const calcDistKm = (lat1, lng1, lat2, lng2) => {
                 const R = 6371;
                 const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -872,9 +868,8 @@
                     }
                 }
             };
-            const setWsBadge = (text, kind = '') => {
+            const setWsBadge = (text) => {
                 if (!wsEstadoVol) return;
-                // No usamos "badge" visual grande aquí; solo texto discreto.
                 wsEstadoVol.textContent = text;
             };
 
@@ -920,18 +915,18 @@
                                 <div class="ml-line">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                          stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 16 0Z"/>
-                                        <circle cx="12" cy="10" r="3"/>
+                                        <path d="M9 11l3 3L22 4"/>
+                                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
                                     </svg>
-                                    <span>${escapeHtml(d.direccion || 'Av. Principal 123')}</span>
+                                    <span>Discapacidad: <strong>${escapeHtml(d.tipoDiscapacidad || '—')}</strong></span>
                                 </div>
-                                <div class="ml-line" style="opacity:.9;">
+                                <div class="ml-line">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                          stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="12" cy="12" r="10"/>
-                                        <path d="M12 6v6l4 2"/>
+                                        <rect x="2" y="5" width="20" height="14" rx="2"/>
+                                        <line x1="2" y1="10" x2="22" y2="10"/>
                                     </svg>
-                                    <span>Ubicación: lat=${escapeHtml(ub.lat)} lng=${escapeHtml(ub.lng)}</span>
+                                    <span>CONADIS: <strong>${escapeHtml(d.conadis || '—')}</strong></span>
                                 </div>
                             </div>
                         </div>
@@ -945,7 +940,6 @@
                     </div>
                 `;
 
-                // Limpiar listeners (lo hacemos re-clonando con reemplazo si ya existe)
                 if (existing) existing.remove();
 
                 const wrapper = container.cloneNode(true);
@@ -977,18 +971,22 @@
                 if (!infoDiv || !detalleDiv) return;
 
                 detalleDiv.innerHTML = `
-                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                        <div style="width:40px;height:40px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;color:white;font-size:18px;flex-shrink:0;">📍</div>
+                    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                        <div style="width:42px;height:42px;border-radius:50%;background:#f97316;display:flex;align-items:center;justify-content:center;color:white;font-size:20px;flex-shrink:0;">♿</div>
                         <div>
-                            <div style="font-weight:800;color:#1e3a5f;">${escapeHtml(nombre)}</div>
+                            <div style="font-weight:800;color:#1e3a5f;font-size:1rem;">${escapeHtml(nombre)}</div>
                             <div style="font-size:0.85rem;color:#4a5568;">📞 ${escapeHtml(d.telefono || '—')}</div>
                         </div>
                     </div>
-                    <div style="font-size:0.88rem;color:#4a5568;margin-bottom:4px;">
-                        🏠 ${escapeHtml(d.direccion || '—')}
-                    </div>
-                    <div style="font-size:0.85rem;color:#6b7280;margin-bottom:10px;">
-                        📍 Lat: ${escapeHtml(ub.lat)}, Lng: ${escapeHtml(ub.lng)}
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                        <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:8px 12px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:#c2410c;text-transform:uppercase;letter-spacing:0.5px;">♿ Discapacidad</div>
+                            <div style="font-size:0.9rem;color:#1e3a5f;font-weight:700;margin-top:3px;">${escapeHtml(d.tipoDiscapacidad || '—')}</div>
+                        </div>
+                        <div style="background:#fef9c3;border:1px solid #fde68a;border-radius:10px;padding:8px 12px;">
+                            <div style="font-size:0.72rem;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:0.5px;">🪪 CONADIS</div>
+                            <div style="font-size:0.9rem;color:#1e3a5f;font-weight:700;margin-top:3px;">${escapeHtml(d.conadis || '—')}</div>
+                        </div>
                     </div>
                     <button id="btnTerminarAyuda" style="width:100%;padding:12px;border:none;background:#ef4444;color:white;border-radius:999px;font-weight:800;font-size:1rem;cursor:pointer;transition:background .18s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
                         ✅ Terminar Ayuda
@@ -996,7 +994,6 @@
                 `;
                 infoDiv.style.display = 'block';
 
-                // Listener del botón de terminar
                 document.getElementById('btnTerminarAyuda')?.addEventListener('click', () => {
                     if (socket && socket.readyState === WebSocket.OPEN && solicitudAceptadaId) {
                         socket.send(JSON.stringify({ type: 'TERMINAR_AYUDA', solicitudId: solicitudAceptadaId }));
@@ -1026,7 +1023,6 @@
                 }
                 const infoDiv = document.getElementById('infoDiscapacitado');
                 if (infoDiv) infoDiv.style.display = 'none';
-                // Destruir mapa
                 if (leafletMap) {
                     leafletMap.remove();
                     leafletMap = null;
@@ -1036,7 +1032,6 @@
                 }
                 const distEl = document.getElementById('mapDistanciaVol');
                 if (distEl) distEl.textContent = '';
-                // Mostrar estado limpio
                 setSinAlertas();
                 showToast('✅ Ayuda finalizada. En espera de nuevas solicitudes.', 'success', 5000);
             };
@@ -1052,7 +1047,6 @@
                     return;
                 }
 
-                // Si vamos a aceptar, aseguramos que el backend tenga ubicación reciente.
                 if (decision === 'ACEPTAR') {
                     flushLastPosition();
                 }
@@ -1105,7 +1099,6 @@
 
                         lastPosition = { lat, lng, precisionMetros: precision, timestamp: now };
 
-                        // Reducir intervalo a 3s cuando hay sesión aceptada activa
                         const intervalo = sesionAceptada ? 3000 : 5000;
 
                         let debereEnviar = false;
@@ -1140,7 +1133,6 @@
                     { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
                 );
 
-                // Refresco continuo de ubicación cada 3 segundos cuando la sesión de ayuda está aceptada y activa
                 setInterval(() => {
                     if (sesionAceptada && navigator.geolocation) {
                         navigator.geolocation.getCurrentPosition(
@@ -1274,7 +1266,6 @@
                             break;
                         }
                         case 'UBICACION_ACTUALIZADA': {
-                            // Actualizar marcador del discapacitado en tiempo real
                             if (data.lat != null && data.lng != null) {
                                 updateDisMarker(Number(data.lat), Number(data.lng));
                             }

@@ -11,4 +11,9 @@ public interface HistorialAyudaRepository extends JpaRepository<HistorialAyuda, 
     List<HistorialAyuda> findBySolicitud_Discapacitado_IdOrderByFechaFinalizacionDesc(Long discapacitadoId);
     
     List<HistorialAyuda> findBySolicitud_VoluntarioAceptado_IdOrderByFechaFinalizacionDesc(Long voluntarioId);
+
+    long countBySolicitud_VoluntarioAceptado_Id(Long voluntarioId);
+
+    void deleteBySolicitud_Discapacitado_Id(Long discapacitadoId);
+    void deleteBySolicitud_VoluntarioAceptado_Id(Long voluntarioId);
 }
