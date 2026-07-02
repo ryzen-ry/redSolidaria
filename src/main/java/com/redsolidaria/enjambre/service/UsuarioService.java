@@ -65,6 +65,9 @@ public class UsuarioService {
     private HistorialAyudaRepository historialAyudaRepository;
 
     @Autowired
+    private IncidenciaRepository incidenciaRepository;
+
+    @Autowired
     private UsuarioBloqueadoService usuarioBloqueadoService;
 
     // ========== MÉTODOS PARA ADMIN CONTROLLER ==========
@@ -157,6 +160,11 @@ public class UsuarioService {
             sancionRepository.desasociarAdministrador(id);
         }
         sancionRepository.flush();
+
+        // 9.7. Eliminar incidencias para evitar FK constraint fail
+        incidenciaRepository.deleteByDenunciante_Id(id);
+        incidenciaRepository.deleteByDenunciado_Id(id);
+        incidenciaRepository.flush();
         
         // 10. Eliminar solicitudes de ayuda e intentos
         if ("DISCAPACITADO".equals(usuario.getRol())) {

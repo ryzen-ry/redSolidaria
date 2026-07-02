@@ -94,6 +94,55 @@
                 </div>
             </div>
 
+            <!-- LISTADO DE BENEFICIARIOS BLOQUEADOS -->
+            <div class="adm-table-card" style="margin-top: 30px; border-top: 4px solid #dc3545;">
+                <div class="adm-table-toolbar" style="background: #fdf2f2;">
+                    <span class="adm-table-toolbar__title" style="color: #c53030;">🚫 Listado de Beneficiarios Bloqueados</span>
+                    <span class="adm-table-toolbar__hint">Personas con discapacidad inhabilitadas permanentemente por conductas inadecuadas</span>
+                </div>
+
+                <div class="adm-table-wrap" th:if="${discapacitadosBloqueados != null and not #lists.isEmpty(discapacitadosBloqueados)}">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Beneficiario</th>
+                                <th>DNI</th>
+                                <th>Certificado</th>
+                                <th>Motivo del Bloqueo</th>
+                                <th>Fecha Bloqueo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="db : ${discapacitadosBloqueados}">
+                                <td><span class="adm-id" th:text="'#' + ${db.id}">#1</span></td>
+                                <td>
+                                    <div class="adm-cell-user">
+                                        <span class="adm-avatar adm-avatar--red" style="background: #e53e3e; color: white;" th:text="${#strings.substring(db.nombres, 0, 1)}">D</span>
+                                        <div>
+                                            <span class="adm-cell-user__name" th:text="${db.nombres + ' ' + db.apellidos}">Nombre</span>
+                                            <span class="adm-cell-user__email" th:text="${db.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td th:text="${db.dni}">—</td>
+                                <td th:text="${db.certificadoDiscapacidad}">—</td>
+                                <td class="adm-cell-muted" style="color: #c53030; font-weight: 500;" th:text="${db.motivo}">Motivo</td>
+                                <td class="adm-cell-muted" th:text="${#temporals.format(db.fechaBloqueo, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="adm-empty" th:if="${discapacitadosBloqueados == null or #lists.isEmpty(discapacitadosBloqueados)}">
+                    <div class="adm-empty__icon" style="color: #e53e3e;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    </div>
+                    <h3>No hay beneficiarios bloqueados</h3>
+                    <p>Las personas con discapacidad bloqueadas por sanciones aparecerán en esta lista.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>

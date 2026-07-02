@@ -9,12 +9,14 @@ import com.redsolidaria.enjambre.repository.ComentarioRepository;
 import com.redsolidaria.enjambre.repository.PublicacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @Service
+@Transactional
 public class ForoService {
 
     @Autowired
@@ -82,6 +84,11 @@ public class ForoService {
             throw new Exception("No tienes permiso para eliminar esta publicación");
         }
 
+        // 1. Eliminar comentarios asociados a esta publicación
+        comentarioRepository.deleteByPublicacion_Id(id);
+        comentarioRepository.flush();
+
+        // 2. Eliminar publicación
         publicacionRepository.deleteById(id);
     }
 
