@@ -1,7 +1,8 @@
 package com.redsolidaria.enjambre.service;
 
 import com.redsolidaria.enjambre.model.Usuario;
-import com.redsolidaria.enjambre.model.UsuarioBloqueado;import com.redsolidaria.enjambre.repository.PersonaDiscapacitadaRepository;
+import com.redsolidaria.enjambre.model.UsuarioBloqueado;
+import com.redsolidaria.enjambre.repository.PersonaDiscapacitadaRepository;
 import com.redsolidaria.enjambre.repository.UsuarioBloqueadoRepository;
 import com.redsolidaria.enjambre.repository.VoluntarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
