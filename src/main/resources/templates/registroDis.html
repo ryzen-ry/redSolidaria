@@ -18,28 +18,36 @@
             <p>Completa tu información personal</p>
         </div>
 
-        <form th:action="@{/registro/discapacitado}" method="post" enctype="multipart/form-data">
+        <div th:if="${error}" class="rs-alert rs-alert--error" style="background:#FEE2E2;color:#991B1B;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-weight:600;border-left:4px solid #EF4444;" th:text="${error}"></div>
+        <input type="hidden" id="error-message" th:value="${error}" />
+
+        <form th:action="@{/registro/discapacitado}" method="post" enctype="multipart/form-data" id="formRegistroDis" th:object="${personaDiscapacitadaDTO}">
             <div class="rs-form-grid">
                 <!-- Campos básicos -->
                 <div class="rs-field">
                     <label>Nombres <span class="req">*</span></label>
-                    <input type="text" name="nombres" required />
+                    <input type="text" th:field="*{nombres}" required />
+                    <div th:if="${#fields.hasErrors('nombres')}" class="validation-message error" th:errors="*{nombres}"></div>
                 </div>
                 <div class="rs-field">
                     <label>Apellidos <span class="req">*</span></label>
-                    <input type="text" name="apellidos" required />
+                    <input type="text" th:field="*{apellidos}" required />
+                    <div th:if="${#fields.hasErrors('apellidos')}" class="validation-message error" th:errors="*{apellidos}"></div>
                 </div>
                 <div class="rs-field rs-form-full">
                     <label>Correo electrónico <span class="req">*</span></label>
-                    <input id="emailDis" type="email" name="email" required pattern="^[A-Za-z0-9._%+-]+@(gmail\\.com|hotmail\\.com)$" placeholder="usuario@gmail.com o usuario@hotmail.com" />
+                    <input id="emailDis" type="email" th:field="*{email}" required pattern="^[A-Za-z0-9._%+-]+@(gmail\\.com|hotmail\\.com)$" placeholder="usuario@gmail.com o usuario@hotmail.com" />
                     <div id="emailDisMessage" class="validation-message" style="display:none"></div>
+                    <div th:if="${#fields.hasErrors('email')}" class="validation-message error" th:errors="*{email}"></div>
                 </div>
                 
                 <!-- CAMPO MODIFICADO: Nro. DNI -->
                 <div class="rs-field rs-form-full">
                     <label>Nro. DNI <span class="req">*</span></label>
-                    <input type="text" name="conadis" placeholder="Ej: 12345678" required />
+                    <input type="text" id="dniInput" th:field="*{conadis}" placeholder="Ej: 12345678" required maxlength="8" />
                     <span class="rs-field-hint">Ingresa tu número de DNI (8 dígitos)</span>
+                    <div id="dniMessage" class="validation-message" style="display:none"></div>
+                    <div th:if="${#fields.hasErrors('conadis')}" class="validation-message error" th:errors="*{conadis}"></div>
                 </div>
 
                 <!-- CAMPO CON TOOLTIP: Nro. certificado de discapacidad -->
@@ -48,40 +56,47 @@
                         Nro. certificado de discapacidad: 
                         <span class="icono-ayuda" id="iconoAyuda">❓</span>
                     </label>
-                    <input type="text" name="certificadoDiscapacidad" placeholder="Ej: CERT-2024-001" required />
+                    <input type="text" id="certificadoInput" th:field="*{certificadoDiscapacidad}" placeholder="Ej: CERT-2024-001" required />
                     <span class="rs-field-hint">Ingresa el número que aparece en tu certificado</span>
+                    <div id="certificadoMessage" class="validation-message" style="display:none"></div>
+                    <div th:if="${#fields.hasErrors('certificadoDiscapacidad')}" class="validation-message error" th:errors="*{certificadoDiscapacidad}"></div>
                 </div>
                 
                 <!-- Tipo de discapacidad con opción múltiple -->
                 <div class="rs-field">
                     <label>Tipo de discapacidad <span class="req">*</span></label>
-                    <select name="tipoDiscapacidad" required>
+                    <select th:field="*{tipoDiscapacidad}" required>
                         <option value="">Selecciona</option>
                         <option>Auditiva</option>
                         <option>Motriz</option>
                         <option>Del habla</option>
                         <option>Discapacidad Múltiple</option>
                     </select>
+                    <div th:if="${#fields.hasErrors('tipoDiscapacidad')}" class="validation-message error" th:errors="*{tipoDiscapacidad}"></div>
                 </div>
                 
                 <div class="rs-field">
                     <label>Teléfono / Celular <span class="req">*</span></label>
-                    <input type="tel" name="telefono" required />
+                    <input type="tel" id="telefonoInput" th:field="*{telefono}" required maxlength="9" />
+                    <div th:if="${#fields.hasErrors('telefono')}" class="validation-message error" th:errors="*{telefono}"></div>
                 </div>
                 <div class="rs-field rs-form-full">
                     <label>Dirección <span class="req">*</span></label>
-                    <input type="text" name="direccion" placeholder="San Juan de Lurigancho" required />
+                    <input type="text" th:field="*{direccion}" placeholder="San Juan de Lurigancho" required />
+                    <div th:if="${#fields.hasErrors('direccion')}" class="validation-message error" th:errors="*{direccion}"></div>
                 </div>
                 
                 <!-- Contraseñas -->
                 <div class="rs-field">
                     <label>Contraseña <span class="req">*</span></label>
-                    <input type="password" name="password" id="password" required />
+                    <input type="password" th:field="*{password}" id="password" required />
+                    <div th:if="${#fields.hasErrors('password')}" class="validation-message error" th:errors="*{password}"></div>
                 </div>
                 <div class="rs-field">
                     <label>Confirmar Contraseña <span class="req">*</span></label>
-                    <input type="password" name="confirmPassword" id="confirmPassword" required />
+                    <input type="password" th:field="*{confirmPassword}" id="confirmPassword" required />
                     <div id="passwordMatchError" class="validation-message"></div>
+                    <div th:if="${#fields.hasErrors('confirmPassword')}" class="validation-message error" th:errors="*{confirmPassword}"></div>
                 </div>
 
                 <!-- SECCIÓN DE DOCUMENTOS -->
@@ -317,16 +332,36 @@
         </script>
 
         <!-- Validación de contraseñas y documentos -->
+        <script th:src="@{/js/global.js}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const form = document.querySelector('form');
-                const password = document.querySelector('[name="password"]');
-                const confirmPassword = document.querySelector('[name="confirmPassword"]');
-                
+                const form = document.getElementById('formRegistroDis');
+                const password = document.getElementById('password');
+                const confirmPassword = document.getElementById('confirmPassword');
+                const emailDis = document.getElementById('emailDis');
+                const emailDisMessage = document.getElementById('emailDisMessage');
+                const dniInput = document.getElementById('dniInput');
+                const dniMessage = document.getElementById('dniMessage');
+                const certificadoInput = document.getElementById('certificadoInput');
+                const certificadoMessage = document.getElementById('certificadoMessage');
+                const telefonoInput = document.getElementById('telefonoInput');
+
+                let emailDisTimeout;
+                let blockedState = { email: false, dni: false, certificado: false };
+
+                function showInlineMessage(el, msgEl, message, type) {
+                    if (!el || !msgEl) return;
+                    el.classList.remove('valid', 'invalid');
+                    el.classList.add(type === 'success' ? 'valid' : 'invalid');
+                    msgEl.innerHTML = '<span class="validation-icon">' + (type === 'success' ? '✓' : '⚠️') + '</span> ' + message;
+                    msgEl.className = 'validation-message ' + type;
+                    msgEl.style.display = 'block';
+                }
+
                 function validatePasswordsMatch() {
                     const errorDiv = document.getElementById('passwordMatchError');
                     if (!errorDiv || !password || !confirmPassword) return true;
-                    
+
                     if (password.value !== confirmPassword.value) {
                         confirmPassword.classList.add('invalid');
                         confirmPassword.classList.remove('valid');
@@ -348,40 +383,79 @@
                     confirmPassword.addEventListener('input', validatePasswordsMatch);
                 }
 
-                // Email existence + domain validation for persona con discapacidad
-                const emailDis = document.getElementById('emailDis');
-                const emailDisMessage = document.getElementById('emailDisMessage');
-                let emailDisTimeout;
+                function checkBlockedDiscapacitado() {
+                    const email = emailDis ? emailDis.value.trim() : '';
+                    const dni = dniInput ? dniInput.value.trim() : '';
+                    const cert = certificadoInput ? certificadoInput.value.trim() : '';
+                    if (!email && !dni && !cert) return;
+
+                    fetch('/api/auth/check-discapacitado-bloqueado?email=' + encodeURIComponent(email) +
+                          '&dni=' + encodeURIComponent(dni) + '&certificado=' + encodeURIComponent(cert))
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.blocked) {
+                                blockedState.email = data.message && data.message.includes('correo');
+                                blockedState.dni = data.message && data.message.includes('DNI');
+                                blockedState.certificado = data.message && data.message.includes('certificado');
+                                if (blockedState.email && emailDis) {
+                                    showInlineMessage(emailDis, emailDisMessage, data.message.replace('⛔ ', ''), 'error');
+                                }
+                                if (blockedState.dni && dniInput) {
+                                    showInlineMessage(dniInput, dniMessage, data.message.replace('⛔ ', ''), 'error');
+                                }
+                                if (blockedState.certificado && certificadoInput) {
+                                    showInlineMessage(certificadoInput, certificadoMessage, data.message.replace('⛔ ', ''), 'error');
+                                }
+                            } else {
+                                blockedState = { email: false, dni: false, certificado: false };
+                            }
+                        }).catch(() => {});
+                }
+
                 if (emailDis) {
                     emailDis.addEventListener('input', function() {
                         clearTimeout(emailDisTimeout);
                         emailDisMessage.style.display = 'none';
-                        emailDis.classList.remove('invalid');
-                        emailDis.classList.remove('valid');
+                        emailDis.classList.remove('invalid', 'valid');
                         emailDisTimeout = setTimeout(() => {
+                            if (!emailDis.value.trim()) return;
                             if (!emailDis.checkValidity()) {
-                                emailDis.classList.add('invalid');
-                                emailDisMessage.innerHTML = '<span class="validation-icon">⚠️</span> Usa un correo @gmail.com o @hotmail.com';
-                                emailDisMessage.className = 'validation-message error';
-                                emailDisMessage.style.display = 'block';
+                                showInlineMessage(emailDis, emailDisMessage, 'Usa un correo @gmail.com o @hotmail.com', 'error');
                                 return;
                             }
                             fetch('/api/auth/check-email?email=' + encodeURIComponent(emailDis.value.trim()))
                                 .then(r => r.json())
                                 .then(data => {
-                                    if (data.exists) {
-                                        emailDis.classList.add('invalid');
-                                        emailDisMessage.innerHTML = '<span class="validation-icon">❌</span> El correo ya está registrado';
-                                        emailDisMessage.className = 'validation-message error';
-                                        emailDisMessage.style.display = 'block';
+                                    if (data.blocked) {
+                                        blockedState.email = true;
+                                        showInlineMessage(emailDis, emailDisMessage, data.message || 'Cuenta suspendida', 'error');
+                                    } else if (data.exists) {
+                                        showInlineMessage(emailDis, emailDisMessage, 'El correo ya está registrado', 'error');
                                     } else {
-                                        emailDis.classList.add('valid');
-                                        emailDisMessage.innerHTML = '<span class="validation-icon">✓</span> Correo disponible';
-                                        emailDisMessage.className = 'validation-message success';
-                                        emailDisMessage.style.display = 'block';
+                                        blockedState.email = false;
+                                        showInlineMessage(emailDis, emailDisMessage, 'Correo disponible', 'success');
                                     }
-                                }).catch(()=>{});
+                                    checkBlockedDiscapacitado();
+                                }).catch(() => {});
                         }, 400);
+                    });
+                }
+
+                if (dniInput) {
+                    dniInput.addEventListener('input', function() {
+                        dniInput.value = dniInput.value.replace(/\D/g, '').slice(0, 8);
+                        dniMessage.style.display = 'none';
+                        if (dniInput.value.length === 8) checkBlockedDiscapacitado();
+                    });
+                }
+
+                if (certificadoInput) {
+                    certificadoInput.addEventListener('blur', checkBlockedDiscapacitado);
+                }
+
+                if (telefonoInput) {
+                    telefonoInput.addEventListener('input', function() {
+                        telefonoInput.value = telefonoInput.value.replace(/\D/g, '').slice(0, 9);
                     });
                 }
 
@@ -389,10 +463,75 @@
                     const dniFotoDelantera = document.getElementById('dniFotoDelantera');
                     const dniFotoTrasera = document.getElementById('dniFotoTrasera');
                     const conadisFoto = document.getElementById('conadisFoto');
-                    
-                    if ((dniFotoDelantera && !dniFotoDelantera.files.length) ||
-                        (dniFotoTrasera && !dniFotoTrasera.files.length) ||
-                        (conadisFoto && !conadisFoto.files.length)) {
+                    return dniFotoDelantera && dniFotoDelantera.files.length &&
+                           dniFotoTrasera && dniFotoTrasera.files.length &&
+                           conadisFoto && conadisFoto.files.length;
+                }
+
+                function validateFormDiscapacitado() {
+                    const errors = [];
+                    const nombres = form.querySelector('[name="nombres"]');
+                    const apellidos = form.querySelector('[name="apellidos"]');
+                    const tipoDisc = form.querySelector('[name="tipoDiscapacidad"]');
+                    const direccion = form.querySelector('[name="direccion"]');
+
+                    if (!nombres.value.trim()) errors.push('Nombres');
+                    if (!apellidos.value.trim()) errors.push('Apellidos');
+
+                    if (!emailDis.value.trim()) {
+                        errors.push('Correo electrónico');
+                    } else if (!emailDis.checkValidity()) {
+                        errors.push('Correo electrónico (debe ser @gmail.com o @hotmail.com)');
+                    } else if (blockedState.email) {
+                        errors.push('Correo suspendido permanentemente');
+                    }
+
+                    if (!dniInput.value.trim()) {
+                        errors.push('Nro. DNI');
+                    } else if (!/^\d{8}$/.test(dniInput.value.trim())) {
+                        errors.push('Nro. DNI (debe tener 8 dígitos)');
+                    } else if (blockedState.dni) {
+                        errors.push('DNI suspendido permanentemente');
+                    }
+
+                    if (!certificadoInput.value.trim()) {
+                        errors.push('Nro. certificado de discapacidad');
+                    } else if (blockedState.certificado) {
+                        errors.push('Certificado suspendido permanentemente');
+                    }
+
+                    if (!tipoDisc.value) errors.push('Tipo de discapacidad');
+
+                    if (!telefonoInput.value.trim()) {
+                        errors.push('Teléfono / Celular');
+                    } else if (!/^\d{9}$/.test(telefonoInput.value.trim())) {
+                        errors.push('Teléfono / Celular (debe tener 9 dígitos)');
+                    }
+
+                    if (!direccion.value.trim()) {
+                        errors.push('Dirección');
+                    } else if (direccion.value.trim().length < 5) {
+                        errors.push('Dirección (mínimo 5 caracteres)');
+                    }
+
+                    if (!password.value.trim()) {
+                        errors.push('Contraseña');
+                    } else if (password.value.length < 6) {
+                        errors.push('Contraseña (mínimo 6 caracteres)');
+                    }
+
+                    if (!confirmPassword.value.trim()) errors.push('Confirmar Contraseña');
+
+                    if (!validateDocuments()) {
+                        errors.push('Documentos requeridos (DNI y Carnet CONADIS)');
+                    }
+
+                    if (errors.length > 0) {
+                        alert('⚠️ Por favor corrige los siguientes campos:\n- ' + errors.join('\n- '));
+                        return false;
+                    }
+                    if (!validatePasswordsMatch()) {
+                        alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
                         return false;
                     }
                     return true;
@@ -400,32 +539,8 @@
 
                 if (form) {
                     form.addEventListener('submit', function(e) {
-                        // Validar campos requeridos vacíos
-                        const requiredInputs = form.querySelectorAll('[required]');
-                        let emptyFields = [];
-                        requiredInputs.forEach(input => {
-                            if (!input.value.trim() || (input.type === 'file' && !input.files.length)) {
-                                const labelText = input.closest('.rs-field')?.querySelector('label')?.innerText.replace('*', '').trim() || input.name;
-                                emptyFields.push(labelText);
-                            }
-                        });
-                        
-                        if (emptyFields.length > 0) {
+                        if (!validateFormDiscapacitado()) {
                             e.preventDefault();
-                            alert('⚠️ Por favor complete los siguientes campos requeridos:\n- ' + emptyFields.join('\n- '));
-                            return false;
-                        }
-
-                        if (!validatePasswordsMatch()) {
-                            e.preventDefault();
-                            alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
-                            return false;
-                        }
-                        
-                        if (!validateDocuments()) {
-                            e.preventDefault();
-                            alert('⚠️ Debes cargar todos los documentos requeridos (DNI y Carnet CONADIS).');
-                            return false;
                         }
                     });
                 }

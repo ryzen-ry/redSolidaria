@@ -204,8 +204,9 @@ public class EmailService {
     public void enviarBloqueoCuentaIncidencia(String emailDestino, boolean isVoluntario, String motivo) {
         String rol = isVoluntario ? "voluntario" : "beneficiario";
         String text = "Hola,\n\n" +
-                      "Lamentamos informarte que tu cuenta ha sido bloqueada permanentemente debido a la acumulación de reportes o una falta grave en la plataforma como " + rol + ".\n" +
+                      "Lamentamos informarte que tu cuenta ha sido suspendida permanentemente debido a la acumulación de reportes o una falta grave en la plataforma como " + rol + ".\n" +
                       "Motivo del bloqueo:\n" + motivo + "\n\n" +
+                      "No podrás volver a registrarte en la plataforma con los mismos datos (correo, DNI, certificado o código de estudiante).\n" +
                       "Esta decisión es inapelable.\n\n" +
                       "Saludos,\nEquipo Red Solidaria UTP";
         sendEmailViaBrevo(emailDestino, "🚫 Cuenta bloqueada permanentemente - Red Solidaria UTP", text);

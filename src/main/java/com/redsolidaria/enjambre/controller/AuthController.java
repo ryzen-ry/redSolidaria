@@ -6,6 +6,7 @@ import com.redsolidaria.enjambre.model.RegistroTemporalVoluntario;
 import com.redsolidaria.enjambre.model.Usuario;
 import com.redsolidaria.enjambre.service.UsuarioService;
 import com.redsolidaria.enjambre.service.VerificacionService;
+import com.redsolidaria.enjambre.service.UsuarioBloqueadoService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +33,9 @@ public class AuthController {
 
     @Autowired
     private VerificacionService verificacionService;
+
+    @Autowired
+    private UsuarioBloqueadoService usuarioBloqueadoService;
 
     // ========== PÁGINAS DE LOGIN/REGISTRO ==========
 
@@ -74,6 +78,32 @@ public class AuthController {
         String lowerEmail = email.toLowerCase();
         if (!lowerEmail.matches("^u\\d{8}@utp\\.edu\\.pe$")) {
             model.addAttribute("error", "Debes usar tu correo institucional con el formato u12345678@utp.edu.pe");
+            return "registroVol";
+        }
+
+        if (nombres == null || nombres.trim().isEmpty()) {
+            model.addAttribute("error", "❌ Los nombres son obligatorios");
+            return "registroVol";
+        }
+
+        if (apellidos == null || apellidos.trim().isEmpty()) {
+            model.addAttribute("error", "❌ Los apellidos son obligatorios");
+            return "registroVol";
+        }
+
+        if (codigo == null || codigo.trim().isEmpty()) {
+            model.addAttribute("error", "❌ El código de estudiante es obligatorio");
+            return "registroVol";
+        }
+
+        if (carrera == null || carrera.trim().isEmpty()) {
+            model.addAttribute("error", "❌ Debes seleccionar tu carrera");
+            return "registroVol";
+        }
+
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoVoluntario(email, codigo);
+        if (mensajeBloqueo != null) {
+            model.addAttribute("error", mensajeBloqueo);
             return "registroVol";
         }
         
@@ -178,6 +208,12 @@ public class AuthController {
             result.rejectValue("email", "error", "Debes usar un correo @gmail.com o @hotmail.com");
         }
 
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoDiscapacitado(
+                dto.getEmail(), dto.getConadis(), dto.getCertificadoDiscapacidad());
+        if (mensajeBloqueo != null) {
+            result.reject("bloqueado", mensajeBloqueo);
+        }
+
         // Validar que el email no esté ya registrado en BD
         if (usuarioService.existeEmail(dto.getEmail())) {
             result.rejectValue("email", "error", "❌ El correo ya está registrado");
@@ -193,7 +229,24 @@ public class AuthController {
             result.rejectValue("certificadoDiscapacidad", "error", "❌ El certificado de discapacidad ya está registrado");
         }
         
+        // Validar documentos requeridos
+        if (dto.getDniFotoDelantera() == null || dto.getDniFotoDelantera().isEmpty()) {
+            result.rejectValue("dniFotoDelantera", "error", "❌ Debes subir la foto del DNI (parte delantera)");
+        }
+        if (dto.getDniFotoTrasera() == null || dto.getDniFotoTrasera().isEmpty()) {
+            result.rejectValue("dniFotoTrasera", "error", "❌ Debes subir la foto del DNI (parte trasera)");
+        }
+        if (dto.getConadisFoto() == null || dto.getConadisFoto().isEmpty()) {
+            result.rejectValue("conadisFoto", "error", "❌ Debes subir la foto del Carnet CONADIS");
+        }
+
         if (result.hasErrors()) {
+            model.addAttribute("personaDiscapacitadaDTO", dto);
+            if (result.getGlobalError() != null) {
+                model.addAttribute("error", result.getGlobalError().getDefaultMessage());
+            } else if (result.getFieldErrorCount() > 0) {
+                model.addAttribute("error", "❌ Por favor corrige los errores señalados en el formulario");
+            }
             return "registroDis";
         }
         
