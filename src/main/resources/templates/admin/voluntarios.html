@@ -90,6 +90,53 @@
                 </div>
             </div>
 
+            <!-- LISTADO DE VOLUNTARIOS BLOQUEADOS -->
+            <div class="adm-table-card" style="margin-top: 30px; border-top: 4px solid #dc3545;">
+                <div class="adm-table-toolbar" style="background: #fdf2f2;">
+                    <span class="adm-table-toolbar__title" style="color: #c53030;">🚫 Listado de Voluntarios Bloqueados</span>
+                    <span class="adm-table-toolbar__hint">Voluntarios inhabilitados permanentemente por conductas inadecuadas</span>
+                </div>
+
+                <div class="adm-table-wrap" th:if="${voluntariosBloqueados != null and not #lists.isEmpty(voluntariosBloqueados)}">
+                    <table class="adm-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Voluntario</th>
+                                <th>Código</th>
+                                <th>Motivo del Bloqueo</th>
+                                <th>Fecha Bloqueo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="vb : ${voluntariosBloqueados}">
+                                <td><span class="adm-id" th:text="'#' + ${vb.id}">#1</span></td>
+                                <td>
+                                    <div class="adm-cell-user">
+                                        <span class="adm-avatar adm-avatar--red" style="background: #e53e3e; color: white;" th:text="${#strings.substring(vb.nombres, 0, 1)}">V</span>
+                                        <div>
+                                            <span class="adm-cell-user__name" th:text="${vb.nombres + ' ' + vb.apellidos}">Nombre</span>
+                                            <span class="adm-cell-user__email" th:text="${vb.email}">email</span>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><strong th:text="${vb.codigoEstudiante}">—</strong></td>
+                                <td class="adm-cell-muted" style="color: #c53030; font-weight: 500;" th:text="${vb.motivo}">Motivo</td>
+                                <td class="adm-cell-muted" th:text="${#temporals.format(vb.fechaBloqueo, 'dd/MM/yyyy HH:mm')}">01/01/2026</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="adm-empty" th:if="${voluntariosBloqueados == null or #lists.isEmpty(voluntariosBloqueados)}">
+                    <div class="adm-empty__icon" style="color: #e53e3e;">
+                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    </div>
+                    <h3>No hay voluntarios bloqueados</h3>
+                    <p>Los voluntarios bloqueados por sanciones aparecerán en esta lista.</p>
+                </div>
+            </div>
+
         </div>
     </div>
 </body>

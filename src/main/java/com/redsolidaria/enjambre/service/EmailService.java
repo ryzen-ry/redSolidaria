@@ -138,7 +138,8 @@ public class EmailService {
         String text = "Hola " + nombre + ",\n\n" +
                         "Agradecemos enormemente tu intención de donar.\n" +
                         "Lamentablemente, en esta ocasión no podemos recibir el producto propuesto debido a políticas internas o falta de capacidad de almacenamiento para este tipo de implemento.\n" +
-                        "Esperamos poder contar con tu ayuda en futuras oportunidades.\n\n";
+                        "Esperamos poder contar con tu ayuda en futuras oportunidades.\n\n" +
+                        "Saludos,\nEquipo Red Solidaria UTP";
         sendEmailViaBrevo(emailDestino, "⚠️ Actualización sobre tu donación de producto - Red Solidaria UTP", text);
     }
 

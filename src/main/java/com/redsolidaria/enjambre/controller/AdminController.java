@@ -77,12 +77,14 @@ public class AdminController {
     @GetMapping("/voluntarios")
     public String voluntarios(Model model) {
         model.addAttribute("voluntarios", usuarioService.listarVoluntarios());
+        model.addAttribute("voluntariosBloqueados", usuarioBloqueadoService.listarBloqueadosPorRol("VOLUNTARIO"));
         return "admin/voluntarios";
     }
     
     @GetMapping("/discapacitados")
     public String discapacitados(Model model) {
         model.addAttribute("discapacitados", usuarioService.listarDiscapacitados());
+        model.addAttribute("discapacitadosBloqueados", usuarioBloqueadoService.listarBloqueadosPorRol("DISCAPACITADO"));
         return "admin/discapacitados";
     }
     
@@ -147,13 +149,22 @@ public class AdminController {
     
     @GetMapping("/usuario/eliminar/{id}")
     public String eliminarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        String redirectTarget = "/admin/usuarios";
         try {
+            Usuario usuario = usuarioService.buscarPorId(id);
+            if (usuario != null) {
+                if ("VOLUNTARIO".equals(usuario.getRol())) {
+                    redirectTarget = "/admin/voluntarios";
+                } else if ("DISCAPACITADO".equals(usuario.getRol())) {
+                    redirectTarget = "/admin/discapacitados";
+                }
+            }
             usuarioService.eliminarUsuario(id);
             redirectAttributes.addFlashAttribute("success", "✅ Usuario eliminado");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/admin/usuarios";
+        return "redirect:" + redirectTarget;
     }
 
     // ========== ACTIVACIÓN DE USUARIOS PENDIENTES ==========
@@ -329,10 +340,9 @@ public class AdminController {
                 emailService.enviarSegundoAvisoIncidencia(reportedUser.getEmail(), isVoluntario);
                 redirectAttributes.addFlashAttribute("success", "✅ Segundo aviso registrado, incidencia resuelta y notificaciones enviadas");
             } else if ("BLOQUEO".equals(tipoSancion)) {
-                reportedUser.setEstado("BLOQUEADO");
-                usuarioService.guardarUsuario(reportedUser);
                 usuarioBloqueadoService.registrarBloqueo(reportedUser, motivo, admin.getId());
                 emailService.enviarBloqueoCuentaIncidencia(reportedUser.getEmail(), isVoluntario, motivo);
+                usuarioService.eliminarUsuario(reportedUserId);
                 redirectAttributes.addFlashAttribute("success", "🚫 Cuenta bloqueada permanentemente, registrada en lista de bloqueados, incidencia resuelta y notificaciones enviadas");
             }
 

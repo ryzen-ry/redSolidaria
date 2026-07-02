@@ -29,6 +29,10 @@ public class UsuarioBloqueadoService {
         usuarioBloqueadoRepository.save(bloqueado);
     }
 
+    public java.util.List<UsuarioBloqueado> listarBloqueadosPorRol(String rol) {
+        return usuarioBloqueadoRepository.findByRol(rol);
+    }
+
     private Usuario resolverUsuarioCompleto(Usuario usuario) {
         if ("VOLUNTARIO".equals(usuario.getRol())) {
             return voluntarioRepository.findByEmail(usuario.getEmail())
