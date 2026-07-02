@@ -1,10 +1,7 @@
 package com.redsolidaria.enjambre.service;
 
-import com.redsolidaria.enjambre.model.PersonaDiscapacitada;
 import com.redsolidaria.enjambre.model.Usuario;
-import com.redsolidaria.enjambre.model.UsuarioBloqueado;
-import com.redsolidaria.enjambre.model.Voluntario;
-import com.redsolidaria.enjambre.repository.PersonaDiscapacitadaRepository;
+import com.redsolidaria.enjambre.model.UsuarioBloqueado;import com.redsolidaria.enjambre.repository.PersonaDiscapacitadaRepository;
 import com.redsolidaria.enjambre.repository.UsuarioBloqueadoRepository;
 import com.redsolidaria.enjambre.repository.VoluntarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +30,14 @@ public class UsuarioBloqueadoService {
 
     private Usuario resolverUsuarioCompleto(Usuario usuario) {
         if ("VOLUNTARIO".equals(usuario.getRol())) {
-            return voluntarioRepository.findById(usuario.getId()).orElse(usuario);
+            return voluntarioRepository.findByEmail(usuario.getEmail())
+                    .map(Usuario.class::cast)
+                    .orElse(usuario);
         }
         if ("DISCAPACITADO".equals(usuario.getRol())) {
-            return personaDiscapacitadaRepository.findById(usuario.getId()).orElse(usuario);
+            return personaDiscapacitadaRepository.findByEmail(usuario.getEmail())
+                    .map(Usuario.class::cast)
+                    .orElse(usuario);
         }
         return usuario;
     }
