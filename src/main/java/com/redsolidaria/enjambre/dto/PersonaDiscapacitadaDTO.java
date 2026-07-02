@@ -8,11 +8,11 @@ import org.springframework.web.multipart.MultipartFile;
 public class PersonaDiscapacitadaDTO {
 
     @NotBlank(message = "Los nombres son obligatorios")
-    @Size(min = 2, max = 50, message = "Los nombres deben tener entre 2 y 50 caracteres")
+    @Size(max = 50, message = "Los nombres no pueden superar los 50 caracteres")
     private String nombres;
 
     @NotBlank(message = "Los apellidos son obligatorios")
-    @Size(min = 2, max = 50, message = "Los apellidos deben tener entre 2 y 50 caracteres")
+    @Size(max = 50, message = "Los apellidos no pueden superar los 50 caracteres")
     private String apellidos;
 
     @NotBlank(message = "El correo electrónico es obligatorio")

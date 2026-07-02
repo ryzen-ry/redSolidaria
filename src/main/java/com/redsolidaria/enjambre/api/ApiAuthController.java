@@ -6,6 +6,7 @@ import com.redsolidaria.enjambre.model.RegistroTemporalVoluntario;
 import com.redsolidaria.enjambre.model.Usuario;
 import com.redsolidaria.enjambre.service.UsuarioService;
 import com.redsolidaria.enjambre.service.VerificacionService;
+import com.redsolidaria.enjambre.service.UsuarioBloqueadoService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +39,9 @@ public class ApiAuthController {
     @Autowired
     private VerificacionService verificacionService;
 
+    @Autowired
+    private UsuarioBloqueadoService usuarioBloqueadoService;
+
     // ========== INICIAR SESIÓN ==========
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> body, HttpSession session) {
@@ -64,6 +68,10 @@ public class ApiAuthController {
 
         if ("PENDIENTE".equals(usuario.getEstado())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "❌ Cuenta en revisión por el administrador"));
+        }
+
+        if ("BLOQUEADO".equals(usuario.getEstado())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", "❌ Tu cuenta ha sido suspendida permanentemente por conductas inadecuadas."));
         }
 
         // Guardar usuario en la sesión
@@ -123,6 +131,11 @@ public class ApiAuthController {
 
         if (password.length() < 6) {
             return ResponseEntity.badRequest().body(Map.of("error", "La contraseña debe tener al menos 6 caracteres"));
+        }
+
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoVoluntario(email, codigo);
+        if (mensajeBloqueo != null) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("error", mensajeBloqueo, "blocked", true));
         }
 
         if (usuarioService.existeEmail(email)) {
@@ -202,6 +215,12 @@ public class ApiAuthController {
             result.rejectValue("email", "error", "Debes usar un correo @gmail.com o @hotmail.com");
         }
 
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoDiscapacitado(
+                dto.getEmail(), dto.getConadis(), dto.getCertificadoDiscapacidad());
+        if (mensajeBloqueo != null) {
+            result.reject("bloqueado", mensajeBloqueo);
+        }
+
         if (usuarioService.existeEmail(dto.getEmail())) {
             result.rejectValue("email", "error", "❌ El correo ya está registrado");
         }
@@ -264,8 +283,34 @@ public class ApiAuthController {
         if (email == null || email.trim().isEmpty()) {
             return ResponseEntity.badRequest().body(Map.of("error", "Email requerido"));
         }
+        boolean blocked = usuarioBloqueadoService.estaEmailBloqueado(email);
+        if (blocked) {
+            return ResponseEntity.ok(Map.of("exists", true, "blocked", true,
+                    "message", "⛔ Este correo pertenece a una cuenta suspendida permanentemente."));
+        }
         boolean exists = usuarioService.existeEmail(email);
-        return ResponseEntity.ok(Map.of("exists", exists));
+        return ResponseEntity.ok(Map.of("exists", exists, "blocked", false));
+    }
+
+    @GetMapping("/check-voluntario-bloqueado")
+    public ResponseEntity<?> checkVoluntarioBloqueado(@RequestParam(required = false) String email,
+                                                     @RequestParam(required = false) String codigo) {
+        String mensaje = usuarioBloqueadoService.mensajeBloqueoVoluntario(email, codigo);
+        if (mensaje != null) {
+            return ResponseEntity.ok(Map.of("blocked", true, "message", mensaje));
+        }
+        return ResponseEntity.ok(Map.of("blocked", false));
+    }
+
+    @GetMapping("/check-discapacitado-bloqueado")
+    public ResponseEntity<?> checkDiscapacitadoBloqueado(@RequestParam(required = false) String email,
+                                                         @RequestParam(required = false) String dni,
+                                                         @RequestParam(required = false) String certificado) {
+        String mensaje = usuarioBloqueadoService.mensajeBloqueoDiscapacitado(email, dni, certificado);
+        if (mensaje != null) {
+            return ResponseEntity.ok(Map.of("blocked", true, "message", mensaje));
+        }
+        return ResponseEntity.ok(Map.of("blocked", false));
     }
 
     @PostMapping("/verificar-codigo")
