@@ -17,7 +17,10 @@
             <p>Completa tu información como estudiante UTP</p>
         </div>
 
-        <form th:action="@{/registro/voluntario}" method="post" enctype="multipart/form-data">
+        <div th:if="${error}" class="rs-alert rs-alert--error" style="background:#FEE2E2;color:#991B1B;padding:12px 16px;border-radius:8px;margin-bottom:16px;font-weight:600;border-left:4px solid #EF4444;" th:text="${error}"></div>
+        <input type="hidden" id="error-message" th:value="${error}" />
+
+        <form th:action="@{/registro/voluntario}" method="post" enctype="multipart/form-data" id="formRegistroVol">
             <div class="rs-form-grid">
                 <div class="rs-field">
                     <label>Nombres <span class="req">*</span></label>
@@ -140,18 +143,53 @@
         <script th:src="@{/js/global.js}"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                const form = document.querySelector('form');
+                const form = document.getElementById('formRegistroVol');
                 const emailVol = document.getElementById('emailVol');
                 const emailVolMessage = document.getElementById('emailVolMessage');
                 const submitBtn = form.querySelector('button[type="submit"]');
+                const codigoInput = form.querySelector('[name="codigo"]');
+                const password = form.querySelector('[name="password"]');
+                const confirmPassword = form.querySelector('[name="confirmPassword"]');
+                const carreraSelect = form.querySelector('[name="carrera"]');
 
                 let emailVolTimeout;
+                let emailBlocked = false;
+
+                function showFieldError(input, message) {
+                    if (!input) return;
+                    input.classList.add('invalid');
+                    input.classList.remove('valid');
+                    let msgDiv = input.closest('.rs-field')?.querySelector('.field-error-msg');
+                    if (!msgDiv) {
+                        msgDiv = document.createElement('div');
+                        msgDiv.className = 'validation-message error field-error-msg';
+                        input.closest('.rs-field')?.appendChild(msgDiv);
+                    }
+                    msgDiv.innerHTML = '<span class="validation-icon">⚠️</span> ' + message;
+                    msgDiv.style.display = 'block';
+                }
+
+                function clearFieldError(input) {
+                    if (!input) return;
+                    const msgDiv = input.closest('.rs-field')?.querySelector('.field-error-msg');
+                    if (msgDiv) msgDiv.style.display = 'none';
+                }
+
                 function checkEmailVolExistence(email) {
                     if (!email) return;
                     fetch('/api/auth/check-email?email=' + encodeURIComponent(email))
                         .then(r => r.json())
                         .then(data => {
-                            if (data.exists) {
+                            if (data.blocked) {
+                                emailBlocked = true;
+                                emailVol.classList.add('invalid');
+                                emailVol.classList.remove('valid');
+                                emailVolMessage.innerHTML = '<span class="validation-icon">⛔</span> ' + (data.message || 'Cuenta suspendida permanentemente');
+                                emailVolMessage.className = 'validation-message error';
+                                emailVolMessage.style.display = 'block';
+                                submitBtn.disabled = true;
+                            } else if (data.exists) {
+                                emailBlocked = false;
                                 emailVol.classList.add('invalid');
                                 emailVol.classList.remove('valid');
                                 emailVolMessage.innerHTML = '<span class="validation-icon">❌</span> El correo ya está registrado';
@@ -159,6 +197,7 @@
                                 emailVolMessage.style.display = 'block';
                                 submitBtn.disabled = true;
                             } else {
+                                emailBlocked = false;
                                 emailVol.classList.remove('invalid');
                                 emailVol.classList.add('valid');
                                 emailVolMessage.innerHTML = '<span class="validation-icon">✓</span> Correo disponible';
@@ -167,9 +206,7 @@
                                 submitBtn.disabled = false;
                             }
                         })
-                        .catch(() => {
-                            // ignore
-                        });
+                        .catch(() => {});
                 }
 
                 if (emailVol) {
@@ -191,15 +228,11 @@
                         }, 400);
                     });
                 }
-                
-                // Validación de contraseñas coincidentes en tiempo real
-                const password = document.querySelector('[name="password"]');
-                const confirmPassword = document.querySelector('[name="confirmPassword"]');
-                
+
                 function validatePasswordsMatch() {
                     const errorDiv = document.getElementById('passwordMatchError');
                     if (!errorDiv || !password || !confirmPassword) return true;
-                    
+
                     if (password.value !== confirmPassword.value) {
                         confirmPassword.classList.add('invalid');
                         confirmPassword.classList.remove('valid');
@@ -215,59 +248,98 @@
                     }
                     return true;
                 }
-                
+
                 if (confirmPassword && password) {
-                    // Crear el div para mensaje si no existe
                     if (!document.getElementById('passwordMatchError')) {
                         const div = document.createElement('div');
                         div.id = 'passwordMatchError';
                         div.className = 'validation-message';
                         confirmPassword.parentElement.appendChild(div);
                     }
-                    
                     password.addEventListener('input', validatePasswordsMatch);
                     confirmPassword.addEventListener('input', validatePasswordsMatch);
                 }
 
-                // Validar documentos requeridos antes de enviar
+                if (codigoInput) {
+                    codigoInput.addEventListener('blur', function() {
+                        if (!codigoInput.value.trim()) return;
+                        fetch('/api/auth/check-voluntario-bloqueado?codigo=' + encodeURIComponent(codigoInput.value.trim()))
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.blocked) {
+                                    showFieldError(codigoInput, data.message.replace('⛔ ', ''));
+                                }
+                            }).catch(() => {});
+                    });
+                }
+
                 function validateDocuments() {
                     const certificadoLaboral = document.getElementById('certificadoLaboral');
-                    
-                    if (!certificadoLaboral || !certificadoLaboral.files.length) {
+                    return certificadoLaboral && certificadoLaboral.files.length > 0;
+                }
+
+                function validateFormVoluntario() {
+                    const errors = [];
+                    const nombres = form.querySelector('[name="nombres"]');
+                    const apellidos = form.querySelector('[name="apellidos"]');
+
+                    [nombres, apellidos, emailVol, codigoInput, carreraSelect, password, confirmPassword].forEach(clearFieldError);
+
+                    if (!nombres.value.trim()) {
+                        errors.push('Nombres');
+                        showFieldError(nombres, 'Este campo es obligatorio');
+                    }
+                    if (!apellidos.value.trim()) {
+                        errors.push('Apellidos');
+                        showFieldError(apellidos, 'Este campo es obligatorio');
+                    }
+                    if (!emailVol.value.trim()) {
+                        errors.push('Correo Electrónico');
+                        showFieldError(emailVol, 'Este campo es obligatorio');
+                    } else if (!emailVol.checkValidity()) {
+                        errors.push('Correo Electrónico (formato inválido)');
+                        showFieldError(emailVol, 'Debe ser u12345678@utp.edu.pe');
+                    } else if (emailBlocked) {
+                        errors.push('Correo suspendido');
+                    }
+                    if (!codigoInput.value.trim()) {
+                        errors.push('Código de Estudiante');
+                        showFieldError(codigoInput, 'Este campo es obligatorio');
+                    }
+                    if (!carreraSelect.value) {
+                        errors.push('Carrera');
+                        showFieldError(carreraSelect, 'Debes seleccionar tu carrera');
+                    }
+                    if (!password.value.trim()) {
+                        errors.push('Contraseña');
+                        showFieldError(password, 'Este campo es obligatorio');
+                    } else if (password.value.length < 6) {
+                        errors.push('Contraseña (mínimo 6 caracteres)');
+                        showFieldError(password, 'La contraseña debe tener al menos 6 caracteres');
+                    }
+                    if (!confirmPassword.value.trim()) {
+                        errors.push('Confirmar Contraseña');
+                        showFieldError(confirmPassword, 'Este campo es obligatorio');
+                    }
+                    if (!validateDocuments()) {
+                        errors.push('Certificado Único Laboral (PDF)');
+                    }
+
+                    if (errors.length > 0) {
+                        alert('⚠️ Por favor corrige los siguientes campos:\n- ' + errors.join('\n- '));
+                        return false;
+                    }
+                    if (!validatePasswordsMatch()) {
+                        alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
                         return false;
                     }
                     return true;
                 }
-                
-                // Validar antes de enviar
+
                 if (form) {
                     form.addEventListener('submit', function(e) {
-                        // Validar campos requeridos vacíos
-                        const requiredInputs = form.querySelectorAll('[required]');
-                        let emptyFields = [];
-                        requiredInputs.forEach(input => {
-                            if (!input.value.trim() || (input.type === 'file' && !input.files.length)) {
-                                const labelText = input.closest('.rs-field')?.querySelector('label')?.innerText.replace('*', '').trim() || input.name;
-                                emptyFields.push(labelText);
-                            }
-                        });
-                        
-                        if (emptyFields.length > 0) {
+                        if (!validateFormVoluntario()) {
                             e.preventDefault();
-                            alert('⚠️ Por favor complete los siguientes campos requeridos:\n- ' + emptyFields.join('\n- '));
-                            return false;
-                        }
-
-                        if (!validatePasswordsMatch()) {
-                            e.preventDefault();
-                            alert('⚠️ Las contraseñas no coinciden. Por favor, verifica.');
-                            return false;
-                        }
-
-                        if (!validateDocuments()) {
-                            e.preventDefault();
-                            alert('⚠️ Debes cargar el Certificado Único Laboral (PDF) antes de registrarte.');
-                            return false;
                         }
                     });
                 }

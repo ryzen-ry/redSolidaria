@@ -446,6 +446,9 @@
                             </div>
 
                             <!-- Botones de Acción para Sancionar al Voluntario -->
+                            <p th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}" style="font-size:0.85rem;color:#64748B;margin-top:1rem;margin-bottom:0;">
+                                <strong>Acciones:</strong> Los avisos 1 y 2 envían correo al denunciado. En todos los casos se notifica al denunciante que su reporte fue atendido. El bloqueo suspende la cuenta permanentemente.
+                            </p>
                             <div class="action-buttons-group" th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}">
                                 <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
                                       th:data-confirm-msg="|¿Enviar Primer Aviso por conductas indebidas a ${inc.denunciado.nombreCompleto}? Se registrará el incidente en su historial.|">
@@ -546,6 +549,9 @@
                             </div>
 
                             <!-- Botones de Acción para Sancionar al Beneficiario -->
+                            <p th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}" style="font-size:0.85rem;color:#64748B;margin-top:1rem;margin-bottom:0;">
+                                <strong>Acciones:</strong> Los avisos 1 y 2 envían correo al denunciado. En todos los casos se notifica al denunciante que su reporte fue atendido. El bloqueo suspende la cuenta permanentemente.
+                            </p>
                             <div class="action-buttons-group" th:if="${inc.denunciado != null and inc.estado != 'RESUELTO'}">
                                 <form th:action="@{/admin/incidencias/sancionar}" method="post" class="confirm-sancion-form"
                                       th:data-confirm-msg="|¿Enviar Primer Aviso por conductas indebidas a ${inc.denunciado.nombreCompleto}? Se registrará el incidente en su historial.|">

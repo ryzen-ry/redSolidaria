@@ -64,6 +64,9 @@ public class UsuarioService {
     @Autowired
     private HistorialAyudaRepository historialAyudaRepository;
 
+    @Autowired
+    private UsuarioBloqueadoService usuarioBloqueadoService;
+
     // ========== MÉTODOS PARA ADMIN CONTROLLER ==========
     
     public List<Usuario> listarTodosUsuarios() {
@@ -206,6 +209,11 @@ public class UsuarioService {
         if (usuarioRepository.existsByEmail(email)) {
             throw new Exception("❌ El correo ya está registrado");
         }
+
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoVoluntario(email, codigo);
+        if (mensajeBloqueo != null) {
+            throw new Exception(mensajeBloqueo);
+        }
         
         if (voluntarioRepository.existsByCodigo(codigo)) {
             throw new Exception("❌ El código de estudiante ya está registrado");
@@ -279,6 +287,11 @@ public class UsuarioService {
         
         if (usuarioRepository.existsByEmail(email)) {
             throw new Exception("❌ El correo ya está registrado");
+        }
+
+        String mensajeBloqueo = usuarioBloqueadoService.mensajeBloqueoDiscapacitado(email, conadis, certificadoDiscapacidad);
+        if (mensajeBloqueo != null) {
+            throw new Exception(mensajeBloqueo);
         }
         
         if (personaDiscapacitadaRepository.existsByConadis(conadis)) {

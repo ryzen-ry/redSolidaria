@@ -12,6 +12,7 @@ import com.redsolidaria.enjambre.repository.SancionRepository;
 import com.redsolidaria.enjambre.repository.AdministradorRepository;
 import com.redsolidaria.enjambre.service.UsuarioService;
 import com.redsolidaria.enjambre.service.EmailService;
+import com.redsolidaria.enjambre.service.UsuarioBloqueadoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -49,6 +50,9 @@ public class AdminController {
 
     @Autowired
     private com.redsolidaria.enjambre.ws.AyudaConnectionRegistry ayudaConnectionRegistry;
+
+    @Autowired
+    private UsuarioBloqueadoService usuarioBloqueadoService;
 
     // ========== DASHBOARD ==========
     
@@ -274,6 +278,10 @@ public class AdminController {
             } else if ("AVISO_2".equals(tipoSancion)) {
                 resolucionDetalles = "Se ha aplicado un Segundo Aviso de Advertencia al usuario reportado.";
             } else if ("BLOQUEO".equals(tipoSancion)) {
+                if (motivo == null || motivo.trim().isEmpty()) {
+                    redirectAttributes.addFlashAttribute("error", "❌ Debes indicar el motivo del bloqueo");
+                    return "redirect:/admin/incidencias";
+                }
                 resolucionDetalles = "Se ha inhabilitado permanentemente la cuenta del usuario reportado por el siguiente motivo: " + motivo;
             }
 
@@ -323,8 +331,9 @@ public class AdminController {
             } else if ("BLOQUEO".equals(tipoSancion)) {
                 reportedUser.setEstado("BLOQUEADO");
                 usuarioService.guardarUsuario(reportedUser);
+                usuarioBloqueadoService.registrarBloqueo(reportedUser, motivo, admin.getId());
                 emailService.enviarBloqueoCuentaIncidencia(reportedUser.getEmail(), isVoluntario, motivo);
-                redirectAttributes.addFlashAttribute("success", "🚫 Cuenta bloqueada permanentemente, incidencia resuelta y notificaciones enviadas");
+                redirectAttributes.addFlashAttribute("success", "🚫 Cuenta bloqueada permanentemente, registrada en lista de bloqueados, incidencia resuelta y notificaciones enviadas");
             }
 
         } catch (Exception e) {
