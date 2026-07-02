@@ -12,4 +12,6 @@ public interface UsuarioBloqueadoRepository extends JpaRepository<UsuarioBloquea
     boolean existsByDni(String dni);
 
     boolean existsByCertificadoDiscapacidad(String certificadoDiscapacidad);
+
+    java.util.List<UsuarioBloqueado> findByRol(String rol);
 }
