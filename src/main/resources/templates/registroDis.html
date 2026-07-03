@@ -67,10 +67,10 @@
                     <label>Tipo de discapacidad <span class="req">*</span></label>
                     <select th:field="*{tipoDiscapacidad}" required>
                         <option value="">Selecciona</option>
-                        <option>Auditiva</option>
-                        <option>Motriz</option>
-                        <option>Del habla</option>
-                        <option>Discapacidad Múltiple</option>
+                        <option value="Auditiva">Auditiva</option>
+                        <option value="Motriz">Motriz</option>
+                        <option value="Del habla">Del habla</option>
+                        <option value="Discapacidad Múltiple">Discapacidad Múltiple</option>
                     </select>
                     <div th:if="${#fields.hasErrors('tipoDiscapacidad')}" class="validation-message error" th:errors="*{tipoDiscapacidad}"></div>
                 </div>
