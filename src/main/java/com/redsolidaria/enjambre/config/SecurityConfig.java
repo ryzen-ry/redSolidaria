@@ -11,6 +11,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 
 @Configuration
 @EnableWebSecurity
@@ -19,26 +21,56 @@ public class SecurityConfig {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
+    @Autowired
+    private RateLimitingFilter rateLimitingFilter;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Deshabilitar CSRF para compatibilidad con formularios HTML existentes
+            // ── Rate limiting: se ejecuta antes de la autenticación ──
+            .addFilterBefore(rateLimitingFilter, UsernamePasswordAuthenticationFilter.class)
+
+            // ── CSRF deshabilitado (se compensa con SameSite y rate limiting) ──
+            .csrf(csrf -> csrf.disable())
+
+            // ── Cabeceras de seguridad HTTP ──
+            .headers(headers -> headers
+                .xssProtection(xss -> xss
+                    .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
+                )
+                .contentSecurityPolicy(csp -> csp
+                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' ws://localhost:* wss://localhost:*")
+                )
+                .frameOptions(frame -> frame.sameOrigin())
+                // X-Content-Type-Options: nosniff está habilitado por defecto en Spring Boot 3
+                .httpStrictTransportSecurity(hsts -> hsts
+                    .includeSubDomains(true)
+                    .maxAgeInSeconds(31536000)
+                )
+            )
+
+            // ── Autorización de rutas ──
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/","/nosotros","/capacitacion","/donaciones","/foro" ,"/login", "/registro/**", "/verificar-codigo",
-                    "/css/**", "/js/**", "/imagen/**", "/uploads/**", "/vendor/**", "/portada.ico",
+                    "/css/**", "/js/**", "/imagen/**", "/vendor/**", "/portada.ico",
                     "/api/auth/**", "/ws/**"
                 ).permitAll()
+                // /uploads/** ya NO está en permitAll() — se sirve mediante controlador autenticado
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/voluntario/**").hasRole("VOLUNTARIO")
                 .requestMatchers("/discapacitado/**").hasRole("DISCAPACITADO")
                 .anyRequest().authenticated()
             )
+
+            // ── Login ──
             .formLogin(form -> form
                 .loginPage("/login")
-                .loginProcessingUrl("/perform_login_dummy") // Evita que Spring Security intercepte el POST a /login
+                .loginProcessingUrl("/perform_login_dummy")
                 .permitAll()
             )
+
+            // ── Logout ──
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/")
