@@ -140,7 +140,7 @@ public class DataLoader implements CommandLineRunner {
                 "Aprende técnicas seguras para asistir a personas con movilidad reducida y respetar su autonomía.",
                 "Intermedio",
                 2,
-                "https://youtu.be/GQMUisKnrEo"
+                "https://youtu.be/Z1IdiCUYx-U"
             );
             cursoRepository.save(curso2);
 
@@ -214,7 +214,7 @@ public class DataLoader implements CommandLineRunner {
                 "Curso esencial de primeros auxilios y soporte vital básico para situaciones de emergencia.",
                 "Básico",
                 4,
-                "https://youtu.be/MYEnE0bJLXg"
+                "https://youtu.be/-oKpTAJamQs"
             );
             cursoRepository.save(curso3);
 
