@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -70,6 +72,9 @@ public class UsuarioService {
     @Autowired
     private UsuarioBloqueadoService usuarioBloqueadoService;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     // ========== MÉTODOS PARA ADMIN CONTROLLER ==========
     
     public List<Usuario> listarTodosUsuarios() {
@@ -94,7 +99,7 @@ public class UsuarioService {
             throw new Exception("❌ El correo ya está registrado");
         }
         
-        Administrador admin = new Administrador(nombres, apellidos, email, password);
+        Administrador admin = new Administrador(nombres, apellidos, email, passwordEncoder.encode(password));
         administradorRepository.save(admin);
         System.out.println("✅ Administrador registrado: " + email);
     }
@@ -227,7 +232,7 @@ public class UsuarioService {
             throw new Exception("❌ El código de estudiante ya está registrado");
         }
         
-        Voluntario voluntario = new Voluntario(nombres, apellidos, email, password, codigo, carrera);
+        Voluntario voluntario = new Voluntario(nombres, apellidos, email, passwordEncoder.encode(password), codigo, carrera);
         voluntario.setVerificado(verificado);
         
         // ✅ Guardar las rutas de los archivos
@@ -267,7 +272,7 @@ public class UsuarioService {
             throw new Exception("❌ El número de DNI ya está registrado");
         }
         
-        PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
+        PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, passwordEncoder.encode(password), 
                                                                 conadis, tipoDiscapacidad, telefono, direccion);
         persona.setVerificado(verificado);
         
@@ -306,7 +311,7 @@ public class UsuarioService {
             throw new Exception("❌ El número de DNI ya está registrado");
         }
         
-        PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, password, 
+        PersonaDiscapacitada persona = new PersonaDiscapacitada(nombres, apellidos, email, passwordEncoder.encode(password), 
                                                                 conadis, tipoDiscapacidad, telefono, direccion);
         persona.setCertificadoDiscapacidad(certificadoDiscapacidad);
         persona.setDniDelanteraUrl(dniDelanteraUrl);

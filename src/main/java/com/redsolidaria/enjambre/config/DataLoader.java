@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,6 +27,9 @@ public class DataLoader implements CommandLineRunner {
     @Autowired
     private PreguntaRepository preguntaRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
     public void run(String... args) throws Exception {
         
@@ -36,7 +41,7 @@ public class DataLoader implements CommandLineRunner {
                 "Administrador", 
                 "Sistema", 
                 "admin@redsolidaria.pe", 
-                "admin123"
+                passwordEncoder.encode("admin123")
             );
             
             administradorRepository.save(admin);
