@@ -39,9 +39,18 @@ public class SecurityConfig {
                     .headerValue(XXssProtectionHeaderWriter.HeaderValue.ENABLED_MODE_BLOCK)
                 )
                 .contentSecurityPolicy(csp -> csp
-                    .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; img-src 'self' data:; font-src 'self' https://cdn.jsdelivr.net; connect-src 'self' ws://localhost:* wss://localhost:*")
+                    .policyDirectives(
+                        "default-src 'self'; " +
+                        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; " +
+                        "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; " +
+                        "img-src 'self' data: https://i.ytimg.com https://img.youtube.com; " +
+                        "font-src 'self' https://cdn.jsdelivr.net; " +
+                        "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
+                        "connect-src 'self' ws://localhost:* wss://localhost:*; " +
+                        "media-src 'self' https://www.youtube.com;"
+                    )
                 )
-                .frameOptions(frame -> frame.sameOrigin())
+                .frameOptions(frame -> frame.deny()) // X-Frame-Options: DENY (CSP frame-src lo reemplaza)
                 // X-Content-Type-Options: nosniff está habilitado por defecto en Spring Boot 3
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
