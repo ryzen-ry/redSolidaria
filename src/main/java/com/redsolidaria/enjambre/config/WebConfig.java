@@ -9,12 +9,15 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Mapear la URL /uploads/** para que busque en la carpeta física de desarrollo, en el classpath y en la raíz del proyecto
-        registry.addResourceHandler("/uploads/**")
+        // Los archivos subidos (documentos, fotos) se sirven a través de FileController
+        // que requiere autenticación. Ya no se mapean como recursos estáticos públicos.
+        // Solo se mantienen los recursos estáticos normales (CSS, JS, imágenes, vendor).
+        registry.addResourceHandler("/css/**", "/js/**", "/imagen/**", "/vendor/**")
                 .addResourceLocations(
-                        "file:src/main/resources/static/uploads/",
-                        "classpath:/static/uploads/",
-                        "file:uploads/"
+                        "classpath:/static/css/",
+                        "classpath:/static/js/",
+                        "classpath:/static/imagen/",
+                        "classpath:/static/vendor/"
                 );
     }
 }
