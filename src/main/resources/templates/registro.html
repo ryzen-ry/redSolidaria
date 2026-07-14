@@ -6,6 +6,21 @@
 <body>
 
 <div th:fragment="content">
+
+    <!-- Mensaje cuando el tiempo o los intentos se agotaron -->
+    <div th:if="${param.expired != null}"
+         style="max-width:600px; margin: 0 auto 28px auto; background:#FEF3C7; border:1px solid #FDE68A;
+                border-radius:14px; padding:16px 20px; display:flex; align-items:flex-start; gap:12px;">
+        <span style="font-size:1.4rem; flex-shrink:0;">⚠️</span>
+        <div>
+            <strong style="color:#92400E; display:block; margin-bottom:4px;">Sesión de verificación expirada</strong>
+            <span style="color:#78350F; font-size:0.85rem;">
+                Se agotaron los 3 intentos permitidos o el tiempo de 90 segundos expiró.<br>
+                Por favor completa el registro nuevamente para recibir un nuevo código.
+            </span>
+        </div>
+    </div>
+
     <div class="text-center mb-4">
         <h1 class="rs-section-title" style="font-size: 2rem;">Registro de Usuario</h1>
         <p style="color: #6B7280;">Selecciona el tipo de cuenta que deseas crear</p>
