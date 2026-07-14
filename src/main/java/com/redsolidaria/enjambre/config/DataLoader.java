@@ -282,6 +282,15 @@ public class DataLoader implements CommandLineRunner {
             preguntaRepository.saveAll(preguntasCurso3);
 
             System.out.println("🌱 ¡Cursos y preguntas de capacitación cargados con éxito!");
+        } else {
+            // Si los cursos ya existen en BD, actualizar las URLs de YouTube por si cambiaron
+            System.out.println("🔄 Actualizando URLs de videos de cursos existentes...");
+            
+            actualizarUrlCurso("Lenguaje de Señas Peruano - Nivel 1", "https://youtu.be/dsUe7F0fjD4");
+            actualizarUrlCurso("Asistencia a Personas con Discapacidad Motriz", "https://youtu.be/Z1IdiCUYx-U");
+            actualizarUrlCurso("Primeros Auxilios", "https://youtu.be/-oKpTAJamQs");
+            
+            System.out.println("✅ URLs de videos actualizadas correctamente");
         }
 
         // Mostrar resumen de usuarios
@@ -289,5 +298,20 @@ public class DataLoader implements CommandLineRunner {
         System.out.println("   Administradores: " + administradorRepository.count());
         System.out.println("   Cursos cargados: " + cursoRepository.count());
         System.out.println("   Preguntas cargadas: " + preguntaRepository.count());
+    }
+    
+    /**
+     * Actualiza la URL del video de un curso existente si es diferente a la que está en BD.
+     */
+    private void actualizarUrlCurso(String titulo, String nuevaUrl) {
+        List<Curso> cursos = cursoRepository.findAll();
+        for (Curso c : cursos) {
+            if (c.getTitulo().equals(titulo) && !nuevaUrl.equals(c.getUrlVideo())) {
+                c.setUrlVideo(nuevaUrl);
+                cursoRepository.save(c);
+                System.out.println("   📹 URL actualizada: " + titulo + " → " + nuevaUrl);
+                return;
+            }
+        }
     }
 }
