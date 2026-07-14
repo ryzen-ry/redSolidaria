@@ -4,6 +4,7 @@ import com.redsolidaria.enjambre.model.CodigoVerificacion;
 import com.redsolidaria.enjambre.repository.CodigoVerificacionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.Random;
 
@@ -16,6 +17,9 @@ public class VerificacionService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public String generarCodigo() {
         Random random = new Random();
         int codigo = 100000 + random.nextInt(900000);
@@ -26,32 +30,28 @@ public class VerificacionService {
         String codigo = generarCodigo();
         LocalDateTime expiracion = LocalDateTime.now().plusMinutes(10);
 
-        CodigoVerificacion cv = new CodigoVerificacion(email, codigo, expiracion);
+        String codigoCifrado = passwordEncoder.encode(codigo);
+        CodigoVerificacion cv = new CodigoVerificacion(email, codigoCifrado, expiracion);
         codigoRepository.save(cv);
 
         emailService.enviarCodigoVerificacion(email, codigo);
     }
 
     public boolean verificarCodigo(String email, String codigoIngresado) {
-        var optionalCodigo = codigoRepository.findByEmailAndCodigoAndUsadoFalse(email, codigoIngresado);
+        java.util.List<CodigoVerificacion> codigosActivos = codigoRepository.findByEmailAndUsadoFalse(email);
 
-        if (optionalCodigo.isEmpty()) {
-            return false;
+        for (CodigoVerificacion cv : codigosActivos) {
+            if (passwordEncoder.matches(codigoIngresado, cv.getCodigo())) {
+                if (cv.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+                    return false;
+                }
+
+                cv.setUsado(true);
+                codigoRepository.save(cv);
+                return true;
+            }
         }
 
-        CodigoVerificacion cv = optionalCodigo.get();
-
-        if (cv.getFechaExpiracion().isBefore(LocalDateTime.now())) {
-            return false;
-        }
-
-        cv.setUsado(true);
-        codigoRepository.save(cv);
-        
-        // ❌ ELIMINADO: Ya no se marca como verificado aquí
-        // El guardado en BD y marcado como verificado ahora se hace en AuthController
-        // después de que el código es válido
-        
-        return true;
+        return false;
     }
 }

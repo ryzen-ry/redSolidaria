@@ -26,10 +26,10 @@
         .logo h1 { font-size: 1.5rem; font-weight: 700; color: #1E2D4A; }
         .logo h1 span { color: #2563EB; }
         h2 { text-align: center; margin-bottom: 12px; font-size: 1.3rem; font-weight: 600; }
-        .subtitle { text-align: center; color: #6B7280; margin-bottom: 32px; font-size: 0.85rem; }
-        .form-group { margin-bottom: 32px; }
+        .subtitle { text-align: center; color: #6B7280; margin-bottom: 20px; font-size: 0.85rem; }
+        .form-group { margin-bottom: 24px; }
         label { display: block; font-weight: 500; font-size: 0.85rem; margin-bottom: 8px; }
-        input {
+        input[type="text"] {
             width: 100%;
             padding: 16px;
             background: #F9FAFB;
@@ -40,7 +40,7 @@
             letter-spacing: 8px;
             transition: all 0.2s;
         }
-        input:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        input[type="text"]:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
         .btn-verify {
             width: 100%;
             background: #2563EB;
@@ -51,15 +51,114 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            font-size: 1rem;
         }
         .btn-verify:hover { background: #1D4ED8; }
+        .btn-verify:disabled { background: #9CA3AF; cursor: not-allowed; }
         .resend { text-align: center; margin-top: 24px; font-size: 0.75rem; color: #6B7280; }
         .resend a { color: #2563EB; text-decoration: none; }
-        .alert { padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; }
-        .alert-danger { background: #FEE2E2; color: #991B1B; }
+        .alert { padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; }
+        .alert-danger { background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA; }
+        .alert-warning { background: #FEF3C7; color: #92400E; border: 1px solid #FDE68A; }
+
+        /* ── Seguridad: temporizador e intentos ── */
+        .security-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #F0F4FF;
+            border: 1px solid #BFDBFE;
+            border-radius: 14px;
+            padding: 12px 18px;
+            margin-bottom: 24px;
+            gap: 12px;
+        }
+        .security-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+        .security-label {
+            font-size: 0.7rem;
+            color: #6B7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
+        }
+        .security-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1E2D4A;
+        }
+        .security-divider {
+            width: 1px;
+            height: 36px;
+            background: #BFDBFE;
+        }
+        /* Temporizador urgente */
+        .timer-urgent { color: #DC2626 !important; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        /* Barra de progreso del tiempo */
+        .timer-progress-wrap {
+            background: #E5E7EB;
+            border-radius: 99px;
+            height: 5px;
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+        .timer-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #2563EB, #60A5FA);
+            border-radius: 99px;
+            transition: width 1s linear, background 0.5s;
+        }
+        .timer-progress-bar.urgent { background: linear-gradient(90deg, #DC2626, #F87171); }
+
+        /* Overlay de bloqueo */
+        .blocked-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.55);
+            z-index: 999;
+            align-items: center;
+            justify-content: center;
+        }
+        .blocked-overlay.show { display: flex; }
+        .blocked-box {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 36px;
+            max-width: 380px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+            animation: slideUp 0.3s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .blocked-icon { font-size: 3rem; margin-bottom: 16px; }
+        .blocked-title { font-size: 1.2rem; font-weight: 700; color: #991B1B; margin-bottom: 10px; }
+        .blocked-msg { font-size: 0.85rem; color: #4B5563; margin-bottom: 24px; line-height: 1.6; }
+        .blocked-countdown { font-size: 2rem; font-weight: 700; color: #2563EB; margin-bottom: 8px; }
+        .blocked-hint { font-size: 0.75rem; color: #9CA3AF; }
     </style>
 </head>
 <body>
+
+    <!-- Overlay de bloqueo (intentos agotados o tiempo expirado) -->
+    <div class="blocked-overlay" id="blockedOverlay">
+        <div class="blocked-box">
+            <div class="blocked-icon" id="blockedIcon">🔒</div>
+            <div class="blocked-title" id="blockedTitle">Acceso bloqueado</div>
+            <div class="blocked-msg" id="blockedMsg">Se han agotado tus intentos o el tiempo ha expirado.<br>Deberás registrarte nuevamente.</div>
+            <div class="blocked-countdown" id="redirectCountdown">5</div>
+            <div class="blocked-hint">Redirigiendo a registro...</div>
+        </div>
+    </div>
+
     <div class="verify-container">
         <div class="verify-card">
             <div class="logo">
@@ -67,18 +166,156 @@
             </div>
             <h2>🔐 Verifica tu correo</h2>
             <div class="subtitle">Hemos enviado un código de 6 dígitos a <strong th:text="${email}"></strong></div>
+
+            <!-- Barra de seguridad: tiempo e intentos -->
+            <div class="security-bar">
+                <div class="security-item">
+                    <span class="security-label">⏱ Tiempo</span>
+                    <span class="security-value" id="timerDisplay">1:30</span>
+                </div>
+                <div class="security-divider"></div>
+                <div class="security-item">
+                    <span class="security-label">🎯 Intentos</span>
+                    <span class="security-value" id="attemptsDisplay"
+                          th:text="${intentosRestantes != null ? intentosRestantes : 3}">3</span>
+                </div>
+            </div>
+
+            <!-- Barra de progreso del temporizador -->
+            <div class="timer-progress-wrap">
+                <div class="timer-progress-bar" id="timerProgressBar" style="width: 100%;"></div>
+            </div>
+
+            <!-- Alertas del servidor -->
             <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
-            <form th:action="@{/verificar-codigo}" method="post">
+            <div th:if="${warning}" class="alert alert-warning" th:text="${warning}"></div>
+
+            <form th:action="@{/verificar-codigo}" method="post" id="verifyForm">
                 <input type="hidden" name="email" th:value="${email}">
                 <input type="hidden" name="tipoUsuario" th:value="${tipoUsuario}">
+                <!-- Campo oculto para indicar si el tiempo expiró -->
+                <input type="hidden" name="tiempoExpirado" id="tiempoExpiradoInput" value="false">
                 <div class="form-group">
                     <label>Código de verificación</label>
-                    <input type="text" name="codigo" placeholder="123456" maxlength="6" required>
+                    <input type="text" name="codigo" id="codigoInput"
+                           placeholder="123456" maxlength="6" required
+                           autocomplete="one-time-code">
                 </div>
-                <button type="submit" class="btn-verify">Verificar cuenta</button>
+                <button type="submit" class="btn-verify" id="btnVerify">Verificar cuenta</button>
             </form>
             <div class="resend">¿No recibiste el código? <a href="#">Reenviar</a></div>
         </div>
     </div>
+
+<script th:inline="javascript">
+    // ── Token único de esta sesión de verificación (generado por el servidor) ─
+    // Cada nuevo registro genera un UUID distinto → sessionStorage siempre fresco
+    const SESSION_TOKEN   = /*[[${verifyToken}]]*/ 'fallback';
+    const STORAGE_KEY     = 'verify_deadline_' + SESSION_TOKEN;
+
+    // ── Leer intentos restantes desde Thymeleaf ──────────────────────────────
+    const intentosRestantes = /*[[${intentosRestantes != null ? intentosRestantes : 3}]]*/ 3;
+    const TOTAL_SECONDS = 90;
+
+    // ── Estado del temporizador (persiste en sessionStorage por token) ────────
+    let deadlineMs;
+    const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (stored) {
+        deadlineMs = parseInt(stored, 10);
+    } else {
+        deadlineMs = Date.now() + TOTAL_SECONDS * 1000;
+        sessionStorage.setItem(STORAGE_KEY, deadlineMs);
+    }
+
+    // ── Referencias DOM ───────────────────────────────────────────────────────
+    const timerDisplay        = document.getElementById('timerDisplay');
+    const attemptsDisplay     = document.getElementById('attemptsDisplay');
+    const progressBar         = document.getElementById('timerProgressBar');
+    const blockedOverlay      = document.getElementById('blockedOverlay');
+    const blockedTitle        = document.getElementById('blockedTitle');
+    const blockedMsg          = document.getElementById('blockedMsg');
+    const blockedIcon         = document.getElementById('blockedIcon');
+    const redirectCountdown   = document.getElementById('redirectCountdown');
+    const btnVerify           = document.getElementById('btnVerify');
+    const codigoInput         = document.getElementById('codigoInput');
+    const tiempoExpiradoInput = document.getElementById('tiempoExpiradoInput');
+    const verifyForm          = document.getElementById('verifyForm');
+
+    // ── Actualizar intentos en pantalla ───────────────────────────────────────
+    attemptsDisplay.textContent = intentosRestantes;
+    if (intentosRestantes <= 1) attemptsDisplay.style.color = '#DC2626';
+    else if (intentosRestantes === 2) attemptsDisplay.style.color = '#D97706';
+
+    // ── Función: mostrar overlay de bloqueo y redirigir ───────────────────────
+    function showBlockedAndRedirect(title, msg, icon) {
+        blockedTitle.textContent = title;
+        blockedMsg.innerHTML = msg;
+        blockedIcon.textContent = icon;
+        blockedOverlay.classList.add('show');
+        btnVerify.disabled = true;
+        codigoInput.disabled = true;
+
+        let secs = 5;
+        redirectCountdown.textContent = secs;
+        const interval = setInterval(() => {
+            secs--;
+            redirectCountdown.textContent = secs;
+            if (secs <= 0) {
+                clearInterval(interval);
+                // Limpiar SOLO la clave de este token antes de redirigir
+                sessionStorage.removeItem(STORAGE_KEY);
+                window.location.href = '/registro?expired=1';
+            }
+        }, 1000);
+    }
+
+    // ── Si intentos ya son 0, bloquear de inmediato ───────────────────────────
+    if (intentosRestantes <= 0) {
+        showBlockedAndRedirect(
+            '❌ Sin intentos disponibles',
+            'Has agotado los 3 intentos permitidos.<br>Deberás registrarte nuevamente para obtener un nuevo código.',
+            '🚫'
+        );
+    }
+
+    // ── Temporizador ──────────────────────────────────────────────────────────
+    function updateTimer() {
+        const remaining = Math.max(0, deadlineMs - Date.now());
+        const secs = Math.ceil(remaining / 1000);
+        const mins = Math.floor(secs / 60);
+        const sec  = secs % 60;
+
+        timerDisplay.textContent = `${mins}:${sec.toString().padStart(2, '0')}`;
+
+        // Barra de progreso
+        const pct = (remaining / (TOTAL_SECONDS * 1000)) * 100;
+        progressBar.style.width = pct + '%';
+
+        if (secs <= 20) {
+            timerDisplay.classList.add('timer-urgent');
+            progressBar.classList.add('urgent');
+        } else {
+            timerDisplay.classList.remove('timer-urgent');
+            progressBar.classList.remove('urgent');
+        }
+
+        if (remaining <= 0) {
+            clearInterval(timerInterval);
+            timerDisplay.textContent = '0:00';
+            progressBar.style.width = '0%';
+
+            // Limpiar esta clave de sessionStorage y notificar al backend
+            sessionStorage.removeItem(STORAGE_KEY);
+            tiempoExpiradoInput.value = 'true';
+            codigoInput.removeAttribute('required');
+            codigoInput.value = '';
+            verifyForm.submit();
+        }
+    }
+
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 500);
+</script>
+
 </body>
 </html>
