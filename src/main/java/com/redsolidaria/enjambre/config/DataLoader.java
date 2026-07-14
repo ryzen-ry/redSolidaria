@@ -66,7 +66,7 @@ public class DataLoader implements CommandLineRunner {
                 "Curso completo de introducción al lenguaje de señas en el contexto peruano.",
                 "Básico",
                 1,
-                "https://youtu.be/2FOgfDn5rkg"
+                "https://youtu.be/dsUe7F0fjD4"
             );
             cursoRepository.save(curso1);
 
