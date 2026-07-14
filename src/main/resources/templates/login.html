@@ -72,9 +72,10 @@
             <div th:if="${param.logout != null}" class="alert alert-success">
     ✅ Has cerrado sesión exitosamente
 </div>
-<div th:if="${param.error != null}" class="alert alert-danger">
-    ❌ Correo o contraseña incorrectos
-</div>
+            <div th:if="${param.error != null}" class="alert alert-danger">
+                <span th:if="${param.error[0] == 'rate_limit'}" th:text="'⏳ Demasiados intentos. Espera 1 minuto antes de volver a intentarlo.'">⏳ Demasiados intentos.</span>
+                <span th:unless="${param.error[0] == 'rate_limit'}" th:text="'❌ Correo o contraseña incorrectos'">❌ Error</span>
+            </div>
             <div th:if="${mensaje}" class="alert alert-success" th:text="${mensaje}"></div>
             <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
             <form th:action="@{/login}" method="post">
