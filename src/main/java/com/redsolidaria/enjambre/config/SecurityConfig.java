@@ -63,7 +63,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/","/nosotros","/capacitacion","/donaciones","/foro" ,"/login", "/registro/**", "/verificar-codigo",
                     "/css/**", "/js/**", "/imagen/**", "/vendor/**", "/portada.ico",
-                    "/api/auth/**", "/ws/**"
+                    "/api/auth/**", "/api/foro/**", "/ws/**"
                 ).permitAll()
                 // /uploads/** ya NO está en permitAll() — se sirve mediante controlador autenticado
                 .requestMatchers("/admin/**").hasRole("ADMIN")
