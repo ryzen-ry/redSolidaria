@@ -46,11 +46,12 @@ public class SecurityConfig {
                         "img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://*.basemaps.cartocdn.com; " +
                         "font-src 'self' https://cdn.jsdelivr.net; " +
                         "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
+                        "frame-ancestors 'self'; " +
                         "connect-src 'self' ws://localhost:* wss://localhost:*; " +
                         "media-src 'self' https://www.youtube.com;"
                     )
                 )
-                .frameOptions(frame -> frame.deny()) // X-Frame-Options: DENY (CSP frame-src lo reemplaza)
+                .frameOptions(frame -> frame.sameOrigin()) // Permite visualizar PDFs locales en iframe del mismo origen
                 // X-Content-Type-Options: nosniff está habilitado por defecto en Spring Boot 3
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
