@@ -72,11 +72,19 @@
             height: 100%;
             background: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(8px);
-            display: none;
+            display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 10000;
             padding: 1rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
         }
 
         .modal-card {
@@ -298,7 +306,7 @@
                 <h1 style="color: white !important;">Reportar una Incidencia</h1>
                 <p>Reporta cualquier inconveniente o conducta inapropiada durante las asistencias. Tu seguridad es nuestra prioridad.</p>
             </div>
-            <button class="btn-report" onclick="openModal()">
+            <button class="btn-report" id="btnReportar">
                 <span>⚠️</span> Reportar Incidencia
             </button>
         </div>
@@ -410,43 +418,91 @@
 
     <!-- JS FOR INTERACTIVITY AND CLIENT-SIDE VALIDATION -->
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // ── Botón reportar ──
+            const btnReportar = document.getElementById('btnReportar');
+            if (btnReportar) {
+                btnReportar.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    openModal();
+                });
+            }
+
+            // ── Cerrar modal con la X ──
+            const closeBtn = document.querySelector('.modal-close');
+            if (closeBtn) {
+                closeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    closeModal();
+                });
+            }
+
+            // ── Cerrar modal al hacer clic fuera ──
+            const modal = document.getElementById('reportModal');
+            if (modal) {
+                modal.addEventListener('click', function(event) {
+                    if (event.target === modal) {
+                        closeModal();
+                    }
+                });
+            }
+
+            // ── Select de historial ──
+            const historialSelect = document.getElementById('historialSelect');
+            if (historialSelect) {
+                historialSelect.addEventListener('change', handleHistorialChange);
+            }
+
+            // ── Validación de archivo ──
+            const evidenciaFile = document.getElementById('evidenciaFile');
+            if (evidenciaFile) {
+                evidenciaFile.addEventListener('change', function() {
+                    validateFile(this);
+                });
+            }
+        });
+
         function openModal() {
-            document.getElementById('reportModal').style.display = 'flex';
+            const modal = document.getElementById('reportModal');
+            if (modal) {
+                modal.classList.add('active');
+            }
         }
 
         function closeModal() {
-            document.getElementById('reportModal').style.display = 'none';
-            // Reset form
-            document.querySelector('#reportModal form').reset();
-            document.getElementById('reportedPersonBox').style.display = 'none';
-            document.getElementById('fileError').style.display = 'none';
-        }
-
-        function closeModalOutside(event) {
-            if (event.target === document.getElementById('reportModal')) {
-                closeModal();
+            const modal = document.getElementById('reportModal');
+            if (modal) {
+                modal.classList.remove('active');
             }
+            // Reset form
+            const form = document.querySelector('#reportModal form');
+            if (form) form.reset();
+            const nameBox = document.getElementById('reportedPersonBox');
+            if (nameBox) nameBox.style.display = 'none';
+            const errorDiv = document.getElementById('fileError');
+            if (errorDiv) errorDiv.style.display = 'none';
         }
 
         function handleHistorialChange() {
             const select = document.getElementById('historialSelect');
+            if (!select) return;
             const selectedOption = select.options[select.selectedIndex];
             const nameBox = document.getElementById('reportedPersonBox');
             const nameSpan = document.getElementById('reportedPersonName');
 
             if (selectedOption && selectedOption.value !== "") {
                 const voluntarioName = selectedOption.getAttribute('data-name');
-                nameSpan.textContent = voluntarioName;
-                nameBox.style.display = 'flex';
+                if (nameSpan) nameSpan.textContent = voluntarioName;
+                if (nameBox) nameBox.style.display = 'flex';
             } else {
-                nameBox.style.display = 'none';
+                if (nameBox) nameBox.style.display = 'none';
             }
         }
 
         function validateFile(input) {
             const file = input.files[0];
             const errorDiv = document.getElementById('fileError');
-            errorDiv.style.display = 'none';
+            if (errorDiv) errorDiv.style.display = 'none';
 
             if (!file) return true;
 
@@ -454,16 +510,19 @@
             const maxSize = 10 * 1024 * 1024; // 10MB
 
             if (isVideo && file.size > maxSize) {
-                errorDiv.textContent = '⚠️ El video supera los 10 MB permitidos.';
-                errorDiv.style.display = 'block';
-                input.value = ''; // Clear file
+                if (errorDiv) {
+                    errorDiv.textContent = '⚠️ El video supera los 10 MB permitidos.';
+                    errorDiv.style.display = 'block';
+                }
+                input.value = '';
                 return false;
             }
             
-            // Check images size (limit to 10MB as well)
             if (file.size > maxSize) {
-                errorDiv.textContent = '⚠️ El archivo supera los 10 MB permitidos.';
-                errorDiv.style.display = 'block';
+                if (errorDiv) {
+                    errorDiv.textContent = '⚠️ El archivo supera los 10 MB permitidos.';
+                    errorDiv.style.display = 'block';
+                }
                 input.value = '';
                 return false;
             }
@@ -475,12 +534,12 @@
             const select = document.getElementById('historialSelect');
             const errorDiv = document.getElementById('fileError');
             
-            if (select.value === "") {
+            if (select && select.value === "") {
                 alert("Por favor, selecciona un código del historial.");
                 return false;
             }
             
-            if (errorDiv.style.display === 'block') {
+            if (errorDiv && errorDiv.style.display === 'block') {
                 alert("Por favor, corrige el error de archivo antes de enviar.");
                 return false;
             }
