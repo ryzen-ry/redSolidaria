@@ -563,6 +563,8 @@
             let leafletMap = null;
             let volMarker = null;
             let miMarker = null;
+            let volCircle = null;
+            let miCircle = null;
             let rutaLine = null;
 
             // ── Toast ───────────────────────────────────────────────────────
@@ -632,7 +634,7 @@
                 }
             };
 
-            const initMap = async (latVol, lngVol, latMi, lngMi) => {
+            const initMap = async (latVol, lngVol, latMi, lngMi, precisionVol = null, precisionMi = null) => {
                 if (!isValidCoord(latVol, lngVol)) {
                     showToast('Ubicación del voluntario no disponible.', 'warning', 4000);
                     return;
@@ -688,6 +690,18 @@
                             .addTo(leafletMap)
                             .bindPopup('<b>🙋 Voluntario</b><br>En camino hacia ti');
                     }
+                    if (volCircle) {
+                        volCircle.setLatLng([latV, lngV]);
+                        if (precisionVol) volCircle.setRadius(precisionVol);
+                    } else {
+                        volCircle = L.circle([latV, lngV], {
+                            radius: precisionVol || 15,
+                            color: '#3b82f6',
+                            fillColor: '#3b82f6',
+                            fillOpacity: 0.15,
+                            weight: 1
+                        }).addTo(leafletMap);
+                    }
 
                     if (latM != null && lngM != null) {
                         if (miMarker) {
@@ -696,6 +710,18 @@
                             miMarker = L.marker([latM, lngM], { icon: iconMi })
                                 .addTo(leafletMap)
                                 .bindPopup('<b>📍 Tu ubicación</b>');
+                        }
+                        if (miCircle) {
+                            miCircle.setLatLng([latM, lngM]);
+                            if (precisionMi) miCircle.setRadius(precisionMi);
+                        } else {
+                            miCircle = L.circle([latM, lngM], {
+                                radius: precisionMi || 15,
+                                color: '#ef4444',
+                                fillColor: '#ef4444',
+                                fillOpacity: 0.15,
+                                weight: 1
+                            }).addTo(leafletMap);
                         }
                         fitBothMarkers(false);
                         updateRuta();
@@ -740,19 +766,32 @@
                 requestAnimationFrame(step);
             };
 
-            const updateVolMarker = (lat, lng) => {
+            const updateVolMarker = (lat, lng, precision = null) => {
                 if (!isValidCoord(lat, lng)) return;
                 if (!leafletMap || !volMarker) {
                     if (sesionAceptada) {
                         const myLat = lastPosition?.lat ?? null;
                         const myLng = lastPosition?.lng ?? null;
-                        initMap(Number(lat), Number(lng), myLat, myLng);
+                        const myPrec = lastPosition?.precisionMetros ?? null;
+                        initMap(Number(lat), Number(lng), myLat, myLng, precision, myPrec);
                     }
                     return;
                 }
                 animateMarkerTo(volMarker, Number(lat), Number(lng), 1000, () => {
                     updateRuta();
                 });
+                if (volCircle) {
+                    volCircle.setLatLng([lat, lng]);
+                    if (precision) volCircle.setRadius(precision);
+                } else {
+                    volCircle = L.circle([lat, lng], {
+                        radius: precision || 15,
+                        color: '#3b82f6',
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.15,
+                        weight: 1
+                    }).addTo(leafletMap);
+                }
                 if (miMarker) {
                     fitBothMarkers(true);
                 } else {
@@ -760,7 +799,7 @@
                 }
             };
 
-            const updateMiMarker = (lat, lng) => {
+            const updateMiMarker = (lat, lng, precision = null) => {
                 if (!isValidCoord(lat, lng) || !leafletMap) return;
                 if (!miMarker) {
                     const iconMi = L.divIcon({
@@ -772,6 +811,13 @@
                     miMarker = L.marker([lat, lng], { icon: iconMi })
                         .addTo(leafletMap)
                         .bindPopup('<b>📍 Tu ubicación</b>');
+                    miCircle = L.circle([lat, lng], {
+                        radius: precision || 15,
+                        color: '#ef4444',
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.15,
+                        weight: 1
+                    }).addTo(leafletMap);
                     if (volMarker) {
                         fitBothMarkers(false);
                         updateRuta();
@@ -781,6 +827,18 @@
                 animateMarkerTo(miMarker, Number(lat), Number(lng), 1000, () => {
                     updateRuta();
                 });
+                if (miCircle) {
+                    miCircle.setLatLng([lat, lng]);
+                    if (precision) miCircle.setRadius(precision);
+                } else {
+                    miCircle = L.circle([lat, lng], {
+                        radius: precision || 15,
+                        color: '#ef4444',
+                        fillColor: '#ef4444',
+                        fillOpacity: 0.15,
+                        weight: 1
+                    }).addTo(leafletMap);
+                }
             };
 
             const setEstado = (msg) => {
@@ -799,6 +857,8 @@
                     leafletMap = null;
                     volMarker = null;
                     miMarker = null;
+                    volCircle = null;
+                    miCircle = null;
                     rutaLine = null;
                 }
                 const distEl = document.getElementById('mapDistancia');
@@ -880,8 +940,9 @@
 
                 const myLat = lastPosition?.lat ?? null;
                 const myLng = lastPosition?.lng ?? null;
+                const myPrec = lastPosition?.precisionMetros ?? null;
                 if (ub.lat != null && ub.lng != null) {
-                    initMap(Number(ub.lat), Number(ub.lng), myLat, myLng);
+                    initMap(Number(ub.lat), Number(ub.lng), myLat, myLng, ub.precisionMetros ? Number(ub.precisionMetros) : null, myPrec);
                 } else {
                     showToast('Esperando ubicación del voluntario en el mapa...', 'warning', 4000);
                 }
@@ -910,7 +971,7 @@
                             debereEnviar = true;
                         } else {
                             const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
-                            if (distMeters >= 2.0) {
+                            if (distMeters >= 0.1) {
                                 debereEnviar = true;
                             }
                         }
@@ -928,7 +989,7 @@
                         }
 
                         if (sesionAceptada && leafletMap) {
-                            updateMiMarker(lat, lng);
+                            updateMiMarker(lat, lng, precision);
                         } else if (sesionAceptada && !leafletMap && lastPosition) {
                             flushLastPosition();
                         }
@@ -937,7 +998,7 @@
                         locationEnabled = false;
                         setEstado('No se pudo habilitar la ubicación. Revisa permisos del navegador.');
                     },
-                    { enableHighAccuracy: true, maximumAge: 500, timeout: 10000 }
+                    { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
                 );
 
                 setInterval(() => {
@@ -957,7 +1018,7 @@
                                     debereEnviar = true;
                                 } else {
                                     const distMeters = calcDistKm(lat, lng, lastSentPosition.lat, lastSentPosition.lng) * 1000;
-                                    if (distMeters >= 2.0) {
+                                    if (distMeters >= 0.1) {
                                         debereEnviar = true;
                                     }
                                 }
@@ -975,7 +1036,7 @@
                                 }
 
                                 if (leafletMap) {
-                                    updateMiMarker(lat, lng);
+                                    updateMiMarker(lat, lng, precision);
                                 }
                             },
                             (err) => {
@@ -1050,7 +1111,7 @@
                             break;
                         case 'UBICACION_ACTUALIZADA':
                             if (data.lat != null && data.lng != null) {
-                                updateVolMarker(Number(data.lat), Number(data.lng));
+                                updateVolMarker(Number(data.lat), Number(data.lng), data.precisionMetros ? Number(data.precisionMetros) : null);
                             }
                             break;
                         case 'SOLICITUD_CANCELADA':
