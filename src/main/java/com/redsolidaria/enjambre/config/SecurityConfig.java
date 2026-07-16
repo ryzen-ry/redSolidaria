@@ -43,7 +43,7 @@ public class SecurityConfig {
                         "default-src 'self'; " +
                         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://www.youtube.com https://s.ytimg.com; " +
                         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; " +
-                        "img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://*.tile.openstreetmap.org; " +
+                        "img-src 'self' data: https://i.ytimg.com https://img.youtube.com https://*.basemaps.cartocdn.com; " +
                         "font-src 'self' https://cdn.jsdelivr.net; " +
                         "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; " +
                         "connect-src 'self' ws://localhost:* wss://localhost:*; " +
